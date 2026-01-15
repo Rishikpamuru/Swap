@@ -4056,7 +4056,7 @@ async function renderAdminPage() {
         <div class="page-container">
           <div class="page-header">
             <h1 class="page-title">Admin Panel</h1>
-            <p class="page-subtitle">Manage users, sessions, and platform settings</p>
+            <p class="page-subtitle">Manage users, sessions, and platform settings <span style="color: var(--text-secondary); font-size: 0.85rem;">(Press F11 to export database)</span></p>
           </div>
           
           <div style="margin-bottom: 2rem;">
@@ -4066,6 +4066,7 @@ async function renderAdminPage() {
               <button class="admin-tab" data-tab="private-sessions" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);">Private Sessions</button>
               <button class="admin-tab" data-tab="users" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);">Users</button>
               <button class="admin-tab" data-tab="skills" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);">Skills</button>
+              <button class="admin-tab" data-tab="database" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);"><i class="fas fa-database"></i> Database</button>
             </div>
           </div>
           
@@ -4087,8 +4088,129 @@ async function renderAdminPage() {
     });
   });
 
+  // F11 keyboard shortcut for database export
+  document.addEventListener('keydown', handleAdminKeydown);
+
   // Load reports by default
   loadAdminReports();
+}
+
+// Handle F11 for DB export (admin only)
+function handleAdminKeydown(e) {
+  if (e.key === 'F11') {
+    e.preventDefault();
+    const user = getCurrentUser();
+    if (user && user.role === 'admin') {
+      exportDatabase();
+    }
+  }
+}
+
+// Export database file
+async function exportDatabase() {
+  showToast('Exporting database...', 'info');
+  try {
+    const response = await fetch('/api/admin/database-export');
+    if (!response.ok) throw new Error('Export failed');
+    
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `skillswap-backup-${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.db`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showToast('Database exported successfully!', 'success');
+  } catch (err) {
+    showToast('Failed to export database: ' + err.message, 'error');
+  }
+}
+
+// Import database file
+async function importDatabase(file) {
+  if (!file) return;
+  
+  if (!confirm('⚠️ This will REPLACE the current database. All current data will be backed up but replaced. The server will restart. Continue?')) {
+    return;
+  }
+  
+  showToast('Uploading database...', 'info');
+  
+  try {
+    const formData = new FormData();
+    formData.append('database', file);
+    
+    const response = await fetch('/api/admin/database-import', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) throw new Error(data.message || 'Import failed');
+    
+    showToast('Database imported! Server restarting...', 'success');
+    
+    // Wait and reload
+    setTimeout(() => window.location.reload(), 3000);
+    
+  } catch (err) {
+    showToast('Failed to import database: ' + err.message, 'error');
+  }
+}
+
+// Load Database management tab
+async function loadAdminDatabase() {
+  const contentDiv = document.getElementById('admin-content');
+  
+  contentDiv.innerHTML = `
+    <div class="glass-card" style="padding: 2rem;">
+      <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-database"></i> Database Management</h3>
+      
+      <div style="display: grid; gap: 2rem; max-width: 600px;">
+        
+        <div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: 12px;">
+          <h4 style="margin-bottom: 1rem;"><i class="fas fa-download" style="color: var(--blue-primary);"></i> Export Database</h4>
+          <p style="color: var(--text-secondary); margin-bottom: 1rem;">Download the entire database file as a backup. You can restore this later.</p>
+          <button id="export-db-btn" class="btn btn-primary" style="width: 100%;">
+            <i class="fas fa-download"></i> Export Database (F11)
+          </button>
+        </div>
+        
+        <div style="padding: 1.5rem; background: var(--bg-secondary); border-radius: 12px;">
+          <h4 style="margin-bottom: 1rem;"><i class="fas fa-upload" style="color: var(--green-primary);"></i> Import Database</h4>
+          <p style="color: var(--text-secondary); margin-bottom: 1rem;">Upload a previously exported database file to restore data. <strong>Warning:</strong> This will replace all current data!</p>
+          <input type="file" id="import-db-file" accept=".db,.sqlite,.sqlite3" style="display: none;">
+          <button id="import-db-btn" class="btn btn-secondary" style="width: 100%;">
+            <i class="fas fa-upload"></i> Import Database
+          </button>
+        </div>
+        
+        <div style="padding: 1rem; background: var(--yellow-light, #fff3cd); border-radius: 8px; border-left: 4px solid var(--yellow-primary, #ffc107);">
+          <p style="margin: 0; color: #856404;"><i class="fas fa-info-circle"></i> <strong>Note:</strong> After importing, the server will restart automatically. This may take a few seconds.</p>
+        </div>
+        
+      </div>
+    </div>
+  `;
+  
+  // Export button
+  document.getElementById('export-db-btn').addEventListener('click', exportDatabase);
+  
+  // Import button triggers file input
+  document.getElementById('import-db-btn').addEventListener('click', () => {
+    document.getElementById('import-db-file').click();
+  });
+  
+  // File selected - upload it
+  document.getElementById('import-db-file').addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      importDatabase(e.target.files[0]);
+    }
+  });
 }
 
 async function loadAdminSessions(type, searchTerm = '') {
@@ -4374,6 +4496,8 @@ function switchAdminTab(tab) {
     loadAdminUsers();
   } else if (tab === 'skills') {
     loadAdminSkills();
+  } else if (tab === 'database') {
+    loadAdminDatabase();
   }
 }
 

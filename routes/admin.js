@@ -1,7 +1,16 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const { requireAdmin } = require('../middleware/auth');
-const { getAll, getOne, runQuery } = require('../config/database');
+const { getAll, getOne, runQuery, getDatabasePath } = require('../config/database');
+
+// Configure multer for DB file uploads
+const upload = multer({ 
+  dest: path.join(__dirname, '..', 'uploads', 'temp'),
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB max
+});
 
 router.use(requireAdmin);
 
@@ -620,6 +629,97 @@ router.get('/database/:table', async (req, res) => {
   } catch (error) {
     console.error('Table query error:', error);
     res.status(500).json({ success: false, message: 'Failed to query table' });
+  }
+});
+
+/**
+ * GET /api/admin/database/export
+ * Download the entire database file
+ */
+router.get('/database-export', async (req, res) => {
+  try {
+    const dbPath = getDatabasePath();
+    
+    if (!fs.existsSync(dbPath)) {
+      return res.status(404).json({ success: false, message: 'Database file not found' });
+    }
+    
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const filename = `skillswap-backup-${timestamp}.db`;
+    
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    
+    const fileStream = fs.createReadStream(dbPath);
+    fileStream.pipe(res);
+    
+  } catch (error) {
+    console.error('Database export error:', error);
+    res.status(500).json({ success: false, message: 'Failed to export database' });
+  }
+});
+
+/**
+ * POST /api/admin/database-import
+ * Upload and replace the database file
+ */
+router.post('/database-import', upload.single('database'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+    
+    const uploadedPath = req.file.path;
+    const dbPath = getDatabasePath();
+    
+    // Validate it's a SQLite file (check header)
+    const buffer = Buffer.alloc(16);
+    const fd = fs.openSync(uploadedPath, 'r');
+    fs.readSync(fd, buffer, 0, 16, 0);
+    fs.closeSync(fd);
+    
+    const sqliteHeader = 'SQLite format 3';
+    if (!buffer.toString('utf8', 0, 15).startsWith(sqliteHeader.slice(0, 15))) {
+      fs.unlinkSync(uploadedPath);
+      return res.status(400).json({ success: false, message: 'Invalid SQLite database file' });
+    }
+    
+    // Close current DB connection before replacing
+    const db = req.app.locals.db;
+    
+    await new Promise((resolve, reject) => {
+      db.close((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+    
+    // Backup current DB
+    const backupPath = dbPath + '.backup-' + Date.now();
+    if (fs.existsSync(dbPath)) {
+      fs.copyFileSync(dbPath, backupPath);
+    }
+    
+    // Replace with uploaded file
+    fs.copyFileSync(uploadedPath, dbPath);
+    fs.unlinkSync(uploadedPath);
+    
+    // Note: Server needs restart to use new DB
+    res.json({ 
+      success: true, 
+      message: 'Database imported successfully. Server restart required.',
+      backupCreated: backupPath
+    });
+    
+    // Auto-restart after response
+    setTimeout(() => {
+      console.log('🔄 Restarting server after database import...');
+      process.exit(0); // Railway will auto-restart
+    }, 1000);
+    
+  } catch (error) {
+    console.error('Database import error:', error);
+    res.status(500).json({ success: false, message: 'Failed to import database: ' + error.message });
   }
 });
 
