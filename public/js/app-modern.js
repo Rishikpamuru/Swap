@@ -6343,6 +6343,12 @@ function openProfileEditor() {
 
 // Skill tag input with autocomplete
 let allSkillsCache = null;
+
+// Convert to Title Case (capitalize first letter of each word)
+function toTitleCase(str) {
+  return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
 async function fetchAllSkills() {
   if (allSkillsCache) return allSkillsCache;
   try {
@@ -6375,8 +6381,8 @@ function initSkillTagInput(prefix, initialValue) {
     skills.forEach((skill, idx) => {
       const tag = document.createElement('span');
       tag.className = 'skill-tag';
-      tag.style.cssText = 'display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: var(--blue-light); color: var(--blue-primary); border-radius: var(--radius-md); font-size: 0.875rem;';
-      tag.innerHTML = `${Utils.escapeHtml(skill)} <button type="button" data-idx="${idx}" style="background: none; border: none; cursor: pointer; color: var(--blue-primary); font-size: 1rem; line-height: 1; padding: 0;">&times;</button>`;
+      tag.style.cssText = 'display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: var(--blue-light); color: #1a1a1a; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500;';
+      tag.innerHTML = `${Utils.escapeHtml(skill)} <button type="button" data-idx="${idx}" style="background: none; border: none; cursor: pointer; color: #666; font-size: 1rem; line-height: 1; padding: 0;">&times;</button>`;
       container.insertBefore(tag, input);
     });
     // Update hidden input
@@ -6433,7 +6439,7 @@ function initSkillTagInput(prefix, initialValue) {
     if (item) {
       let skillName;
       if (item.classList.contains('skill-add-new')) {
-        skillName = input.value.trim();
+        skillName = toTitleCase(input.value.trim());
       } else {
         skillName = item.textContent.trim();
       }
@@ -6451,7 +6457,7 @@ function initSkillTagInput(prefix, initialValue) {
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const val = input.value.trim();
+      const val = toTitleCase(input.value.trim());
       if (val && !skills.some(s => s.toLowerCase() === val.toLowerCase())) {
         skills.push(val);
         renderTags();

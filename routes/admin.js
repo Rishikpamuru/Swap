@@ -560,4 +560,67 @@ router.get('/skills', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/admin/database
+ * View database tables and row counts (admin only)
+ */
+router.get('/database', async (req, res) => {
+  const db = req.app.locals.db;
+  
+  try {
+    // Get all tables
+    const tables = await getAll(db, `
+      SELECT name FROM sqlite_master 
+      WHERE type='table' AND name NOT LIKE 'sqlite_%'
+      ORDER BY name
+    `);
+    
+    const tableInfo = [];
+    for (const t of tables) {
+      const countResult = await getOne(db, `SELECT COUNT(*) as count FROM "${t.name}"`);
+      tableInfo.push({
+        name: t.name,
+        rowCount: countResult?.count || 0
+      });
+    }
+    
+    res.json({ success: true, tables: tableInfo });
+  } catch (error) {
+    console.error('Database info error:', error);
+    res.status(500).json({ success: false, message: 'Failed to get database info' });
+  }
+});
+
+/**
+ * GET /api/admin/database/:table
+ * View rows from a specific table (admin only, limit 100)
+ */
+router.get('/database/:table', async (req, res) => {
+  const db = req.app.locals.db;
+  const tableName = req.params.table;
+  
+  // Whitelist allowed tables to prevent SQL injection
+  const allowedTables = ['users', 'user_profiles', 'roles', 'skills', 'skill_requests', 
+                         'sessions', 'session_offers', 'session_offer_slots', 
+                         'ratings', 'messages', 'achievements', 'audit_logs'];
+  
+  if (!allowedTables.includes(tableName)) {
+    return res.status(400).json({ success: false, message: 'Invalid table name' });
+  }
+  
+  try {
+    // Don't expose password hashes
+    let query = `SELECT * FROM "${tableName}" LIMIT 100`;
+    if (tableName === 'users') {
+      query = `SELECT id, username, email, role_id, status, created_at, updated_at FROM users LIMIT 100`;
+    }
+    
+    const rows = await getAll(db, query);
+    res.json({ success: true, table: tableName, rows });
+  } catch (error) {
+    console.error('Table query error:', error);
+    res.status(500).json({ success: false, message: 'Failed to query table' });
+  }
+});
+
 module.exports = router;

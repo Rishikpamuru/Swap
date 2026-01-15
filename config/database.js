@@ -12,6 +12,13 @@ const fs = require('fs');
 // Database file path
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'skillswap.db');
 
+// Ensure the directory exists for the database file
+const dbDir = path.dirname(DB_PATH);
+if (!fs.existsSync(dbDir)) {
+  console.log(`📁 Creating database directory: ${dbDir}`);
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
 /**
  * Initialize database connection with proper configuration
  */

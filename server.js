@@ -94,6 +94,63 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Database initialization and server start
 let database;
 
+// Auto-seed database if empty (for Railway deployments)
+async function autoSeedIfEmpty(db) {
+  const { getOne, runQuery } = require('./config/database');
+  const { hashPassword } = require('./middleware/auth');
+  
+  try {
+    const existingUser = await getOne(db, 'SELECT id FROM users LIMIT 1');
+    if (existingUser) {
+      console.log('📊 Database already has data, skipping auto-seed');
+      return;
+    }
+    
+    console.log('🌱 Auto-seeding database with demo data...');
+    
+    // Create admin user
+    const adminPassword = await hashPassword('Admin123!');
+    const adminResult = await runQuery(db, `
+      INSERT INTO users (username, email, password_hash, role_id, status)
+      VALUES (?, ?, ?, 1, 'active')
+    `, ['admin', 'admin@skillswap.edu', adminPassword]);
+    
+    await runQuery(db, `
+      INSERT INTO user_profiles (user_id, full_name, bio, privacy_level, school, grade_level)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [adminResult.id, 'System Administrator', 'SkillSwap platform administrator', 'public', 'Reedy High School', '12']);
+    
+    // Create demo students
+    const studentPassword = await hashPassword('Student123!');
+    const students = [
+      { username: 'alice_math', email: 'alice@skillswap.edu', name: 'Alice Johnson', bio: 'Math enthusiast' },
+      { username: 'bob_coder', email: 'bob@skillswap.edu', name: 'Bob Martinez', bio: 'Python programmer' },
+      { username: 'carol_artist', email: 'carol@skillswap.edu', name: 'Carol Smith', bio: 'Digital artist' },
+      { username: 'david_music', email: 'david@skillswap.edu', name: 'David Chen', bio: 'Guitarist and tutor' },
+      { username: 'emma_science', email: 'emma@skillswap.edu', name: 'Emma Williams', bio: 'Science tutor' }
+    ];
+    
+    for (const s of students) {
+      const result = await runQuery(db, `
+        INSERT INTO users (username, email, password_hash, role_id, status)
+        VALUES (?, ?, ?, 2, 'active')
+      `, [s.username, s.email, studentPassword]);
+      
+      await runQuery(db, `
+        INSERT INTO user_profiles (user_id, full_name, bio, privacy_level, school, grade_level)
+        VALUES (?, ?, ?, 'public', 'Reedy High School', '11')
+      `, [result.id, s.name, s.bio]);
+    }
+    
+    console.log('✅ Auto-seed complete! Demo accounts ready.');
+    console.log('   Admin: admin@skillswap.edu / Admin123!');
+    console.log('   Students: alice@skillswap.edu / Student123! (and others)');
+    
+  } catch (err) {
+    console.error('⚠️ Auto-seed error:', err.message);
+  }
+}
+
 async function startServer() {
   try {
     // Initialize database
@@ -102,6 +159,9 @@ async function startServer() {
 
     // Lightweight migrations / optional tables
     await ensureExtendedSchema(database);
+    
+    // Auto-seed if database is empty (for Railway deployments)
+    await autoSeedIfEmpty(database);
     
     // Audit logging middleware
     app.use(logAudit);
