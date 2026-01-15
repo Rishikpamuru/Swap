@@ -72,7 +72,7 @@ router.delete('/users/:id', async (req, res) => {
 
 /**
  * GET /api/admin/sessions
- * Get all sessions (public and private)
+ * Get all sessions - public (session_offers) and private (booked sessions)
  * Query params: ?type=public|private
  */
 router.get('/sessions', async (req, res) => {
@@ -80,36 +80,62 @@ router.get('/sessions', async (req, res) => {
   const type = req.query.type || 'public'; // public or private
   
   try {
-    // Public sessions: anyone can see details
-    // Private sessions: tutor created for specific student
-    const sessions = await getAll(db, `
-      SELECT
-        s.id,
-        s.tutor_id AS tutorId,
-        s.student_id AS studentId,
-        s.skill_id AS skillId,
-        s.scheduled_date AS scheduledDate,
-        s.duration,
-        s.location,
-        s.status,
-        s.notes,
-        s.created_at AS createdAt,
-        sk.skill_name AS skillName,
-        tutor.username AS tutorUsername,
-        COALESCE(tp.full_name, '') AS tutorFullName,
-        student.username AS studentUsername,
-        COALESCE(sp.full_name, '') AS studentFullName,
-        CASE WHEN s.student_id IS NOT NULL THEN 'private' ELSE 'public' END AS sessionType
-      FROM sessions s
-      JOIN users tutor ON tutor.id = s.tutor_id
-      LEFT JOIN users student ON student.id = s.student_id
-      JOIN skills sk ON sk.id = s.skill_id
-      LEFT JOIN user_profiles tp ON tp.user_id = s.tutor_id
-      LEFT JOIN user_profiles sp ON sp.user_id = s.student_id
-      WHERE CASE WHEN s.student_id IS NOT NULL THEN 'private' ELSE 'public' END = ?
-        AND s.status != 'completed'
-      ORDER BY datetime(s.scheduled_date) DESC
-    `, [type]);
+    let sessions;
+    
+    if (type === 'public') {
+      // Public sessions = session_offers (open offers anyone can request)
+      sessions = await getAll(db, `
+        SELECT
+          so.id,
+          so.tutor_id AS tutorId,
+          so.skill_id AS skillId,
+          so.title,
+          so.notes,
+          so.location_type AS locationType,
+          so.location,
+          so.status,
+          so.created_at AS createdAt,
+          sk.skill_name AS skillName,
+          tutor.username AS tutorUsername,
+          COALESCE(tp.full_name, tutor.username) AS tutorFullName,
+          (SELECT MIN(sos.scheduled_date) FROM session_offer_slots sos WHERE sos.offer_id = so.id) AS scheduledDate,
+          (SELECT sos.duration FROM session_offer_slots sos WHERE sos.offer_id = so.id LIMIT 1) AS duration
+        FROM session_offers so
+        JOIN users tutor ON tutor.id = so.tutor_id
+        JOIN skills sk ON sk.id = so.skill_id
+        LEFT JOIN user_profiles tp ON tp.user_id = so.tutor_id
+        WHERE so.status = 'open'
+        ORDER BY so.created_at DESC
+      `);
+    } else {
+      // Private sessions = booked sessions between two users
+      sessions = await getAll(db, `
+        SELECT
+          s.id,
+          s.tutor_id AS tutorId,
+          s.student_id AS studentId,
+          s.skill_id AS skillId,
+          s.scheduled_date AS scheduledDate,
+          s.duration,
+          s.location,
+          s.status,
+          s.notes,
+          s.created_at AS createdAt,
+          sk.skill_name AS skillName,
+          tutor.username AS tutorUsername,
+          COALESCE(tp.full_name, tutor.username) AS tutorFullName,
+          student.username AS studentUsername,
+          COALESCE(sp.full_name, student.username) AS studentFullName
+        FROM sessions s
+        JOIN users tutor ON tutor.id = s.tutor_id
+        JOIN users student ON student.id = s.student_id
+        JOIN skills sk ON sk.id = s.skill_id
+        LEFT JOIN user_profiles tp ON tp.user_id = s.tutor_id
+        LEFT JOIN user_profiles sp ON sp.user_id = s.student_id
+        WHERE s.status != 'completed'
+        ORDER BY datetime(s.scheduled_date) DESC
+      `);
+    }
     
     res.json({ success: true, sessions });
   } catch (error) {
@@ -121,12 +147,12 @@ router.get('/sessions', async (req, res) => {
 /**
  * DELETE /api/admin/sessions/:id
  * Delete a session with reason
- * Body: { reason: string }
+ * Body: { reason: string, type: 'public' | 'private' }
  */
 router.delete('/sessions/:id', async (req, res) => {
   const db = req.app.locals.db;
   const sessionId = parseInt(req.params.id);
-  const { reason } = req.body;
+  const { reason, type } = req.body;
   
   if (!sessionId) {
     return res.status(400).json({ success: false, message: 'Invalid session ID' });
@@ -137,47 +163,76 @@ router.delete('/sessions/:id', async (req, res) => {
   }
   
   try {
-    // Get session details before deleting
-    const session = await getOne(db, `
-      SELECT 
-        s.id,
-        s.tutor_id AS tutorId,
-        s.student_id AS studentId,
-        s.scheduled_date AS scheduledDate,
-        sk.skill_name AS skillName,
-        CASE WHEN s.student_id IS NOT NULL THEN 'private' ELSE 'public' END AS sessionType
-      FROM sessions s
-      JOIN skills sk ON sk.id = s.skill_id
-      WHERE s.id = ?
-    `, [sessionId]);
-    
-    if (!session) {
-      return res.status(404).json({ success: false, message: 'Session not found' });
-    }
-    
     const adminId = req.userId;
-    const isPrivate = session.sessionType === 'private';
     
-    // Send message to tutor (creator) with reason
-    const tutorMessage = `Your session for "${session.skillName}" scheduled on ${new Date(session.scheduledDate).toLocaleString()} has been removed by an administrator. Reason: ${reason}`;
-    await runQuery(db, `
-      INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
-      VALUES (?, ?, ?, ?, 0)
-    `, [adminId, session.tutorId, 'Session Removed', tutorMessage]);
-    
-    // If private session, send message to student WITHOUT reason
-    if (isPrivate && session.studentId) {
-      const studentMessage = `A session for "${session.skillName}" scheduled on ${new Date(session.scheduledDate).toLocaleString()} has been removed by an administrator.`;
+    if (type === 'public') {
+      // Delete session offer
+      const offer = await getOne(db, `
+        SELECT 
+          so.id,
+          so.tutor_id AS tutorId,
+          so.title,
+          sk.skill_name AS skillName
+        FROM session_offers so
+        JOIN skills sk ON sk.id = so.skill_id
+        WHERE so.id = ?
+      `, [sessionId]);
+      
+      if (!offer) {
+        return res.status(404).json({ success: false, message: 'Session offer not found' });
+      }
+      
+      // Send message to tutor with reason
+      const tutorMessage = `Your session offer "${offer.title}" for "${offer.skillName}" has been removed by an administrator. Reason: ${reason}`;
       await runQuery(db, `
         INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
         VALUES (?, ?, ?, ?, 0)
-      `, [adminId, session.studentId, 'Session Removed', studentMessage]);
+      `, [adminId, offer.tutorId, 'Session Offer Removed', tutorMessage]);
+      
+      // Delete the session offer (cascade deletes slots and requests)
+      await runQuery(db, 'DELETE FROM session_offers WHERE id = ?', [sessionId]);
+      
+      res.json({ success: true, message: 'Session offer deleted and notification sent' });
+      
+    } else {
+      // Delete private/booked session
+      const session = await getOne(db, `
+        SELECT 
+          s.id,
+          s.tutor_id AS tutorId,
+          s.student_id AS studentId,
+          s.scheduled_date AS scheduledDate,
+          sk.skill_name AS skillName
+        FROM sessions s
+        JOIN skills sk ON sk.id = s.skill_id
+        WHERE s.id = ?
+      `, [sessionId]);
+      
+      if (!session) {
+        return res.status(404).json({ success: false, message: 'Session not found' });
+      }
+      
+      // Send message to tutor (creator) with reason
+      const tutorMessage = `Your session for "${session.skillName}" scheduled on ${new Date(session.scheduledDate).toLocaleString()} has been removed by an administrator. Reason: ${reason}`;
+      await runQuery(db, `
+        INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
+        VALUES (?, ?, ?, ?, 0)
+      `, [adminId, session.tutorId, 'Session Removed', tutorMessage]);
+      
+      // Send message to student WITHOUT reason
+      if (session.studentId) {
+        const studentMessage = `A session for "${session.skillName}" scheduled on ${new Date(session.scheduledDate).toLocaleString()} has been removed by an administrator.`;
+        await runQuery(db, `
+          INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
+          VALUES (?, ?, ?, ?, 0)
+        `, [adminId, session.studentId, 'Session Removed', studentMessage]);
+      }
+      
+      // Delete the session
+      await runQuery(db, 'DELETE FROM sessions WHERE id = ?', [sessionId]);
+      
+      res.json({ success: true, message: 'Session deleted and notifications sent' });
     }
-    
-    // Delete the session
-    await runQuery(db, 'DELETE FROM sessions WHERE id = ?', [sessionId]);
-    
-    res.json({ success: true, message: 'Session deleted and notifications sent' });
   } catch (error) {
     console.error('Delete session error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete session' });

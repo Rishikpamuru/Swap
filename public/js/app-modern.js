@@ -4253,7 +4253,7 @@ async function loadAdminSessions(type, searchTerm = '') {
             <table style="width: 100%; border-collapse: collapse;">
               <thead>
                 <tr style="border-bottom: 2px solid var(--border-light);">
-                  <th style="padding: 1rem; text-align: left; font-weight: 600;">Skill</th>
+                  <th style="padding: 1rem; text-align: left; font-weight: 600;">${type === 'public' ? 'Title / Skill' : 'Skill'}</th>
                   <th style="padding: 1rem; text-align: left; font-weight: 600;">Tutor</th>
                   ${type === 'private' ? '<th style="padding: 1rem; text-align: left; font-weight: 600;">Student</th>' : ''}
                   <th style="padding: 1rem; text-align: left; font-weight: 600;">Date/Time</th>
@@ -4264,15 +4264,18 @@ async function loadAdminSessions(type, searchTerm = '') {
               </thead>
               <tbody>
                 ${sessions.map(session => {
-      const date = new Date(session.scheduledDate);
+      const date = session.scheduledDate ? new Date(session.scheduledDate) : null;
+      const dateStr = date ? `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'No slots';
+      const displayName = type === 'public' ? (session.title ? `${session.title} (${session.skillName})` : session.skillName) : session.skillName;
+      const locationDisplay = type === 'public' ? (session.locationType === 'online' ? '🌐 Online' : session.location || 'In-Person') : (session.location || 'TBD');
       return `
                     <tr style="border-bottom: 1px solid var(--border-light);">
-                      <td style="padding: 1rem;">${session.skillName}</td>
-                      <td style="padding: 1rem;">${session.tutorFullName || session.tutorUsername}</td>
-                      ${type === 'private' ? `<td style="padding: 1rem;">${session.studentFullName || session.studentUsername}</td>` : ''}
-                      <td style="padding: 1rem;">${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                      <td style="padding: 1rem;">${session.location || 'TBD'}</td>
-                      <td style="padding: 1rem;"><span style="padding: 0.25rem 0.75rem; background: ${session.status === 'scheduled' ? 'var(--blue-light)' : session.status === 'completed' ? 'var(--green-light)' : 'var(--gray-light)'}; color: ${session.status === 'scheduled' ? 'var(--blue-primary)' : session.status === 'completed' ? 'var(--green-primary)' : 'var(--text-secondary)'}; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 600;">${session.status}</span></td>
+                      <td style="padding: 1rem;">${Utils.escapeHtml(displayName)}</td>
+                      <td style="padding: 1rem;">${Utils.escapeHtml(session.tutorFullName || session.tutorUsername)}</td>
+                      ${type === 'private' ? `<td style="padding: 1rem;">${Utils.escapeHtml(session.studentFullName || session.studentUsername)}</td>` : ''}
+                      <td style="padding: 1rem;">${dateStr}</td>
+                      <td style="padding: 1rem;">${Utils.escapeHtml(locationDisplay)}</td>
+                      <td style="padding: 1rem;"><span style="padding: 0.25rem 0.75rem; background: ${session.status === 'scheduled' || session.status === 'open' ? 'var(--blue-light)' : session.status === 'completed' ? 'var(--green-light)' : 'var(--gray-light)'}; color: ${session.status === 'scheduled' || session.status === 'open' ? 'var(--blue-primary)' : session.status === 'completed' ? 'var(--green-primary)' : 'var(--text-secondary)'}; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 600;">${session.status}</span></td>
                       <td style="padding: 1rem; text-align: center;">
                         <button class="delete-session-btn" data-session-id="${session.id}" data-session-type="${type}" style="background: var(--red-primary); color: white; padding: 0.5rem 1rem; border-radius: var(--radius-md); border: none; cursor: pointer; font-weight: 600;">Delete</button>
                       </td>
@@ -4430,7 +4433,7 @@ async function loadAdminSkills(searchTerm = '') {
                     <h3 style="font-size: 1.125rem; font-weight: 700; margin: 0;">${Utils.escapeHtml(skill.skillName)}</h3>
                     <span style="padding: 0.25rem 0.75rem; background: var(--bg-light); border-radius: var(--radius-md); font-size: 0.75rem; color: var(--text-secondary);">${skill.teaching.length + skill.learning.length} users</span>
                   </div>
-                  <button onclick="deleteAdminSkill('${Utils.escapeHtml(skill.skillName.replace(/'/g, "\\'"))}')" style="padding: 0.5rem 1rem; background: var(--red-light); color: var(--red-primary); border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: 600;" title="Delete this skill for all users">
+                  <button class="admin-delete-skill-btn" data-skill="${Utils.escapeHtml(skill.skillName)}" style="padding: 0.5rem 1rem; background: var(--red-light); color: var(--red-primary); border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: 600;" title="Delete this skill for all users">
                     <i class="fas fa-trash"></i> Delete
                   </button>
                 </div>
@@ -4482,6 +4485,16 @@ async function loadAdminSkills(searchTerm = '') {
           e.target.value = '';
         }
       }
+    });
+    
+    // Add delete button handlers
+    document.querySelectorAll('.admin-delete-skill-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const skillName = btn.dataset.skill;
+        if (skillName) {
+          deleteAdminSkill(skillName);
+        }
+      });
     });
   } catch (error) {
     console.error('Load skills error:', error);
@@ -4790,7 +4803,7 @@ async function deleteAdminSession(sessionId, type) {
     const response = await fetch(`/api/admin/sessions/${sessionId}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reason: reason.trim() })
+      body: JSON.stringify({ reason: reason.trim(), type: type })
     });
 
     const data = await response.json();
