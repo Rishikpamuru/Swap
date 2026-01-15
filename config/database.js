@@ -15,7 +15,11 @@ const LOCAL_DB_PATH = path.join(__dirname, '..', 'skillswap.db');
 
 // Railway volume mount settings
 const VOLUME_WAIT_MAX_MS = 30000;  // Wait up to 30s for volume
-const VOLUME_WAIT_INTERVAL_MS = 500;
+const VOLUME_WAIT_INTERVAL_MS = 1000;
+
+console.log('=== DATABASE CONFIG LOADED ===');
+console.log('DB_PATH env:', VOLUME_DB_PATH || '(not set)');
+console.log('LOCAL_DB_PATH:', LOCAL_DB_PATH);
 
 /**
  * Sleep helper
@@ -25,18 +29,20 @@ function sleep(ms) {
 }
 
 /**
- * Check if the volume directory is mounted and writable
+ * Check if a directory is writable
  */
-function isVolumeMounted(dirPath) {
+function isDirectoryWritable(dirPath) {
   try {
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath, { recursive: true });
+      console.log(`📁 Created directory: ${dirPath}`);
     }
     const testFile = path.join(dirPath, '.mount-test-' + Date.now());
     fs.writeFileSync(testFile, 'ok');
     fs.unlinkSync(testFile);
     return true;
-  } catch {
+  } catch (err) {
+    console.log(`⚠️ Directory not writable: ${dirPath} - ${err.message}`);
     return false;
   }
 }
@@ -49,14 +55,15 @@ async function waitForVolumeMount(dirPath) {
   console.log(`⏳ Waiting for volume mount at ${dirPath}...`);
   
   while (Date.now() - start < VOLUME_WAIT_MAX_MS) {
-    if (isVolumeMounted(dirPath)) {
-      console.log(`✅ Volume mounted and writable: ${dirPath}`);
+    if (isDirectoryWritable(dirPath)) {
+      console.log(`✅ Volume mounted and writable after ${Date.now() - start}ms`);
       return true;
     }
+    console.log(`   Still waiting... (${Math.round((Date.now() - start) / 1000)}s elapsed)`);
     await sleep(VOLUME_WAIT_INTERVAL_MS);
   }
   
-  console.log(`⚠️ Volume not mounted after ${VOLUME_WAIT_MAX_MS / 1000}s`);
+  console.log(`❌ Volume not mounted after ${VOLUME_WAIT_MAX_MS / 1000}s`);
   return false;
 }
 
@@ -64,37 +71,48 @@ async function waitForVolumeMount(dirPath) {
  * Get the database path, waiting for volume if configured
  */
 async function getDatabasePath() {
+  console.log('🔍 getDatabasePath() called');
+  
   if (VOLUME_DB_PATH) {
+    console.log(`🔍 Volume path configured: ${VOLUME_DB_PATH}`);
     const dbDir = path.dirname(VOLUME_DB_PATH);
     const mounted = await waitForVolumeMount(dbDir);
+    
     if (mounted) {
       console.log(`📁 Using volume database: ${VOLUME_DB_PATH}`);
       return VOLUME_DB_PATH;
     }
-    // Fall back to local only if volume never mounts
-    console.log(`⚠️ Volume unavailable, using local database: ${LOCAL_DB_PATH}`);
+    console.log(`⚠️ Volume unavailable, falling back to local: ${LOCAL_DB_PATH}`);
     return LOCAL_DB_PATH;
   }
-  console.log(`📁 Using local database: ${LOCAL_DB_PATH}`);
+  
+  console.log(`📁 No DB_PATH env, using local database: ${LOCAL_DB_PATH}`);
   return LOCAL_DB_PATH;
 }
 
 /**
  * Open SQLite database with retry on SQLITE_CANTOPEN
  */
-function openDatabase(dbPath, retries = 5, delayMs = 1000) {
+function openDatabase(dbPath, retries = 5, delayMs = 2000) {
+  console.log(`🔓 Opening database: ${dbPath} (retries=${retries})`);
+  
   return new Promise((resolve, reject) => {
     const attempt = (remaining) => {
+      console.log(`   Attempt ${6 - remaining}/5...`);
+      
       const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
         if (err) {
-          if (err.code === 'SQLITE_CANTOPEN' && remaining > 0) {
-            console.log(`⏳ DB open failed, retrying in ${delayMs}ms... (${remaining} left)`);
+          console.log(`   ❌ Open failed: ${err.code} - ${err.message}`);
+          
+          if ((err.code === 'SQLITE_CANTOPEN' || err.errno === 14) && remaining > 0) {
+            console.log(`   ⏳ Retrying in ${delayMs}ms... (${remaining} attempts left)`);
             setTimeout(() => attempt(remaining - 1), delayMs);
           } else {
-            console.error('Error connecting SQLITE_CANTOPEN:', err.message);
+            console.error('❌ Database open failed permanently:', err.message);
             reject(err);
           }
         } else {
+          console.log(`   ✅ Database opened successfully`);
           resolve(db);
         }
       });
@@ -107,14 +125,33 @@ function openDatabase(dbPath, retries = 5, delayMs = 1000) {
  * Initialize database connection with proper configuration
  */
 async function initializeDatabase() {
-  const DB_PATH = await getDatabasePath();
+  console.log('🚀 initializeDatabase() starting...');
   
-  const db = await openDatabase(DB_PATH);
+  let DB_PATH;
+  try {
+    DB_PATH = await getDatabasePath();
+  } catch (err) {
+    console.error('❌ getDatabasePath failed:', err.message);
+    DB_PATH = LOCAL_DB_PATH;
+  }
+  
+  let db;
+  try {
+    db = await openDatabase(DB_PATH);
+  } catch (err) {
+    // If volume path failed, try local as last resort
+    if (DB_PATH !== LOCAL_DB_PATH) {
+      console.log('🔄 Trying local database as last resort...');
+      db = await openDatabase(LOCAL_DB_PATH);
+    } else {
+      throw err;
+    }
+  }
+  
   console.log('✅ SQLite connected');
   console.log('📁 Database file:', DB_PATH);
 
   return new Promise((resolve, reject) => {
-    // Enable foreign key constraints
     db.run('PRAGMA foreign_keys = ON', (err) => {
       if (err) {
         console.error('❌ Error enabling foreign keys:', err.message);
