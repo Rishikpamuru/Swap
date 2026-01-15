@@ -271,5 +271,5 @@ module.exports = {
   getAll,
   closeDatabase,
   tablesExist,
-  DB_PATH
+  getDatabasePath
 };
