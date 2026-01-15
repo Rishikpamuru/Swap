@@ -9,7 +9,6 @@
 
 ### 1. Admin Audit Logs - FIXED
 **Problem:** Endpoint returned empty array instead of real data  
-**Impact:** Would lose 5-10 points on "Admin Data Control" and "Audit Trail"  
 **Solution:** Wired `/api/admin/audit-logs` to query real audit_logs table with filters
 
 **File:** `routes/admin.js`
@@ -23,8 +22,6 @@
 **Problem:** 
 - Placeholder UI with no functionality
 - Wrong env var name (`process.env.apk` instead of `OPENAI_API_KEY`)
-
-**Impact:** Would lose 5-10 points on "External API Integration"  
 **Solution:** 
 - Fixed env var in `routes/ai.js` to check both `OPENAI_API_KEY` and legacy `apk`
 - Wired up complete chat UI in `public/js/app-modern.js`
@@ -40,7 +37,6 @@
 
 ### 3. Works Cited Page - ADDED
 **Problem:** Documentation claimed page existed but it didn't  
-**Impact:** Would lose 5-10 points on "Documentation" and "Required Pages"  
 **Solution:** Created comprehensive Works Cited page with proper citations
 
 **File:** `public/js/app-modern.js`
@@ -58,7 +54,6 @@
 
 ### 4. Team Information - UPDATED
 **Problem:** Placeholder text in documentation files  
-**Impact:** Would appear unprofessional/incomplete  
 **Solution:** Updated all team placeholders with real information
 
 **Files Updated:**
@@ -78,18 +73,6 @@
 - Added OPENAI_API_KEY documentation
 - Clear notes that AI is optional
 - Instructions on where to get API key
-
----
-
-### 6. Submission Checklist - CREATED
-**File:** `SUBMISSION_CHECKLIST.md`
-- Comprehensive 100-point checklist
-- Pre-submission requirements
-- Testing procedures
-- Package preparation steps
-- Presentation outline
-- Q&A preparation
-- Final verification checklist
 
 ---
 
