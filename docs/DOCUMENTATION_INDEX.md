@@ -10,7 +10,7 @@
 | I want to... | Go to... |
 |--------------|----------|
 | **Set up and run the project** | [SETUP_GUIDE.md](SETUP_GUIDE.md) |
-| **Understand the database** | [Database_Schema.md](Database_Schema.md) |
+| **Understand the database** | [ER_Diagram.md](ER_Diagram.md) |
 | **See rubric compliance** | [BPA_Rubric_Alignment.md](BPA_Rubric_Alignment.md) |
 | **View ER diagram** | [ER_Diagram.md](ER_Diagram.md) |
 | **Check submission requirements** | [SUBMISSION_CHECKLIST.md](SUBMISSION_CHECKLIST.md) |
@@ -32,8 +32,7 @@
 
 | Document | Purpose | Priority |
 |----------|---------|----------|
-| [**Database_Schema.md**](Database_Schema.md) | Complete database documentation with ER diagram | ⭐⭐⭐ ESSENTIAL |
-| [**ER_Diagram.md**](ER_Diagram.md) | Entity relationship diagram | ⭐⭐ IMPORTANT |
+| [**ER_Diagram.md**](ER_Diagram.md) | Database schema + ER diagram + table definitions | ⭐⭐⭐ ESSENTIAL |
 | [**IMPLEMENTATION_SUMMARY.md**](IMPLEMENTATION_SUMMARY.md) | Technical implementation details | ⭐⭐ IMPORTANT |
 
 ### 🏆 Competition Documents
@@ -64,7 +63,6 @@
 | Document | Purpose | Priority |
 |----------|---------|----------|
 | [**PRESENTATION_GUIDE.md**](PRESENTATION_GUIDE.md) | Demo and presentation tips | ⭐⭐ IMPORTANT |
-| [**FEATURE_COMPARISON.md**](FEATURE_COMPARISON.md) | Feature breakdown | ⭐ REFERENCE |
 
 ---
 
@@ -74,7 +72,7 @@
 
 1. [README.md](../README.md) - Project overview
 2. [BPA_Rubric_Alignment.md](BPA_Rubric_Alignment.md) - Rubric compliance
-3. [Database_Schema.md](Database_Schema.md) - Database design
+3. [ER_Diagram.md](ER_Diagram.md) - Database design
 4. [Works_Cited.md](Works_Cited.md) - Citations
 
 ### For Setup/Testing
@@ -91,8 +89,8 @@
 
 ### For Technical Review
 
-1. [Database_Schema.md](Database_Schema.md) - Schema details
-2. [ER_Diagram.md](ER_Diagram.md) - Relationships
+1. [ER_Diagram.md](ER_Diagram.md) - Schema details
+2. [config/schema.sql](../config/schema.sql) - Source-of-truth schema
 3. [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) - Architecture
 
 ---
@@ -101,7 +99,7 @@
 
 | Category | Count |
 |----------|-------|
-| **Documentation Files** | 15 |
+| **Documentation Files** | 14 |
 | **Database Tables** | 12 |
 | **API Routes** | 10 files, 25+ endpoints |
 | **Frontend JS** | ~6,700 lines |
@@ -126,8 +124,8 @@
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | `admin@skillswap.local` | `AdminPass123!` |
-| Student | `alice.johnson@school.edu` | `Student123!` |
+| Admin | `admin@skillswap.edu` | `Admin123!` |
+| Student | `alice@skillswap.edu` | `Student123!` |
 
 ---
 
@@ -137,7 +135,7 @@
 |------|----------|--------|
 | Jan 14, 2026 | README.md | Complete rewrite with team info |
 | Jan 14, 2026 | Works_Cited.md | Created for BPA compliance |
-| Jan 14, 2026 | Database_Schema.md | Updated with 12 tables |
+| Jan 14, 2026 | ER_Diagram.md | Updated schema + ER diagram |
 | Jan 14, 2026 | BPA_Rubric_Alignment.md | Updated with official rubric |
 | Jan 14, 2026 | SETUP_GUIDE.md | Fixed SQLite info (not MySQL) |
 | Jan 14, 2026 | SUBMISSION_CHECKLIST.md | Updated for 2026 deadline |
@@ -150,8 +148,8 @@
 These documents are **REQUIRED** for BPA submission:
 
 1. ✅ **Works Cited** - [Works_Cited.md](Works_Cited.md)
-2. ✅ **Database Documentation** - [Database_Schema.md](Database_Schema.md)
-3. ✅ **ER Diagram** - [ER_Diagram.md](ER_Diagram.md)
+2. ✅ **Database Documentation + ER Diagram** - [ER_Diagram.md](ER_Diagram.md)
+3. ✅ **Schema Source** - [config/schema.sql](../config/schema.sql)
 4. ✅ **Project README** - [README.md](../README.md)
 
 ---

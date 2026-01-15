@@ -98,22 +98,22 @@ http://localhost:3000
 
 | Field | Value |
 |-------|-------|
-| **Email** | `admin@skillswap.local` |
-| **Password** | `AdminPass123!` |
+| **Email** | `admin@skillswap.edu` |
+| **Password** | `Admin123!` |
 | **Access** | Full admin panel, user management, reports, audit logs |
 
 ### Student Accounts
 
 | Name | Email | Password |
 |------|-------|----------|
-| Alice Johnson | `alice.johnson@school.edu` | `Student123!` |
-| Bob Smith | `bob.smith@school.edu` | `Student123!` |
-| Carol Davis | `carol.davis@school.edu` | `Student123!` |
-| David Wilson | `david.wilson@school.edu` | `Student123!` |
-| Emma Brown | `emma.brown@school.edu` | `Student123!` |
+| Alice Johnson | `alice@skillswap.edu` | `Student123!` |
+| Bob Martinez | `bob@skillswap.edu` | `Student123!` |
+| Carol Smith | `carol@skillswap.edu` | `Student123!` |
+| David Chen | `david@skillswap.edu` | `Student123!` |
+| Emma Williams | `emma@skillswap.edu` | `Student123!` |
 
 All student accounts have:
-- ✅ Complete profiles with bio and school info
+- ✅ Complete profiles with bio and privacy settings
 - ✅ Multiple skills (offered and sought)
 - ✅ Session history
 - ✅ Messages exchanged
@@ -142,7 +142,8 @@ All student accounts have:
 #### 2. Profile Management
 - [ ] Click "Profile" in sidebar
 - [ ] Update display name and bio
-- [ ] Set school and grade level
+- [ ] Review privacy settings (Public/Private)
+- [ ] Toggle "Under 16" (verify it defaults to Private)
 - [ ] Upload profile picture (camera icon)
 - [ ] Add skills you OFFER with proficiency level
 - [ ] Add skills you SEEK

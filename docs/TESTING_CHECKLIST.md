@@ -24,7 +24,7 @@ Check these files exist:
 - [x] `MODERN_UI_README.md` - Main overview
 - [x] `QUICKSTART.md` - Quick start
 - [x] `MODERN_UI_GUIDE.md` - Full guide
-- [x] `FEATURE_COMPARISON.md` - Features
+- [x] `DOCUMENTATION_INDEX.md` - Docs map
 - [x] `ICON_GUIDE.md` - Icon pack guide
 - [x] `IMPLEMENTATION_SUMMARY.md` - Summary
 
@@ -378,7 +378,7 @@ Open each documentation file:
 
 - [ ] QUICKSTART.md - Clear and concise
 - [ ] MODERN_UI_GUIDE.md - Comprehensive
-- [ ] FEATURE_COMPARISON.md - Detailed
+- [ ] DOCUMENTATION_INDEX.md - Organized
 - [ ] ICON_GUIDE.md - Helpful
 - [ ] IMPLEMENTATION_SUMMARY.md - Complete
 

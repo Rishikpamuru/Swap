@@ -328,7 +328,7 @@ Currently uses mock authentication (no backend validation).
 - Real-time messaging
 - File uploads
 - Email notifications
-- Calendar sync (Google Calendar, etc.)
+- Full calendar sync (two-way Google/Outlook)
 - Video conferencing integration
 - Payment processing
 

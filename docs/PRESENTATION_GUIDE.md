@@ -105,7 +105,7 @@
 "Passwords are hashed using bcrypt with 12 rounds before storage. We never store plain text passwords. When users login, we use bcrypt's compare function."
 
 ### "Show me your database schema"
-Navigate to: `docs/Database_Schema.md` or show ER diagram
+Navigate to: `docs/ER_Diagram.md` (schema + ER diagram)
 
 ### "Can you explain [feature] code?"
 Be ready to open: `routes/[feature].js` and walk through the logic

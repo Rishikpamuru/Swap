@@ -6,7 +6,7 @@
 
 **Pixel-perfect recreation of the SkillSwap tutoring platform UI**
 
-[![Design Fidelity](https://img.shields.io/badge/Design%20Fidelity-98%25-success)](FEATURE_COMPARISON.md)
+[![Design Fidelity](https://img.shields.io/badge/Design%20Fidelity-98%25-success)](DOCUMENTATION_INDEX.md)
 [![Pages](https://img.shields.io/badge/Pages-19%20Complete-blue)](#pages)
 [![Dependencies](https://img.shields.io/badge/Dependencies-0%20External-brightgreen)](#tech-stack)
 [![Responsive](https://img.shields.io/badge/Responsive-✓%20Mobile%20%2B%20Tablet%20%2B%20Desktop-orange)](#responsive-design)
@@ -68,7 +68,7 @@ Comprehensive guides included:
 |----------|-------------|------|
 | **[QUICKSTART.md](QUICKSTART.md)** | 30-second setup guide | [→](QUICKSTART.md) |
 | **[MODERN_UI_GUIDE.md](MODERN_UI_GUIDE.md)** | Complete technical documentation | [→](MODERN_UI_GUIDE.md) |
-| **[FEATURE_COMPARISON.md](FEATURE_COMPARISON.md)** | Detailed feature comparison | [→](FEATURE_COMPARISON.md) |
+| **[DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)** | Full documentation index | [→](DOCUMENTATION_INDEX.md) |
 | **[ICON_GUIDE.md](ICON_GUIDE.md)** | Icon pack integration guide | [→](ICON_GUIDE.md) |
 
 ---
@@ -435,7 +435,7 @@ This implementation is part of the SkillSwap BPA project.
 
 - 📖 [Quick Start Guide](QUICKSTART.md)
 - 📚 [Full Documentation](MODERN_UI_GUIDE.md)
-- 📊 [Feature Comparison](FEATURE_COMPARISON.md)
+- 📚 [Documentation Index](DOCUMENTATION_INDEX.md)
 - 🎨 [Icon Guide](ICON_GUIDE.md)
 
 ### Troubleshooting
@@ -471,6 +471,6 @@ This is a **complete, production-ready UI implementation** with:
 
 **Made with ❤️ using pure HTML, CSS, and JavaScript**
 
-[Get Started →](QUICKSTART.md) | [Read Docs →](MODERN_UI_GUIDE.md) | [View Features →](FEATURE_COMPARISON.md)
+[Get Started →](QUICKSTART.md) | [Read Docs →](MODERN_UI_GUIDE.md) | [Docs Index →](DOCUMENTATION_INDEX.md)
 
 </div>

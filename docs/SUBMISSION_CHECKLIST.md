@@ -74,7 +74,7 @@
 | Data types & fields used | 5 | ✅ | INTEGER, TEXT, DATETIME, defaults |
 | Normalization (3NF) | 10 | ✅ | 12 tables in 3NF |
 | Structure & organization | 5 | ✅ | PKs, FKs, indexes, triggers, views |
-| ER Diagram | 5 | ✅ | [docs/Database_Schema.md](Database_Schema.md) |
+| ER Diagram | 5 | ✅ | [docs/ER_Diagram.md](ER_Diagram.md) |
 | **SUBTOTAL** | **25** | **25** | |
 
 ---
@@ -143,7 +143,7 @@
 ### Documentation
 - [x] README.md updated
 - [x] Works_Cited.md complete
-- [x] Database_Schema.md current
+- [x] ER_Diagram.md current
 - [x] BPA_Rubric_Alignment.md updated
 - [x] SETUP_GUIDE.md accurate
 - [x] ER_Diagram.md complete
@@ -160,17 +160,17 @@
 ## 🎭 Demo Account Verification
 
 ### Admin Account
-- [ ] Email: `admin@skillswap.local`
-- [ ] Password: `AdminPass123!`
+- [ ] Email: `admin@skillswap.edu`
+- [ ] Password: `Admin123!`
 - [ ] Can access admin panel
 - [ ] Can manage users
 - [ ] Can view audit logs
 - [ ] Can view reports
 
 ### Student Accounts
-- [ ] `alice.johnson@school.edu` / `Student123!`
-- [ ] `bob.smith@school.edu` / `Student123!`
-- [ ] `carol.davis@school.edu` / `Student123!`
+- [ ] `alice@skillswap.edu` / `Student123!`
+- [ ] `bob@skillswap.edu` / `Student123!`
+- [ ] `carol@skillswap.edu` / `Student123!`
 - [ ] All profiles have skills
 - [ ] All accounts have session history
 - [ ] Messages exchanged between accounts

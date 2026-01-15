@@ -104,8 +104,7 @@ erDiagram
         string bio
         string profile_image
         string privacy_level
-        string school
-        string grade_level
+        boolean is_under_16
     }
     
     SKILLS {

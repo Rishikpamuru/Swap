@@ -50,8 +50,8 @@
     │  │ • password_hash  │                              │ • bio            │    │
     │  │ • role_id (FK)───┼──────────────────────────────┤ • profile_image  │    │
     │  │ • status         │                              │ • privacy_level  │    │
-    │  │ • created_at     │                              │ • school         │    │
-    │  │ • updated_at     │                              │ • grade_level    │    │
+    │  │ • created_at     │                              │ • is_under_16    │    │
+    │  │ • updated_at     │                              │                  │    │
     │  └────────┬─────────┘                              │ • updated_at     │    │
     │           │                                        └──────────────────┘    │
     │           │                                                                │
@@ -120,10 +120,15 @@
     │  ├──────────────────┤ ──────► ├──────────────────────┤                      │
     │  │ • id (PK)        │         │ • id (PK)            │                      │
     │  │ • tutor_id (FK)◄─┼─────────┤ • offer_id (FK)      │                      │
-    │  │ • skill_id (FK)  │         │ • slot_date          │                      │
-    │  │ • description    │         │ • slot_time          │                      │
-    │  │ • location       │         │ • duration           │                      │
-    │  │ • created_at     │         │ • is_taken           │                      │
+    │  │ • skill_id (FK)  │         │ • scheduled_date     │                      │
+    │  │ • title          │         │ • duration           │                      │
+    │  │ • notes          │         │ • created_at         │                      │
+    │  │ • location_type  │         │                      │                      │
+    │  │ • location       │         │                      │                      │
+    │  │ • is_group       │         │                      │                      │
+    │  │ • max_participants│        │                      │                      │
+    │  │ • status         │         │                      │                      │
+    │  │ • created_at     │         │                      │                      │
     │  │ • updated_at     │         └──────────────────────┘                      │
     │  └──────────────────┘                                                       │
     └─────────────────────────────────────────────────────────────────────────────┘
@@ -189,8 +194,7 @@ Extended user information (1:1 relationship).
 | bio | TEXT | |
 | profile_image | TEXT | |
 | privacy_level | TEXT | DEFAULT 'public' |
-| school | TEXT | |
-| grade_level | TEXT | |
+| is_under_16 | INTEGER | DEFAULT 0 |
 | updated_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
 
 ---
@@ -269,8 +273,13 @@ Public tutor offers.
 | id | INTEGER | PK |
 | tutor_id | INTEGER | FK → users(id) |
 | skill_id | INTEGER | FK → skills(id) |
-| description | TEXT | |
+| title | TEXT | NOT NULL |
+| notes | TEXT | |
+| location_type | TEXT | DEFAULT 'online' |
 | location | TEXT | |
+| is_group | INTEGER | DEFAULT 0 |
+| max_participants | INTEGER | DEFAULT 1 |
+| status | TEXT | DEFAULT 'open' |
 | created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
 | updated_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
 
@@ -283,10 +292,9 @@ Available time slots for offers.
 |------|------|-------------|
 | id | INTEGER | PK |
 | offer_id | INTEGER | FK → session_offers(id), ON DELETE CASCADE |
-| slot_date | DATE | NOT NULL |
-| slot_time | TIME | NOT NULL |
-| duration | INTEGER | DEFAULT 60 |
-| is_taken | INTEGER | DEFAULT 0 |
+| scheduled_date | DATETIME | NOT NULL |
+| duration | INTEGER | |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
 
 ---
 

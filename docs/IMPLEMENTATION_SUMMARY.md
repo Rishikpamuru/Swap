@@ -32,7 +32,7 @@ I've successfully recreated the **entire SkillSwap UI** from your screenshots wi
 4. **`MODERN_UI_README.md`** - Main overview
 5. **`QUICKSTART.md`** - 30-second setup guide
 6. **`MODERN_UI_GUIDE.md`** - Complete technical docs
-7. **`FEATURE_COMPARISON.md`** - Detailed feature breakdown
+7. **`DOCUMENTATION_INDEX.md`** - Documentation map
 8. **`ICON_GUIDE.md`** - Icon pack integration guide
 
 ---
@@ -187,7 +187,7 @@ BPA_Web/
 ├── MODERN_UI_README.md         ← Main overview
 ├── QUICKSTART.md               ← 30-second guide
 ├── MODERN_UI_GUIDE.md          ← Full documentation
-├── FEATURE_COMPARISON.md       ← Feature breakdown
+├── DOCUMENTATION_INDEX.md      ← Documentation map
 └── ICON_GUIDE.md               ← Icon integration
 ```
 
@@ -228,7 +228,7 @@ BPA_Web/
    - Video conferencing
    - File uploads
    - Email notifications
-   - Calendar sync
+   - Full calendar sync (two-way)
 
 3. **Enhance**
    - Add Font Awesome icons (see ICON_GUIDE.md)
@@ -242,7 +242,7 @@ BPA_Web/
 
 1. **Read QUICKSTART.md first** - Get running in 30 seconds
 2. **Check MODERN_UI_GUIDE.md** - Complete technical reference
-3. **See FEATURE_COMPARISON.md** - What's included
+3. **See DOCUMENTATION_INDEX.md** - What's included
 4. **Use ICON_GUIDE.md** - Upgrade to icon pack
 5. **Study the code** - Clean, documented, educational
 
@@ -280,7 +280,7 @@ npm start
 
 1. **Quick Start**: [QUICKSTART.md](QUICKSTART.md)
 2. **Full Guide**: [MODERN_UI_GUIDE.md](MODERN_UI_GUIDE.md)
-3. **Features**: [FEATURE_COMPARISON.md](FEATURE_COMPARISON.md)
+3. **Docs Index**: [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
 4. **Icons**: [ICON_GUIDE.md](ICON_GUIDE.md)
 
 ### Common Issues
@@ -341,7 +341,7 @@ All pages from screenshots are implemented, missing pages are added, and everyth
 4. `MODERN_UI_README.md` - Main overview
 5. `QUICKSTART.md` - Quick start guide
 6. `MODERN_UI_GUIDE.md` - Full documentation
-7. `FEATURE_COMPARISON.md` - Feature breakdown
+7. `DOCUMENTATION_INDEX.md` - Documentation map
 8. `ICON_GUIDE.md` - Icon integration
 
 ### Existing Files (Untouched)
