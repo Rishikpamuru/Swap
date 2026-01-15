@@ -1,5 +1,5 @@
 /**
- * AI Routes - GPT-powered skill search and tutoring assistant
+ * AI Routes
  */
 
 const express = require('express');
@@ -104,14 +104,12 @@ router.post('/search-skills', validateSession, async (req, res) => {
   }
   
   try {
-    // Get all available skills from database
     const availableSkills = await getAllSkills(db);
     
     if (availableSkills.length === 0) {
       return res.json({ success: true, skills: [], tutors: [], aiSuggestion: '' });
     }
     
-    // Ask GPT to find matching and similar skills
     const systemPrompt = `You are a skill matching assistant for an educational tutoring platform called SkillSwap.
 Given a user's search query and a list of available skills, identify:
 1. Exact or close matches to what the user is looking for
@@ -132,7 +130,6 @@ Only include skills that exist in the available skills list. Be helpful and sugg
       { role: 'user', content: `Find skills related to: "${query}"` }
     ], 300);
     
-    // Parse AI response
     let matchedSkills = [];
     let explanation = '';
     
@@ -152,7 +149,6 @@ Only include skills that exist in the available skills list. Be helpful and sugg
       availableSkills.some(as => as.toLowerCase() === s.toLowerCase())
     );
     
-    // Get tutors for these skills
     const tutors = await getTutorsForSkills(db, validSkills, req.userId);
     
     res.json({
@@ -246,7 +242,6 @@ Format recommendations like this when suggesting tutors:
     
     const aiResponse = await callOpenAI(messages, 800);
     
-    // Extract any mentioned usernames for quick action
     const mentionedUsers = [];
     const usernameMatches = aiResponse.match(/@(\w+)/g);
     if (usernameMatches) {
