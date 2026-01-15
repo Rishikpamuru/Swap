@@ -12,7 +12,7 @@ async function initDB() {
   let db;
   
   try {
-    console.log('🚀 Starting database initialization...\n');
+    console.log(' Starting database initialization...\n');
     
     // Initialize database connection
     db = await initializeDatabase();
@@ -21,20 +21,20 @@ async function initDB() {
     const exists = await tablesExist(db);
     
     if (exists) {
-      console.log('⚠️  Database tables already exist.');
+      console.log('  Database tables already exist.');
       console.log('   To recreate, delete skillswap.db and run this script again.\n');
       await closeDatabase(db);
       return;
     }
     
     // Execute schema SQL file
-    console.log('📋 Creating database schema...');
+    console.log(' Creating database schema...');
     const schemaPath = path.join(__dirname, '..', 'config', 'schema.sql');
     await executeSQLFile(db, schemaPath);
-    console.log('✅ Schema created successfully\n');
+    console.log(' Schema created successfully\n');
     
     // Insert default roles
-    console.log('👥 Creating default roles...');
+    console.log(' Creating default roles...');
     
     const adminPermissions = JSON.stringify([
       'user.create', 'user.read', 'user.update', 'user.delete',
@@ -57,15 +57,15 @@ async function initDB() {
       [2, 'student', studentPermissions]
     );
     
-    console.log('✅ Roles created: admin, student\n');
+    console.log(' Roles created: admin, student\n');
     
-    console.log('🎉 Database initialization complete!');
-    console.log('📝 Next steps:');
+    console.log(' Database initialization complete!');
+    console.log(' Next steps:');
     console.log('   1. Run: node scripts/seedData.js (to add demo data)');
     console.log('   2. Run: npm start (to start the server)\n');
     
   } catch (error) {
-    console.error('❌ Database initialization failed:', error.message);
+    console.error(' Database initialization failed:', error.message);
     console.error('   Stack trace:', error.stack);
     process.exit(1);
   } finally {
