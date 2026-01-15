@@ -94,6 +94,10 @@ Codd, E.F. "A Relational Model of Data for Large Shared Data Banks." *Communicat
 Original artwork created by team members.  
 © 2026 Reedy HS BPA Chapter
 
+**Authentication Background Image (RedAndBlueBack.png)**  
+Background image used on authentication pages (public/RedAndBlueBack.png). Original artwork created by team members.  
+© 2026 Reedy HS BPA Chapter
+
 **Profile Avatars**  
 Default avatars are generated using user initials (no external images required).
 
@@ -106,7 +110,7 @@ Default avatars are generated using user initials (no external images required).
 - Aaryan Porwal
 - Rishik Pamuru
 
-No code was copied from external sources, tutorials, or third-party repositories. All functionality was developed from scratch following BPA competition guidelines prohibiting the use of application frameworks like Drupal, Joomla, WordPress, or DotNetNuke.
+No code was copied from external sources, tutorials, or third-party repositories. All functionality was developed from scratch following BPA competition guidelines prohibiting the use of applicat[...]
 
 ---
 
@@ -126,18 +130,22 @@ No code was copied from external sources, tutorials, or third-party repositories
 | cookie-parser | ^1.4.6 | MIT | Cookie parsing |
 | dotenv | ^16.3.1 | BSD-2-Clause | Environment config |
 
----
+### npm Package Citations (Additional)
 
-## Compliance Statement
+**sqlite3 (npm package)**  
+"sqlite3 - npm." *npm*, 2024, https://www.npmjs.com/package/sqlite3. Accessed 14 Jan. 2026.
 
-This project complies with all BPA Web Application Team Competition guidelines:
+**better-sqlite3**  
+"better-sqlite3 - npm." *npm*, 2024, https://www.npmjs.com/package/better-sqlite3. Accessed 14 Jan. 2026.
 
-1. ✅ No application frameworks (Drupal, Joomla, WordPress, DotNetNuke) were used
-2. ✅ All code is original work of the team
-3. ✅ All third-party resources are properly cited
-4. ✅ All images are either original or properly licensed
-5. ✅ BPA Graphic Standards have been followed
-6. ✅ Copyright and Fair Use Guidelines have been respected
+**multer**  
+"multer - npm." *npm*, 2024, https://www.npmjs.com/package/multer. Accessed 14 Jan. 2026.
+
+**cookie-parser**  
+"cookie-parser - npm." *npm*, 2024, https://www.npmjs.com/package/cookie-parser. Accessed 14 Jan. 2026.
+
+**dotenv**  
+"dotenv - npm." *npm*, 2024, https://www.npmjs.com/package/dotenv. Accessed 14 Jan. 2026.
 
 ---
 

@@ -1,12 +1,12 @@
-# 🎓 SkillSwap: Student Talent Exchange Platform
+# SkillSwap: Student Talent Exchange Platform
 
-**BPA Web Application Team Competition 2026 - National-Level Submission**
+**BPA Web Application Team Competition 2026**
 
 > A secure, database-driven web application connecting students for peer-to-peer skill exchange and tutoring sessions.
 
 ---
 
-## 📋 Team Information
+## Team Information
 
 | Role | Name | School |
 |------|------|--------|
@@ -16,7 +16,7 @@
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Node.js v18+ 
@@ -43,7 +43,7 @@ npm start
 
 ---
 
-## 👥 Demo Accounts
+## Demo Accounts
 
 ### Admin Account
 | Username | Password | Role |
@@ -61,42 +61,7 @@ npm start
 
 ---
 
-## ✅ BPA Rubric Compliance Matrix
-
-### Primary Objectives (All Implemented ✅)
-
-| Requirement | Status | Implementation |
-|-------------|--------|----------------|
-| User registration and login | ✅ | Secure auth with bcrypt (12 rounds) |
-| Profile creation with skills | ✅ | Offered/sought skills with autocomplete |
-| Session scheduling system | ✅ | Public offers + private sessions |
-| Rating and feedback | ✅ | 1-5 star ratings with comments |
-| Admin panel | ✅ | Full user/session/skill management |
-
-### Optional Features (All Implemented ✅)
-
-| Feature | Status | Implementation |
-|---------|--------|----------------|
-| Gamified achievements | ✅ | 30+ unlockable badges |
-| Messaging system | ✅ | Real-time DM with read receipts |
-| Privacy settings | ✅ | Public/private profile options |
-| AI Tutor | ✅ | Floating SkillBot assistant |
-| Reports/Analytics | ✅ | Comprehensive admin dashboard |
-
-### Technical Requirements
-
-| Requirement | Status | Details |
-|-------------|--------|---------|
-| Database-driven | ✅ | SQLite with 12 normalized tables |
-| Server-side scripting | ✅ | Node.js + Express.js |
-| External API | ✅ | OpenAI API for AI Tutor |
-| Original code | ✅ | No CMS, 100% custom code |
-| Security | ✅ | bcrypt, helmet.js, rate limiting |
-| Audit trail | ✅ | Complete action logging |
-
----
-
-## 🏗️ System Architecture
+## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -130,7 +95,7 @@ npm start
 
 ---
 
-## 💾 Database Schema (12 Tables)
+## Database Schema
 
 | Table | Purpose | Key Features |
 |-------|---------|--------------|
@@ -147,11 +112,11 @@ npm start
 | `achievements` | Gamification | 30+ badges |
 | `audit_logs` | Action tracking | Complete audit trail |
 
-See [docs/Database_Schema.md](docs/Database_Schema.md) for full ER diagram.
+See [docs/ER_Diagram.md](docs/ER_Diagram.md) for full ER diagram.
 
 ---
 
-## 🔒 Security Implementation
+## Security Implementation
 
 | Feature | Implementation | Code Location |
 |---------|----------------|---------------|
@@ -166,7 +131,7 @@ See [docs/Database_Schema.md](docs/Database_Schema.md) for full ER diagram.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 BPA_Web/
@@ -205,7 +170,7 @@ BPA_Web/
 
 ---
 
-## 🌐 API Endpoints
+## API Endpoints
 
 ### Authentication
 | Method | Endpoint | Description |
@@ -257,7 +222,7 @@ BPA_Web/
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 ### Environment Variables
 ```env
@@ -282,15 +247,9 @@ node scripts/initDatabase.js
 npm start
 ```
 
-### Recommended Hosting
-- **Render.com** - Free tier available
-- **Railway** - Easy Node.js deployment
-- **Heroku** - PaaS with SQLite support
-- **DigitalOcean App Platform** - Scalable option
-
 ---
 
-## 📊 Testing Checklist
+## Testing Checklist
 
 - [ ] User registration with validation
 - [ ] Login/logout flow
@@ -308,13 +267,13 @@ npm start
 
 ---
 
-## 📜 Works Cited
+## Works Cited
 
 See [docs/Works_Cited.md](docs/Works_Cited.md) for complete attribution.
 
 ---
 
-## 📄 License
+## License
 
 This project was created for the BPA Web Application Team Competition 2026.
 
