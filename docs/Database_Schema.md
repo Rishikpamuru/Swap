@@ -5,7 +5,7 @@
 
 ---
 
-## 📋 Database Overview
+##  Database Overview
 
 | Property | Value |
 |----------|-------|
@@ -19,7 +19,7 @@
 
 ---
 
-## 🗃️ Entity Relationship Diagram
+##  Entity Relationship Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -167,7 +167,7 @@
 
 ---
 
-## 📊 Table Definitions
+##  Table Definitions
 
 ### 1. ROLES
 
@@ -203,11 +203,6 @@ Core user authentication and account management table.
 | `status` | TEXT | DEFAULT 'active' | active / suspended / deleted |
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Registration timestamp |
 | `updated_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Last update timestamp |
-
-**Security Features:**
-- Passwords hashed with bcrypt (12 rounds)
-- Email validation enforced
-- Status allows soft-delete and account suspension
 
 ---
 
@@ -386,7 +381,7 @@ Security audit trail for admin actions.
 
 ---
 
-## 🔑 Indexes
+## Indexes
 
 ```sql
 CREATE INDEX idx_users_email ON users(email);
@@ -401,7 +396,7 @@ CREATE INDEX idx_audit_user_action ON audit_logs(user_id, action, created_at);
 
 ---
 
-## ⚡ Triggers
+## Triggers
 
 ```sql
 -- Auto-update user timestamps
@@ -435,7 +430,7 @@ END;
 
 ---
 
-## 👁️ Views
+## Views
 
 ```sql
 -- User details with role and profile joined
@@ -477,7 +472,7 @@ GROUP BY u.id, u.username;
 
 ---
 
-## 🛡️ Security Implementation
+##  Security Implementation
 
 | Security Measure | Implementation |
 |------------------|----------------|
@@ -491,7 +486,7 @@ GROUP BY u.id, u.username;
 
 ---
 
-## ✅ Normalization Compliance
+## Normalization Compliance
 
 | Normal Form | Status | Evidence |
 |-------------|--------|----------|
@@ -504,23 +499,6 @@ GROUP BY u.id, u.username;
 - Skills as separate entities linked by foreign keys
 - Session ratings separate from sessions themselves
 - Role permissions stored in dedicated roles table
-
----
-
-## 📈 BPA Rubric Compliance
-
-| Requirement | Implementation | Score |
-|-------------|----------------|-------|
-| Database-driven | ✅ SQLite with 12 tables | Max |
-| Normalized (3NF) | ✅ Fully normalized | Max |
-| Primary Keys | ✅ Auto-increment on all tables | Max |
-| Foreign Keys | ✅ 15+ FK relationships | Max |
-| Unique Constraints | ✅ username, email, session ratings | Max |
-| Indexes | ✅ 8 strategic indexes | Max |
-| Triggers | ✅ 5 automatic update triggers | Max |
-| Views | ✅ 3 complex views | Max |
-| Security | ✅ bcrypt, RBAC, audit logs | Max |
-| ER Diagram | ✅ Complete diagram above | Max |
 
 ---
 
