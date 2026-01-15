@@ -7,3 +7,7 @@ node_modules/
 .vscode/
 uploads/
 temp/
+
+# Local SQLite database
+skillswap.db
+*.db

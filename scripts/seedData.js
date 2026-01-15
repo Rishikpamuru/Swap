@@ -36,15 +36,14 @@ async function seedData() {
     `, ['admin', 'admin@skillswap.edu', adminPassword]);
 
     await runQuery(db, `
-      INSERT INTO user_profiles (user_id, full_name, bio, privacy_level, school, grade_level)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO user_profiles (user_id, full_name, bio, privacy_level, is_under_16)
+      VALUES (?, ?, ?, ?, ?)
     `, [
       adminResult.id,
       'System Administrator',
       'SkillSwap platform administrator',
       'public',
-      'Central High School',
-      '12'
+      0
     ]);
 
     console.log('   ✅ Admin user created (username: admin, password: Admin123!)');
@@ -56,40 +55,35 @@ async function seedData() {
         email: 'alice@skillswap.edu',
         full_name: 'Alice Johnson',
         bio: 'Math enthusiast looking to learn Spanish and teach calculus',
-        school: 'Central High School',
-        grade_level: '11'
+        is_under_16: 0
       },
       {
         username: 'bob_coder',
         email: 'bob@skillswap.edu',
         full_name: 'Bob Martinez',
         bio: 'Computer science student, teaching Python and seeking art lessons',
-        school: 'Central High School',
-        grade_level: '12'
+        is_under_16: 0
       },
       {
         username: 'carol_artist',
         email: 'carol@skillswap.edu',
         full_name: 'Carol Smith',
         bio: 'Digital artist offering design lessons, wants to learn coding',
-        school: 'Westside Academy',
-        grade_level: '10'
+        is_under_16: 1
       },
       {
         username: 'david_music',
         email: 'david@skillswap.edu',
         full_name: 'David Chen',
         bio: 'Guitarist and music theory tutor, interested in learning photography',
-        school: 'Central High School',
-        grade_level: '11'
+        is_under_16: 0
       },
       {
         username: 'emma_science',
         email: 'emma@skillswap.edu',
         full_name: 'Emma Williams',
         bio: 'Biology and chemistry tutor seeking creative writing help',
-        school: 'Northview High',
-        grade_level: '12'
+        is_under_16: 0
       }
     ];
 
@@ -105,9 +99,9 @@ async function seedData() {
       studentIds.push(result.id);
 
       await runQuery(db, `
-        INSERT INTO user_profiles (user_id, full_name, bio, privacy_level, school, grade_level)
-        VALUES (?, ?, ?, 'public', ?, ?)
-      `, [result.id, student.full_name, student.bio, student.school, student.grade_level]);
+        INSERT INTO user_profiles (user_id, full_name, bio, privacy_level, is_under_16)
+        VALUES (?, ?, ?, ?, ?)
+      `, [result.id, student.full_name, student.bio, student.is_under_16 ? 'private' : 'public', student.is_under_16]);
     }
 
     console.log(`   ✅ ${students.length} student users created (password: Student123!)`);
