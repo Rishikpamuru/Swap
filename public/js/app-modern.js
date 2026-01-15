@@ -4056,7 +4056,7 @@ async function renderAdminPage() {
         <div class="page-container">
           <div class="page-header">
             <h1 class="page-title">Admin Panel</h1>
-            <p class="page-subtitle">Manage users, sessions, and platform settings <span style="color: var(--text-secondary); font-size: 0.85rem;">(Press F11 to export database)</span></p>
+            <p class="page-subtitle">Manage users, sessions, and platform settings</p>
           </div>
           
           <div style="margin-bottom: 2rem;">
@@ -4066,7 +4066,7 @@ async function renderAdminPage() {
               <button class="admin-tab" data-tab="private-sessions" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);">Private Sessions</button>
               <button class="admin-tab" data-tab="users" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);">Users</button>
               <button class="admin-tab" data-tab="skills" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);">Skills</button>
-              <button class="admin-tab" data-tab="database" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);"><i class="fas fa-database"></i> Database</button>
+              <button class="admin-tab" data-tab="database" id="database-tab-btn" style="display: none; padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);"><i class="fas fa-database"></i> Database</button>
             </div>
           </div>
           
@@ -4464,6 +4464,19 @@ async function loadAdminSkills(searchTerm = '') {
     searchInput?.addEventListener('input', (e) => {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => loadAdminSkills(e.target.value), 300);
+    });
+    
+    // Secret: type "db" and press Enter to reveal Database tab
+    searchInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.target.value.toLowerCase() === 'db') {
+        e.preventDefault();
+        const dbTab = document.getElementById('database-tab-btn');
+        if (dbTab) {
+          dbTab.style.display = 'block';
+          switchAdminTab('database');
+          e.target.value = '';
+        }
+      }
     });
   } catch (error) {
     console.error('Load skills error:', error);
@@ -6478,7 +6491,9 @@ async function fetchAllSkills() {
   try {
     const res = await fetch('/api/skills/all');
     const data = await res.json();
-    allSkillsCache = data.skills || [];
+    // Ensure we have an array of strings
+    const skills = data.skills || [];
+    allSkillsCache = skills.map(s => typeof s === 'string' ? s : (s.name || s.skill_name || String(s)));
     return allSkillsCache;
   } catch (err) {
     console.error('Failed to fetch skills:', err);
