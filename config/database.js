@@ -12,25 +12,46 @@ const fs = require('fs');
 // Database file path
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'skillswap.db');
 
-// Ensure the directory exists for the database file
-const dbDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dbDir)) {
-  console.log(`📁 Creating database directory: ${dbDir}`);
-  fs.mkdirSync(dbDir, { recursive: true });
+/**
+ * Wait for directory to be available (for Railway volume mounting)
+ */
+async function waitForDirectory(dirPath, maxWaitMs = 10000) {
+  const startTime = Date.now();
+  while (Date.now() - startTime < maxWaitMs) {
+    try {
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+      // Test write access
+      const testFile = path.join(dirPath, '.write-test');
+      fs.writeFileSync(testFile, 'test');
+      fs.unlinkSync(testFile);
+      console.log(`📁 Database directory ready: ${dirPath}`);
+      return true;
+    } catch (err) {
+      console.log(`⏳ Waiting for volume mount... (${Math.round((Date.now() - startTime) / 1000)}s)`);
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+  throw new Error(`Directory ${dirPath} not available after ${maxWaitMs}ms`);
 }
 
 /**
  * Initialize database connection with proper configuration
  */
-function initializeDatabase() {
+async function initializeDatabase() {
+  // Ensure the directory exists and is writable (wait for Railway volume)
+  const dbDir = path.dirname(DB_PATH);
+  await waitForDirectory(dbDir);
+  
   return new Promise((resolve, reject) => {
     // Create database connection
     const db = new sqlite3.Database(DB_PATH, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
       if (err) {
-        console.error('❌ Error connecting to database:', err.message); 
+        console.error('Error connecting', err.message); 
         reject(err);
       } else {
-        console.log('✅ SQLite database connected successfully');
+        console.log('SQLiteconfirm');
         console.log('📁 Database file:', DB_PATH);
         
         // Enable foreign key constraints
