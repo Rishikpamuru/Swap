@@ -4425,9 +4425,14 @@ async function loadAdminSkills(searchTerm = '') {
           <div style="display: grid; gap: 1rem;">
             ${skills.map(skill => `
               <div style="border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.5rem;">
-                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                  <h3 style="font-size: 1.125rem; font-weight: 700; margin: 0;">${Utils.escapeHtml(skill.skillName)}</h3>
-                  <span style="padding: 0.25rem 0.75rem; background: var(--bg-light); border-radius: var(--radius-md); font-size: 0.75rem; color: var(--text-secondary);">${skill.teaching.length + skill.learning.length} users</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                  <div style="display: flex; align-items: center; gap: 1rem;">
+                    <h3 style="font-size: 1.125rem; font-weight: 700; margin: 0;">${Utils.escapeHtml(skill.skillName)}</h3>
+                    <span style="padding: 0.25rem 0.75rem; background: var(--bg-light); border-radius: var(--radius-md); font-size: 0.75rem; color: var(--text-secondary);">${skill.teaching.length + skill.learning.length} users</span>
+                  </div>
+                  <button onclick="deleteAdminSkill('${Utils.escapeHtml(skill.skillName.replace(/'/g, "\\'"))}')" style="padding: 0.5rem 1rem; background: var(--red-light); color: var(--red-primary); border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: 600;" title="Delete this skill for all users">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                   <div>
@@ -4833,10 +4838,42 @@ async function deleteAdminUser(userId, username) {
   }
 }
 
+// Delete a skill from the system (admin only)
+async function deleteAdminSkill(skillName) {
+  if (!confirm(`Are you sure you want to delete the skill "${skillName}"?\n\nThis will remove it from ALL users who have it listed.`)) {
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/api/admin/skills/${encodeURIComponent(skillName)}`, {
+      method: 'DELETE'
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to delete skill');
+    }
+    
+    showToast(data.message || 'Skill deleted successfully', 'success');
+    
+    // Refresh the skills list
+    loadAdminSkills();
+    
+    // Clear the skills cache so autocomplete gets updated
+    allSkillsCache = null;
+    
+  } catch (error) {
+    console.error('Delete skill error:', error);
+    showToast('Failed to delete skill: ' + error.message, 'error');
+  }
+}
+
 // Make functions globally accessible for inline onclick handlers
 window.switchAdminTab = switchAdminTab;
 window.deleteAdminSession = deleteAdminSession;
 window.deleteAdminUser = deleteAdminUser;
+window.deleteAdminSkill = deleteAdminSkill;
 
 function renderWorksCitedPage() {
   const worksCitedInner = `

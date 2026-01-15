@@ -570,6 +570,38 @@ router.get('/skills', async (req, res) => {
 });
 
 /**
+ * DELETE /api/admin/skills/:skillName
+ * Delete all instances of a skill (for all users)
+ */
+router.delete('/skills/:skillName', async (req, res) => {
+  const db = req.app.locals.db;
+  const skillName = decodeURIComponent(req.params.skillName);
+  
+  if (!skillName || skillName.trim().length === 0) {
+    return res.status(400).json({ success: false, message: 'Skill name is required' });
+  }
+  
+  try {
+    // Delete all skills with this name (case-insensitive)
+    const result = await runQuery(db, `
+      DELETE FROM skills WHERE LOWER(skill_name) = LOWER(?)
+    `, [skillName]);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ success: false, message: 'Skill not found' });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `Skill "${skillName}" deleted successfully (${result.changes} entries removed)` 
+    });
+  } catch (error) {
+    console.error('Delete skill error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete skill' });
+  }
+});
+
+/**
  * GET /api/admin/database
  * View database tables and row counts (admin only)
  */
