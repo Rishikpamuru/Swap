@@ -9,40 +9,41 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-// Database file path
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'skillswap.db');
+// Database file path - use local fallback if volume path fails
+const VOLUME_DB_PATH = process.env.DB_PATH;
+const LOCAL_DB_PATH = path.join(__dirname, '..', 'skillswap.db');
 
 /**
- * Wait for directory to be available (for Railway volume mounting)
+ * Get the best available database path
  */
-async function waitForDirectory(dirPath, maxWaitMs = 10000) {
-  const startTime = Date.now();
-  while (Date.now() - startTime < maxWaitMs) {
+function getDatabasePath() {
+  if (VOLUME_DB_PATH) {
+    const dbDir = path.dirname(VOLUME_DB_PATH);
     try {
-      if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
+      // Try to create/access the volume directory
+      if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
       }
       // Test write access
-      const testFile = path.join(dirPath, '.write-test');
+      const testFile = path.join(dbDir, '.write-test');
       fs.writeFileSync(testFile, 'test');
       fs.unlinkSync(testFile);
-      console.log(`📁 Database directory ready: ${dirPath}`);
-      return true;
+      console.log(`📁 Using volume database: ${VOLUME_DB_PATH}`);
+      return VOLUME_DB_PATH;
     } catch (err) {
-      console.log(`⏳ Waiting for volume mount... (${Math.round((Date.now() - startTime) / 1000)}s)`);
-      await new Promise(r => setTimeout(r, 1000));
+      console.log(`⚠️ Volume not ready, using local database: ${LOCAL_DB_PATH}`);
+      return LOCAL_DB_PATH;
     }
   }
-  throw new Error(`Directory ${dirPath} not available after ${maxWaitMs}ms`);
+  console.log(`📁 Using local database: ${LOCAL_DB_PATH}`);
+  return LOCAL_DB_PATH;
 }
 
 /**
  * Initialize database connection with proper configuration
  */
 async function initializeDatabase() {
-  // Ensure the directory exists and is writable (wait for Railway volume)
-  const dbDir = path.dirname(DB_PATH);
-  await waitForDirectory(dbDir);
+  const DB_PATH = getDatabasePath();
   
   return new Promise((resolve, reject) => {
     // Create database connection
@@ -60,7 +61,7 @@ async function initializeDatabase() {
             console.error('❌ Error enabling foreign keys:', err.message);
             reject(err);
           } else {
-            console.log('🔒 Foreign key constraints enabled');
+            console.log(' key constraints enabled');
             resolve(db);
           }
         });
