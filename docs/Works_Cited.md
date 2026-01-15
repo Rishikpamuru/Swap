@@ -110,7 +110,7 @@ Default avatars are generated using user initials (no external images required).
 - Aaryan Porwal
 - Rishik Pamuru
 
-No code was copied from external sources, tutorials, or third-party repositories. All functionality was developed from scratch following BPA competition guidelines prohibiting the use of applicat[...]...
+No code was copied from external sources, tutorials, or third-party repositories. All functionality was developed from scratch following BPA competition guidelines prohibiting the use of applicat[...]
 
 ---
 
@@ -146,19 +146,6 @@ No code was copied from external sources, tutorials, or third-party repositories
 
 **dotenv**  
 "dotenv - npm." *npm*, 2024, https://www.npmjs.com/package/dotenv. Accessed 14 Jan. 2026.
-
----
-
-## Compliance Statement
-
-This project complies with all BPA Web Application Team Competition guidelines:
-
-1. ✅ No application frameworks (Drupal, Joomla, WordPress, DotNetNuke) were used
-2. ✅ All code is original work of the team
-3. ✅ All third-party resources are properly cited
-4. ✅ All images are either original or properly licensed
-5. ✅ BPA Graphic Standards have been followed
-6. ✅ Copyright and Fair Use Guidelines have been respected
 
 ---
 
