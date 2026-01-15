@@ -16,7 +16,6 @@ const { isOwnerOrAdmin, validateSession } = require('../middleware/auth');
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'profiles');
-    // Create directory if it doesn't exist
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -58,19 +57,15 @@ router.post('/profile/picture', validateSession, upload.single('profileImage'), 
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
     
-    // Get old profile image to delete it
     const oldProfile = await getOne(db, 'SELECT profile_image FROM user_profiles WHERE user_id = ?', [req.userId]);
     
-    // Construct the URL path for the uploaded image
     const imageUrl = '/uploads/profiles/' + req.file.filename;
     
-    // Update profile image in database
     await runQuery(db, 
       'UPDATE user_profiles SET profile_image = ? WHERE user_id = ?',
       [imageUrl, req.userId]
     );
     
-    // Delete old profile image if it exists
     if (oldProfile && oldProfile.profile_image) {
       const oldImagePath = path.join(__dirname, '..', 'public', oldProfile.profile_image);
       if (fs.existsSync(oldImagePath)) {
@@ -81,8 +76,7 @@ router.post('/profile/picture', validateSession, upload.single('profileImage'), 
     res.json({ success: true, imageUrl, message: 'Profile picture updated successfully' });
   } catch (error) {
     console.error('Profile picture upload error:', error);
-    
-    // Delete uploaded file if there was an error
+
     if (req.file) {
       const filePath = req.file.path;
       if (fs.existsSync(filePath)) {
@@ -130,7 +124,7 @@ router.get('/search', validateSession, async (req, res) => {
         LIMIT 50
       `, [req.userId, `%${query}%`, `%${query}%`]);
     } else {
-      // Search by skills (default)
+      // Search by skills
       users = await getAll(db, `
         SELECT DISTINCT
           u.id,
@@ -151,7 +145,7 @@ router.get('/search', validateSession, async (req, res) => {
       `, [req.userId, `%${query}%`]);
     }
     
-    // Parse offeredSkills from comma-separated string to array
+    // Split offeredSkills from comma-separated string to array
     const usersWithSkills = users.map(user => ({
       ...user,
       offeredSkills: user.offeredSkills ? user.offeredSkills.split(',') : []

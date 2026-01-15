@@ -46,7 +46,7 @@ router.get('/', async (req, res) => {
         AND u.status = 'active'`;
     const params = [];
 
-    // Only exclude own offers when browsing (no specific tutor filter)
+    // Only exclude own offers when browsing
     if (tutorIdFilter == null) {
       where += ` AND o.tutor_id != ?`;
       params.push(userId);
@@ -269,7 +269,7 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    // Verify skill exists and belongs to tutor (offered)
+    // Verify skill exists and belongs to tutor
     const skill = await getOne(db, 'SELECT id, user_id, skill_type FROM skills WHERE id = ?', [skillId]);
     if (!skill || Number(skill.user_id) !== Number(tutorId) || skill.skill_type !== 'offered') {
       return res.status(400).json({ success: false, message: 'Invalid skill or you do not offer this skill' });
@@ -344,7 +344,7 @@ router.post('/:offerId/request', async (req, res) => {
       if (Number.isNaN(dt.getTime())) {
         return res.status(400).json({ success: false, message: 'Invalid proposed date/time' });
       }
-      // prevent absurd dates (basic sanity)
+      // prevent bad dates
       const now = Date.now();
       if (dt.getTime() < now - 5 * 60 * 1000) {
         return res.status(400).json({ success: false, message: 'Proposed time must be in the future' });

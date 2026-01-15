@@ -8,7 +8,7 @@
 const bcrypt = require('bcryptjs');
 const { getOne } = require('../config/database');
 
-// Bcrypt configuration - 12 rounds for strong security
+// Bcrypt configuration
 const SALT_ROUNDS = 12;
 
 /**
@@ -27,9 +27,6 @@ async function hashPassword(password) {
 
 /**
  * Compare password with hash
- * @param {string} password - Plain text password
- * @param {string} hash - Stored password hash
- * @returns {Promise<boolean>} - True if password matches
  */
 async function comparePassword(password, hash) {
   try {
@@ -43,8 +40,6 @@ async function comparePassword(password, hash) {
 /**
  * Validate password strength
  * Requirements: 8+ chars, uppercase, lowercase, number, special character
- * @param {string} password - Password to validate
- * @returns {object} - {valid: boolean, errors: string[]}
  */
 function validatePassword(password) {
   const errors = [];
@@ -77,8 +72,6 @@ function validatePassword(password) {
 
 /**
  * Validate email format
- * @param {string} email - Email to validate
- * @returns {boolean} - True if valid
  */
 function validateEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -88,8 +81,6 @@ function validateEmail(email) {
 /**
  * Validate username format
  * Requirements: 3-20 chars, alphanumeric and underscore only
- * @param {string} username - Username to validate
- * @returns {object} - {valid: boolean, errors: string[]}
  */
 function validateUsername(username) {
   const errors = [];
@@ -206,8 +197,6 @@ function requirePermission(permission) {
 
 /**
  * Sanitize input to prevent XSS attacks
- * @param {string} input - User input to sanitize
- * @returns {string} - Sanitized input
  */
 function sanitizeInput(input) {
   if (typeof input !== 'string') return input;
@@ -223,9 +212,6 @@ function sanitizeInput(input) {
 
 /**
  * Check if user owns resource or is admin
- * @param {number} resourceUserId - User ID who owns the resource
- * @param {object} req - Express request object
- * @returns {boolean} - True if authorized
  */
 function isOwnerOrAdmin(resourceUserId, req) {
   return req.session.userId === resourceUserId || req.session.userRole === 'admin';

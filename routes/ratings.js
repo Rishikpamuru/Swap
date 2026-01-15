@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    // Get the session
+    // Get session
     const session = await getOne(db, 'SELECT id, tutor_id, student_id, status FROM sessions WHERE id = ?', [sessionIdInt]);
     if (!session) {
       return res.status(404).json({ success: false, message: 'Session not found' });
@@ -38,7 +38,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Can only rate completed sessions' });
     }
 
-    // User must be the student in this session (students rate tutors)
+    // User must be the student in this session
     if (Number(session.student_id) !== Number(userId)) {
       return res.status(403).json({ success: false, message: 'Only the student can rate this session' });
     }

@@ -7,8 +7,6 @@
 
 /**
  * Validate registration data
- * @param {object} data - Registration form data
- * @returns {object} - {valid: boolean, errors: object}
  */
 function validateRegistration(data) {
   const errors = {};
@@ -52,7 +50,7 @@ function validateRegistration(data) {
     errors.confirmPassword = 'Passwords do not match';
   }
 
-  // Profile requirements (for BPA signup flow)
+  // Profile requirements
   if (!fullName) {
     errors.fullName = 'Full name is required';
   } else if (fullName.length > 100) {
@@ -73,8 +71,6 @@ function validateRegistration(data) {
 
 /**
  * Validate login data
- * @param {object} data - Login form data
- * @returns {object} - {valid: boolean, errors: object}
  */
 function validateLogin(data) {
   const errors = {};
@@ -95,8 +91,6 @@ function validateLogin(data) {
 
 /**
  * Validate profile data
- * @param {object} data - Profile form data
- * @returns {object} - {valid: boolean, errors: object}
  */
 function validateProfile(data) {
   const errors = {};
@@ -125,8 +119,6 @@ function validateProfile(data) {
 
 /**
  * Validate skill data
- * @param {object} data - Skill form data
- * @returns {object} - {valid: boolean, errors: object}
  */
 function validateSkill(data) {
   const errors = {};
@@ -159,8 +151,6 @@ function validateSkill(data) {
 
 /**
  * Validate session data
- * @param {object} data - Session form data
- * @returns {object} - {valid: boolean, errors: object}
  */
 function validateSession(data) {
   const errors = {};
@@ -192,8 +182,6 @@ function validateSession(data) {
 
 /**
  * Validate message data
- * @param {object} data - Message form data
- * @returns {object} - {valid: boolean, errors: object}
  */
 function validateMessage(data) {
   const errors = {};
@@ -222,8 +210,6 @@ function validateMessage(data) {
 
 /**
  * Validate rating data
- * @param {object} data - Rating form data
- * @returns {object} - {valid: boolean, errors: object}
  */
 function validateRating(data) {
   const errors = {};
@@ -250,8 +236,6 @@ function validateRating(data) {
 
 /**
  * Validate ID parameter
- * @param {any} id - ID to validate
- * @returns {boolean} - True if valid integer
  */
 function validateId(id) {
   const numId = parseInt(id);
@@ -260,8 +244,6 @@ function validateId(id) {
 
 /**
  * Sanitize string input
- * @param {string} input - Input to sanitize
- * @returns {string} - Sanitized input
  */
 function sanitize(input) {
   if (typeof input !== 'string') return input;
@@ -277,8 +259,6 @@ function sanitize(input) {
 
 /**
  * Validate pagination parameters
- * @param {object} query - Query parameters
- * @returns {object} - {page: number, limit: number}
  */
 function validatePagination(query) {
   let page = parseInt(query.page) || 1;
@@ -293,8 +273,6 @@ function validatePagination(query) {
 
 /**
  * Express middleware for validation
- * @param {function} validatorFn - Validation function
- * @returns {function} - Express middleware
  */
 function validate(validatorFn) {
   return (req, res, next) => {

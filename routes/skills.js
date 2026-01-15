@@ -126,7 +126,7 @@ router.get('/all', async (req, res) => {
 	}
 });
 
-// Existing placeholder routes (kept for compatibility)
+// Existing placeholder routes
 router.get('/', (req, res) => res.json({ success: true, skills: [] }));
 router.post('/', (req, res) => res.json({ success: true, message: 'Skill created' }));
 

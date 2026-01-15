@@ -80,7 +80,6 @@ router.post('/register', async (req, res) => {
   const db = req.app.locals.db;
   
   try {
-    // Validate input
     const validation = validateRegistration(req.body);
     if (!validation.valid) {
       return res.status(400).json({
@@ -94,6 +93,7 @@ router.post('/register', async (req, res) => {
     const fullName = (req.body.fullName || `${req.body.firstName || ''} ${req.body.lastName || ''}`.trim()).trim();
     const bio = (req.body.bio || '').trim();
     const isUnder16 = req.body.isUnder16 ? 1 : 0;
+    
     // If under 16, default to private privacy
     const privacyLevel = isUnder16 ? 'private' : 'public';
     const skillsOffer = Array.isArray(req.body.skillsOffer)
@@ -107,7 +107,7 @@ router.post('/register', async (req, res) => {
         ? req.body.skillsSeek.split(',')
         : [];
     
-    // Sanitize inputs
+    // Clean inputs
     const cleanUsername = sanitizeInput(username.trim());
     const cleanEmail = sanitizeInput(email.trim().toLowerCase());
     
@@ -127,7 +127,7 @@ router.post('/register', async (req, res) => {
     // Hash password
     const passwordHash = await hashPassword(password);
     
-    // Insert new user (role_id defaults to 2 = student)
+    // Insert new user
     const result = await runQuery(db, `
       INSERT INTO users (username, email, password_hash, role_id, status)
       VALUES (?, ?, ?, 2, 'active')
@@ -141,7 +141,7 @@ router.post('/register', async (req, res) => {
       VALUES (?, ?, ?, ?, ?)
     `, [userId, fullName, bio, privacyLevel, isUnder16]);
 
-    // Insert skills
+    // Add skills
     const offerClean = skillsOffer.map(s => String(s).trim()).filter(Boolean);
     const seekClean = skillsSeek.map(s => String(s).trim()).filter(Boolean);
 
@@ -204,7 +204,7 @@ router.post('/login', async (req, res) => {
     
     const { username, password } = req.body;
     
-    // Find user with role information
+    // Find user with information
     const user = await getOne(db, `
       SELECT u.*, r.name as role_name
       FROM users u
@@ -271,7 +271,7 @@ router.post('/logout', (req, res) => {
   const userId = req.session.userId;
   const username = req.session.username;
   
-  // Log audit event before destroying session
+  // Log audit event before ending session
   if (userId && req.app.locals.db) {
     const db = req.app.locals.db;
     const auditLog = createAuditLogger(db);
@@ -281,7 +281,7 @@ router.post('/logout', (req, res) => {
     });
   }
   
-  // Destroy session
+  // End session
   req.session.destroy((err) => {
     if (err) {
       console.error('Logout error:', err);
@@ -329,7 +329,7 @@ router.get('/session', (req, res) => {
 
 /**
  * POST /api/auth/change-password
- * Change user password (must be logged in)
+ * Change user password
  */
 router.post('/change-password', async (req, res) => {
   if (!req.session || !req.session.userId) {
@@ -360,7 +360,7 @@ router.post('/change-password', async (req, res) => {
       });
     }
     
-    // Get current user
+    // Get user
     const user = await getOne(db, 
       'SELECT * FROM users WHERE id = ?',
       [req.session.userId]
@@ -373,7 +373,7 @@ router.post('/change-password', async (req, res) => {
       });
     }
     
-    // Verify current password
+    // Verify password
     const passwordValid = await comparePassword(currentPassword, user.password_hash);
     if (!passwordValid) {
       return res.status(401).json({

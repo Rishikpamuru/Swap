@@ -60,6 +60,10 @@ npm, Inc. "npm." *npm*, 2024, https://www.npmjs.com/. Accessed 14 Jan. 2026.
 **Git**  
 Software Freedom Conservancy. "Git." *Git*, 2024, https://git-scm.com/. Accessed 14 Jan. 2026.
 
+**Claude Opus**
+Anthropic. "Claude." *Anthropic*, 2026, www.anthropic.com. Accessed 15 Jan. 2026.
+
+
 ---
 
 ## Design Resources
