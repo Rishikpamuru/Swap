@@ -21,17 +21,130 @@
 ---
 
 ## 2. Entity-Relationship Diagram (Conceptual)
-ROLES (1) ──── (N) USERS ──── (1) USER_PROFILES
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         SKILLSWAP ENTITY-RELATIONSHIP DIAGRAM                    │
+│                                   12 TABLES IN 3NF                               │
+└─────────────────────────────────────────────────────────────────────────────────┘
 
-USERS (1) ──── (N) SKILLS ──── (N) SKILL_REQUESTS ──── (1) SESSIONS ──── (1) RATINGS
 
-USERS (1) ──── (N) SESSION_OFFERS ──── (N) SESSION_OFFER_SLOTS
+                                    ┌──────────────┐
+                                    │    ROLES     │
+                                    ├──────────────┤
+                                    │ • id (PK)    │
+                                    │ • name (UQ)  │
+                                    │ • permissions│
+                                    │ • created_at │
+                                    └──────┬───────┘
+                                           │
+                                           │ 1:N
+                                           │
+    ┌──────────────────────────────────────▼─────────────────────────────────────┐
+    │                                                                            │
+    │  ┌──────────────────┐                              ┌──────────────────┐    │
+    │  │      USERS       │            1:1               │   USER_PROFILES  │    │
+    │  ├──────────────────┤   ─────────────────────────► ├──────────────────┤    │
+    │  │ • id (PK)        │                              │ • id (PK)        │    │
+    │  │ • username (UQ)  │                              │ • user_id (FK,UQ)│    │
+    │  │ • email (UQ)     │                              │ • full_name      │    │
+    │  │ • password_hash  │                              │ • bio            │    │
+    │  │ • role_id (FK)───┼──────────────────────────────┤ • profile_image  │    │
+    │  │ • status         │                              │ • privacy_level  │    │
+    │  │ • created_at     │                              │ • school         │    │
+    │  │ • updated_at     │                              │ • grade_level    │    │
+    │  └────────┬─────────┘                              │ • updated_at     │    │
+    │           │                                        └──────────────────┘    │
+    │           │                                                                │
+    └───────────┼────────────────────────────────────────────────────────────────┘
+                │
+    ┌───────────┼─────────────────────────────────────────────────────────────────┐
+    │           │                         USER OWNED ENTITIES                     │
+    │           │                                                                 │
+    │           ▼ 1:N                                                             │
+    │  ┌──────────────────┐         ┌──────────────────┐    ┌──────────────────┐  │
+    │  │      SKILLS      │         │   ACHIEVEMENTS   │    │   AUDIT_LOGS     │  │
+    │  ├──────────────────┤         ├──────────────────┤    ├──────────────────┤  │
+    │  │ • id (PK)        │         │ • id (PK)        │    │ • id (PK)        │  │
+    │  │ • user_id (FK)───┼─────────┤ • user_id (FK)   │    │ • user_id (FK)   │  │
+    │  │ • skill_name     │         │ • badge_name     │    │ • action         │  │
+    │  │ • skill_type     │ offered │ • badge_type     │    │ • entity_type    │  │
+    │  │   (offered/sought)│ sought │ • description    │    │ • entity_id      │  │
+    │  │ • proficiency    │         │ • earned_at      │    │ • old_value      │  │
+    │  │ • description    │         └──────────────────┘    │ • new_value      │  │
+    │  │ • created_at     │                                 │ • ip_address     │  │
+    │  └────────┬─────────┘                                 │ • user_agent     │  │
+    │           │                                           │ • created_at     │  │
+    │           │                                           └──────────────────┘  │
+    └───────────┼─────────────────────────────────────────────────────────────────┘
+                │
+    ┌───────────┼─────────────────────────────────────────────────────────────────┐
+    │           │                         SKILL EXCHANGES                         │
+    │           ▼ N:1                                                             │
+    │  ┌──────────────────┐                              ┌──────────────────┐     │
+    │  │  SKILL_REQUESTS  │            1:N               │     SESSIONS     │     │
+    │  ├──────────────────┤   ─────────────────────────► ├──────────────────┤     │
+    │  │ • id (PK)        │                              │ • id (PK)        │     │
+    │  │ • requester_id   │◄─ FK to users                │ • request_id (FK)│     │
+    │  │ • provider_id    │◄─ FK to users                │ • tutor_id (FK)  │◄─┐  │
+    │  │ • skill_id (FK)──┼──────────────────────────────┤ • student_id (FK)│◄─┤  │
+    │  │ • status         │ pending/accepted/declined    │ • skill_id (FK)  │  │  │
+    │  │ • message        │                              │ • scheduled_date │  │  │
+    │  │ • created_at     │                              │ • duration       │  │  │
+    │  │ • updated_at     │                              │ • location       │  │  │
+    │  └──────────────────┘                              │ • status         │  │  │
+    │                                                    │ • notes          │  │  │
+    │                                                    │ • created_at     │  │  │
+    │                                                    │ • completed_at   │  │  │
+    │                                                    └────────┬─────────┘  │  │
+    │                                                             │            │  │
+    │                                                             │ 1:1        │  │
+    │                                                             ▼            │  │
+    │                                                    ┌──────────────────┐  │  │
+    │                                                    │     RATINGS      │  │  │
+    │                                                    ├──────────────────┤  │  │
+    │                                                    │ • id (PK)        │  │  │
+    │                                                    │ • session_id(FK,UQ)  │  │
+    │                                                    │ • rater_id (FK)──┼──┘  │
+    │                                                    │ • rated_id (FK)──┼─────┘
+    │                                                    │ • rating (1-5)   │     │
+    │                                                    │ • feedback       │     │
+    │                                                    │ • created_at     │     │
+    │                                                    └──────────────────┘     │
+    └─────────────────────────────────────────────────────────────────────────────┘
 
-USERS (1) ──── (N) MESSAGES (sender / receiver)
+    ┌─────────────────────────────────────────────────────────────────────────────┐
+    │                            SESSION OFFERS SYSTEM                            │
+    │                                                                             │
+    │  ┌──────────────────┐         ┌──────────────────────┐                      │
+    │  │  SESSION_OFFERS  │   1:N   │ SESSION_OFFER_SLOTS  │                      │
+    │  ├──────────────────┤ ──────► ├──────────────────────┤                      │
+    │  │ • id (PK)        │         │ • id (PK)            │                      │
+    │  │ • tutor_id (FK)◄─┼─────────┤ • offer_id (FK)      │                      │
+    │  │ • skill_id (FK)  │         │ • slot_date          │                      │
+    │  │ • description    │         │ • slot_time          │                      │
+    │  │ • location       │         │ • duration           │                      │
+    │  │ • created_at     │         │ • is_taken           │                      │
+    │  │ • updated_at     │         └──────────────────────┘                      │
+    │  └──────────────────┘                                                       │
+    └─────────────────────────────────────────────────────────────────────────────┘
 
-USERS (1) ──── (N) ACHIEVEMENTS
-
-USERS (1) ──── (N) AUDIT_LOGS
+    ┌─────────────────────────────────────────────────────────────────────────────┐
+    │                              MESSAGING SYSTEM                               │
+    │                                                                             │
+    │  ┌──────────────────┐                                                       │
+    │  │     MESSAGES     │                                                       │
+    │  ├──────────────────┤                                                       │
+    │  │ • id (PK)        │                                                       │
+    │  │ • sender_id (FK)─┼──────► FK to users                                    │
+    │  │ • receiver_id(FK)┼──────► FK to users                                    │
+    │  │ • subject        │                                                       │
+    │  │ • content        │                                                       │
+    │  │ • read_status    │  0 = unread, 1 = read                                 │
+    │  │ • created_at     │                                                       │
+    │  │ • read_at        │                                                       │
+    │  └──────────────────┘                                                       │
+    └─────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -293,135 +406,6 @@ Security and administrative auditing.
 | Relationships Labeled | ✅ |
 | Normalization Explained | ✅ |
 | Physical Schema Included | ✅ |
-
----
-
-##  Conceptual ER Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                         SKILLSWAP ENTITY-RELATIONSHIP DIAGRAM                    │
-│                                   12 TABLES IN 3NF                               │
-└─────────────────────────────────────────────────────────────────────────────────┘
-
-
-                                    ┌──────────────┐
-                                    │    ROLES     │
-                                    ├──────────────┤
-                                    │ • id (PK)    │
-                                    │ • name (UQ)  │
-                                    │ • permissions│
-                                    │ • created_at │
-                                    └──────┬───────┘
-                                           │
-                                           │ 1:N
-                                           │
-    ┌──────────────────────────────────────▼─────────────────────────────────────┐
-    │                                                                            │
-    │  ┌──────────────────┐                              ┌──────────────────┐    │
-    │  │      USERS       │            1:1               │   USER_PROFILES  │    │
-    │  ├──────────────────┤   ─────────────────────────► ├──────────────────┤    │
-    │  │ • id (PK)        │                              │ • id (PK)        │    │
-    │  │ • username (UQ)  │                              │ • user_id (FK,UQ)│    │
-    │  │ • email (UQ)     │                              │ • full_name      │    │
-    │  │ • password_hash  │                              │ • bio            │    │
-    │  │ • role_id (FK)───┼──────────────────────────────┤ • profile_image  │    │
-    │  │ • status         │                              │ • privacy_level  │    │
-    │  │ • created_at     │                              │ • school         │    │
-    │  │ • updated_at     │                              │ • grade_level    │    │
-    │  └────────┬─────────┘                              │ • updated_at     │    │
-    │           │                                        └──────────────────┘    │
-    │           │                                                                │
-    └───────────┼────────────────────────────────────────────────────────────────┘
-                │
-    ┌───────────┼─────────────────────────────────────────────────────────────────┐
-    │           │                         USER OWNED ENTITIES                     │
-    │           │                                                                 │
-    │           ▼ 1:N                                                             │
-    │  ┌──────────────────┐         ┌──────────────────┐    ┌──────────────────┐  │
-    │  │      SKILLS      │         │   ACHIEVEMENTS   │    │   AUDIT_LOGS     │  │
-    │  ├──────────────────┤         ├──────────────────┤    ├──────────────────┤  │
-    │  │ • id (PK)        │         │ • id (PK)        │    │ • id (PK)        │  │
-    │  │ • user_id (FK)───┼─────────┤ • user_id (FK)   │    │ • user_id (FK)   │  │
-    │  │ • skill_name     │         │ • badge_name     │    │ • action         │  │
-    │  │ • skill_type     │ offered │ • badge_type     │    │ • entity_type    │  │
-    │  │   (offered/sought)│ sought │ • description    │    │ • entity_id      │  │
-    │  │ • proficiency    │         │ • earned_at      │    │ • old_value      │  │
-    │  │ • description    │         └──────────────────┘    │ • new_value      │  │
-    │  │ • created_at     │                                 │ • ip_address     │  │
-    │  └────────┬─────────┘                                 │ • user_agent     │  │
-    │           │                                           │ • created_at     │  │
-    │           │                                           └──────────────────┘  │
-    └───────────┼─────────────────────────────────────────────────────────────────┘
-                │
-    ┌───────────┼─────────────────────────────────────────────────────────────────┐
-    │           │                         SKILL EXCHANGES                         │
-    │           ▼ N:1                                                             │
-    │  ┌──────────────────┐                              ┌──────────────────┐     │
-    │  │  SKILL_REQUESTS  │            1:N               │     SESSIONS     │     │
-    │  ├──────────────────┤   ─────────────────────────► ├──────────────────┤     │
-    │  │ • id (PK)        │                              │ • id (PK)        │     │
-    │  │ • requester_id   │◄─ FK to users                │ • request_id (FK)│     │
-    │  │ • provider_id    │◄─ FK to users                │ • tutor_id (FK)  │◄─┐  │
-    │  │ • skill_id (FK)──┼──────────────────────────────┤ • student_id (FK)│◄─┤  │
-    │  │ • status         │ pending/accepted/declined    │ • skill_id (FK)  │  │  │
-    │  │ • message        │                              │ • scheduled_date │  │  │
-    │  │ • created_at     │                              │ • duration       │  │  │
-    │  │ • updated_at     │                              │ • location       │  │  │
-    │  └──────────────────┘                              │ • status         │  │  │
-    │                                                    │ • notes          │  │  │
-    │                                                    │ • created_at     │  │  │
-    │                                                    │ • completed_at   │  │  │
-    │                                                    └────────┬─────────┘  │  │
-    │                                                             │            │  │
-    │                                                             │ 1:1        │  │
-    │                                                             ▼            │  │
-    │                                                    ┌──────────────────┐  │  │
-    │                                                    │     RATINGS      │  │  │
-    │                                                    ├──────────────────┤  │  │
-    │                                                    │ • id (PK)        │  │  │
-    │                                                    │ • session_id(FK,UQ)  │  │
-    │                                                    │ • rater_id (FK)──┼──┘  │
-    │                                                    │ • rated_id (FK)──┼─────┘
-    │                                                    │ • rating (1-5)   │     │
-    │                                                    │ • feedback       │     │
-    │                                                    │ • created_at     │     │
-    │                                                    └──────────────────┘     │
-    └─────────────────────────────────────────────────────────────────────────────┘
-
-    ┌─────────────────────────────────────────────────────────────────────────────┐
-    │                            SESSION OFFERS SYSTEM                            │
-    │                                                                             │
-    │  ┌──────────────────┐         ┌──────────────────────┐                      │
-    │  │  SESSION_OFFERS  │   1:N   │ SESSION_OFFER_SLOTS  │                      │
-    │  ├──────────────────┤ ──────► ├──────────────────────┤                      │
-    │  │ • id (PK)        │         │ • id (PK)            │                      │
-    │  │ • tutor_id (FK)◄─┼─────────┤ • offer_id (FK)      │                      │
-    │  │ • skill_id (FK)  │         │ • slot_date          │                      │
-    │  │ • description    │         │ • slot_time          │                      │
-    │  │ • location       │         │ • duration           │                      │
-    │  │ • created_at     │         │ • is_taken           │                      │
-    │  │ • updated_at     │         └──────────────────────┘                      │
-    │  └──────────────────┘                                                       │
-    └─────────────────────────────────────────────────────────────────────────────┘
-
-    ┌─────────────────────────────────────────────────────────────────────────────┐
-    │                              MESSAGING SYSTEM                               │
-    │                                                                             │
-    │  ┌──────────────────┐                                                       │
-    │  │     MESSAGES     │                                                       │
-    │  ├──────────────────┤                                                       │
-    │  │ • id (PK)        │                                                       │
-    │  │ • sender_id (FK)─┼──────► FK to users                                    │
-    │  │ • receiver_id(FK)┼──────► FK to users                                    │
-    │  │ • subject        │                                                       │
-    │  │ • content        │                                                       │
-    │  │ • read_status    │  0 = unread, 1 = read                                 │
-    │  │ • created_at     │                                                       │
-    │  │ • read_at        │                                                       │
-    │  └──────────────────┘                                                       │
-    └─────────────────────────────────────────────────────────────────────────────┘
-```
 
 ---
 
