@@ -17,6 +17,10 @@
   ],
   "author": "Reedy HS BPA Chapter - Jyothir Manchu, Aaryan Porwal, Rishik Pamuru",
   "license": "ISC",
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^9.6.0",
