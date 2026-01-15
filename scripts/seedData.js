@@ -12,7 +12,7 @@ async function seedData() {
   let db;
 
   try {
-    console.log('🌱 Starting data seeding...\n');
+    console.log(' Starting data seeding...\n');
 
     // Initialize database connection
     db = await initializeDatabase();
@@ -20,13 +20,13 @@ async function seedData() {
     // Check if data already exists
     const existingUser = await getOne(db, 'SELECT id FROM users LIMIT 1');
     if (existingUser) {
-      console.log('⚠️  Database already contains data.');
+      console.log('  Database already contains data.');
       console.log('   Delete skillswap.db and reinitialize to reseed.\n');
       await closeDatabase(db);
       return;
     }
 
-    console.log('👤 Creating users...');
+    console.log(' Creating users...');
 
     // Create demo admin user
     const adminPassword = await hashPassword('Admin123!');
@@ -46,7 +46,7 @@ async function seedData() {
       0
     ]);
 
-    console.log('   ✅ Admin user created (username: admin, password: Admin123!)');
+    console.log('    Admin user created (username: admin, password: Admin123!)');
 
     // Create demo student users
     const students = [
@@ -104,9 +104,9 @@ async function seedData() {
       `, [result.id, student.full_name, student.bio, student.is_under_16 ? 'private' : 'public', student.is_under_16]);
     }
 
-    console.log(`   ✅ ${students.length} student users created (password: Student123!)`);
+    console.log(`    ${students.length} student users created (password: Student123!)`);
 
-    console.log('\n🎯 Creating skills...');
+    console.log('\n Creating skills...');
 
     // Skills for Alice (Math)
     await runQuery(db, `
@@ -153,9 +153,9 @@ async function seedData() {
         (?, 'Creative Writing', 'sought', 'intermediate', 'Want to improve essay writing')
     `, [studentIds[4], studentIds[4], studentIds[4]]);
 
-    console.log('   ✅ Skills created for all users');
+    console.log('    Skills created for all users');
 
-    console.log('\n📅 Creating skill requests and sessions...');
+    console.log('\n Creating skill requests and sessions...');
 
     // Bob requests Python help from Alice -> Accepted
     const request1 = await runQuery(db, `
@@ -175,7 +175,7 @@ async function seedData() {
       VALUES (?, ?, 7, 'pending', 'Interested in learning digital illustration!')
     `, [studentIds[1], studentIds[2]]);
 
-    console.log('   ✅ Skill requests created');
+    console.log('    Skill requests created');
 
     // Create completed session for request 1
     const pastDate = new Date();
@@ -195,7 +195,7 @@ async function seedData() {
       VALUES (?, ?, ?, 4, ?, 90, 'Computer Lab B', 'scheduled', 'Introduction to Python basics')
     `, [request2.id, studentIds[1], studentIds[2], futureDate.toISOString()]);
 
-    console.log('   ✅ Sessions created (1 completed, 1 upcoming)');
+    console.log('    Sessions created (1 completed, 1 upcoming)');
 
     console.log('\n⭐ Creating rating...');
 
@@ -205,9 +205,9 @@ async function seedData() {
       VALUES (?, ?, ?, 5, 'Alice is an excellent teacher! Explained calculus concepts clearly and patiently.')
     `, [session1.id, studentIds[1], studentIds[0]]);
 
-    console.log('   ✅ Rating created');
+    console.log('    Rating created');
 
-    console.log('\n💬 Creating messages...');
+    console.log('\n Creating messages...');
 
     // Messages between users
     await runQuery(db, `
@@ -222,9 +222,9 @@ async function seedData() {
       studentIds[2], studentIds[1]
     ]);
 
-    console.log('   ✅ Messages created');
+    console.log('    Messages created');
 
-    console.log('\n🏆 Creating achievements...');
+    console.log('\n Creating achievements...');
 
     // Achievements for active users
     await runQuery(db, `
@@ -235,9 +235,9 @@ async function seedData() {
         (?, 'First Session', 'milestone', 'Completed your first tutoring session')
     `, [studentIds[0], studentIds[0], studentIds[1]]);
 
-    console.log('   ✅ Achievements created');
+    console.log('   Achievements created');
 
-    console.log('\n📝 Creating audit logs...');
+    console.log('\n Creating audit logs...');
 
     // Sample audit logs
     await runQuery(db, `
@@ -248,11 +248,11 @@ async function seedData() {
         (?, 'CREATE', 'ratings', 1, '{"rating":5}', '127.0.0.1')
     `, [studentIds[1], session1.id, studentIds[1]]);
 
-    console.log('   ✅ Audit logs created');
+    console.log('    Audit logs created');
 
-    console.log('\n🎉 Data seeding complete!\n');
+    console.log('\n Data seeding complete!\n');
     console.log('═══════════════════════════════════════════════════════');
-    console.log('📋 Demo Accounts:');
+    console.log(' Demo Accounts:');
     console.log('═══════════════════════════════════════════════════════');
     console.log('Admin Account:');
     console.log('  Username: admin');
@@ -266,10 +266,10 @@ async function seedData() {
     console.log('  - emma_science  (Science tutor)');
     console.log('═══════════════════════════════════════════════════════');
     console.log('');
-    console.log('🚀 Next step: Run "npm start" to start the server\n');
+    console.log(' Next step: Run "npm start" to start the server\n');
 
   } catch (error) {
-    console.error('❌ Data seeding failed:', error.message);
+    console.error(' Data seeding failed:', error.message);
     console.error('   Stack trace:', error.stack);
     process.exit(1);
   } finally {
