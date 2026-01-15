@@ -112,7 +112,7 @@ npm start
 | `achievements` | Gamification | 30+ badges |
 | `audit_logs` | Action tracking | Complete audit trail |
 
-See [docs/Database_Schema.md](docs/ER_Diagram.md) for full ER diagram.
+See [docs/ER_Diagram.md](docs/ER_Diagram.md) for full ER diagram.
 
 ---
 
