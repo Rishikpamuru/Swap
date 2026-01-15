@@ -1,4 +1,4 @@
-# 📊 BPA Rubric Alignment Document
+# BPA Rubric Alignment Document
 
 **SkillSwap - Web Application Team Competition**  
 **Reedy HS BPA Chapter | Frisco, Texas | 2026**  
@@ -8,7 +8,7 @@ This document maps every feature and technical implementation to the official BP
 
 ---
 
-## 🎯 Official Rubric Scoring (100 Points Total)
+## Official Rubric Scoring (100 Points Total)
 
 ### TECHNICAL SKILLS — 85 Points
 
