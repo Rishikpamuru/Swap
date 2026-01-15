@@ -1033,8 +1033,8 @@ const Components = {
 
   modal(content, id = 'modal') {
     return `
-      <div class="modal-overlay" id="${id}" onclick="closeModal('${id}')">
-        <div class="modal" style="max-width: 1200px; width: 100%;" onclick="event.stopPropagation()">
+      <div class="modal-overlay" id="${id}">
+        <div class="modal" style="max-width: 1200px; width: 100%;">
           ${content}
         </div>
       </div>
@@ -1059,7 +1059,7 @@ const Components = {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeModal('rating-modal')">Cancel</button>
+        <button class="btn btn-outline" data-modal-close="rating-modal">Cancel</button>
         <button class="btn btn-primary" onclick="submitRating()">Submit</button>
       </div>
     `;
@@ -1649,7 +1649,7 @@ async function showRatingsFeedbackModal() {
           <div style="font-size: 1.5rem; font-weight: 800;">Feedback</div>
           <div style="color: var(--text-secondary);">Ratings and comments you've received</div>
         </div>
-        <button class="btn btn-secondary" onclick="closeModal('ratings-feedback-modal')">Close</button>
+        <button class="btn btn-secondary" data-modal-close="ratings-feedback-modal">Close</button>
       </div>
       <div style="text-align:center; padding: 2rem; color: var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i></div>
     </div>
@@ -1711,7 +1711,7 @@ async function showRatingsFeedbackModal() {
             <div style="font-size: 1.5rem; font-weight: 800;">Feedback</div>
             <div style="color: var(--text-secondary);">${avg.toFixed(1)} average • ${total} rating${total === 1 ? '' : 's'}</div>
           </div>
-          <button class="btn btn-secondary" onclick="closeModal('ratings-feedback-modal')">Close</button>
+          <button class="btn btn-secondary" data-modal-close="ratings-feedback-modal">Close</button>
         </div>
 
         <div style="display:flex; align-items:center; gap: 0.75rem; margin-bottom: 1rem;">
@@ -1735,7 +1735,7 @@ async function showRatingsFeedbackModal() {
         <div style="padding: 2rem;">
           <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;">
             <div style="font-size: 1.5rem; font-weight: 800;">Feedback</div>
-            <button class="btn btn-secondary" onclick="closeModal('ratings-feedback-modal')">Close</button>
+            <button class="btn btn-secondary" data-modal-close="ratings-feedback-modal">Close</button>
           </div>
           <div style="padding: 1rem; border-radius: 12px; background: rgba(239, 68, 68, 0.10); color: var(--red-primary); font-weight: 700;">${msg}</div>
         </div>
@@ -6144,6 +6144,24 @@ function closeModal(modalId) {
 // Make available for inline onclick="closeModal(...)" handlers
 window.closeModal = closeModal;
 
+// CSP-safe close handling for modals created via Components.modal()
+document.addEventListener('click', (e) => {
+  const closeBtn = e.target?.closest?.('[data-modal-close]');
+  if (closeBtn) {
+    e.preventDefault();
+    const id = closeBtn.getAttribute('data-modal-close');
+    if (id) closeModal(id);
+    return;
+  }
+
+  // Clicking the overlay outside the modal content closes it
+  const target = e.target;
+  if (target && target.classList && target.classList.contains('modal-overlay')) {
+    const id = target.id;
+    if (id) closeModal(id);
+  }
+});
+
 function selectRating(rating) {
   // Backwards-compatible helper (used by older markup)
   window.StarRating?.setValue('rating-control', rating);
@@ -6185,7 +6203,7 @@ function showNotifications() {
         `).join('')}
       </div>
       <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-        <button class="btn btn-primary" onclick="closeModal('notifications-modal')">Close</button>
+        <button class="btn btn-primary" data-modal-close="notifications-modal">Close</button>
       </div>
     </div>
   `;
@@ -6224,7 +6242,7 @@ function showAchievementDetailsModal(achievementId) {
             <div style="margin-top: 0.25rem;">${statusPill}</div>
           </div>
         </div>
-        <button class="btn btn-secondary" onclick="closeModal('achievement-details-modal')">Close</button>
+        <button class="btn btn-secondary" data-modal-close="achievement-details-modal">Close</button>
       </div>
 
       <div style="background: var(--bg-light); border-radius: var(--radius-xl); padding: 1.25rem;">
