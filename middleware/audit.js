@@ -41,7 +41,7 @@ async function logAuditEvent(db, data) {
       userAgent
     ]);
   } catch (error) {
-    console.error('❌ Audit logging failed:', error.message);
+    console.error(' Audit logging failed:', error.message);
     // Don't throw - audit failure shouldn't break the app
   }
 }
@@ -50,12 +50,9 @@ async function logAuditEvent(db, data) {
  * Middleware: Log all admin requests
  */
 function logAudit(req, res, next) {
-  // Only log authenticated requests
   if (!req.session || !req.session.userId) {
     return next();
   }
-  
-  // Only log admin actions or sensitive operations
   const shouldLog = 
     req.session.userRole === 'admin' ||
     req.method !== 'GET' || // Log all non-GET requests
@@ -68,7 +65,6 @@ function logAudit(req, res, next) {
     
     // Log after response is sent
     res.on('finish', () => {
-      // Only log successful operations
       if (res.statusCode >= 200 && res.statusCode < 400) {
         logAuditEvent(db, {
           userId: req.session?.userId || null,
