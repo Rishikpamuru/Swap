@@ -630,6 +630,12 @@ const Router = {
   },
 
   navigate(page) {
+    // Admin UX: treat admin panel as the home page
+    const currentUser = getCurrentUser();
+    if (currentUser?.role === 'admin') {
+      if (page === 'dashboard' || page === 'search') page = 'admin';
+    }
+
     // Allow pages to clean up timers/listeners when navigating away
     if (typeof AppState.cleanup === 'function') {
       try {
@@ -888,20 +894,15 @@ const Components = {
         
         <nav class="sidebar-nav">
           ${isAdmin ? `
-          <a href="#" class="sidebar-nav-item" data-page="search">
-            <span class="sidebar-nav-item-icon"><i class="fas fa-search"></i></span>
-            <span>Search</span>
+          <a href="#" class="sidebar-nav-item" data-page="admin">
+            <span class="sidebar-nav-item-icon"><i class="fas fa-shield-alt"></i></span>
+            <span>Admin Panel</span>
           </a>
 
           <a href="#" class="sidebar-nav-item" data-page="messages">
             <span class="sidebar-nav-item-icon"><i class="fas fa-envelope"></i></span>
             <span>Messages</span>
             <span id="messages-unread-badge" class="notification-badge" style="position: static; margin-left: auto; width: 22px; height: 22px; font-size: 0.75rem; display: none;"></span>
-          </a>
-          
-          <a href="#" class="sidebar-nav-item" data-page="admin">
-            <span class="sidebar-nav-item-icon"><i class="fas fa-shield-alt"></i></span>
-            <span>Admin Panel</span>
           </a>
           ` : `
           <a href="#" class="sidebar-nav-item" data-page="dashboard">
@@ -1282,6 +1283,9 @@ function renderDashboardPage() {
               <div style="font-size: 2rem; margin-bottom: 0.5rem;">⭐</div>
               <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Average Rating</h3>
               <p style="font-size: 2.5rem; font-weight: 700; color: var(--blue-primary);">${(user.averageRating || 0).toFixed(1)}</p>
+              <div style="margin-top: 0.75rem;">
+                <button class="btn btn-outline btn-sm" id="dash-view-feedback"><i class="fas fa-comments"></i> View Feedback</button>
+              </div>
             </div>
             
             <div style="background: white; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md);">
@@ -1383,6 +1387,10 @@ function renderDashboardPage() {
   document.getElementById('dash-offer-teach')?.addEventListener('click', () => Router.navigate('create-session-form'));
   document.getElementById('dash-find-session')?.addEventListener('click', () => Router.navigate('learn'));
   document.getElementById('dash-past-sessions')?.addEventListener('click', () => Router.navigate('past-sessions'));
+  document.getElementById('dash-view-feedback')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    showRatingsFeedbackModal();
+  });
 
   // Load offers + sessions widgets
   (async () => {
@@ -1622,6 +1630,118 @@ function renderDashboardPage() {
       document.getElementById('dashboard-my-offers')?.replaceChildren();
     }
   })();
+}
+
+async function showRatingsFeedbackModal() {
+  const me = getCurrentUser();
+  if (!me?.id) {
+    Router.navigate('login');
+    return;
+  }
+
+  const existing = document.getElementById('ratings-feedback-modal');
+  if (existing) existing.remove();
+
+  const loadingContent = `
+    <div style="padding: 2rem;">
+      <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;">
+        <div>
+          <div style="font-size: 1.5rem; font-weight: 800;">Feedback</div>
+          <div style="color: var(--text-secondary);">Ratings and comments you've received</div>
+        </div>
+        <button class="btn btn-secondary" onclick="closeModal('ratings-feedback-modal')">Close</button>
+      </div>
+      <div style="text-align:center; padding: 2rem; color: var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i></div>
+    </div>
+  `;
+
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = Components.modal(loadingContent, 'ratings-feedback-modal');
+  document.body.appendChild(wrapper);
+  setTimeout(() => document.getElementById('ratings-feedback-modal')?.classList.add('show'), 10);
+
+  const starsHtml = (rating) => {
+    const r = Math.max(0, Math.min(5, Number(rating) || 0));
+    return Array.from({ length: 5 }, (_, i) => {
+      if (i < Math.floor(r)) return '<i class="fas fa-star" style="color: #fbbf24;"></i>';
+      return '<i class="far fa-star" style="color: #d1d5db;"></i>';
+    }).join('');
+  };
+
+  try {
+    const res = await fetch('/api/ratings/received?limit=50', { credentials: 'same-origin' });
+    const ct = String(res.headers.get('content-type') || '');
+    const data = ct.includes('application/json') ? await res.json() : null;
+    if (!res.ok || !data?.success) {
+      throw new Error(data?.message || 'Failed to load feedback');
+    }
+
+    const avg = Number(data.avgRating || 0);
+    const total = Number(data.totalRatings || 0);
+    const ratings = Array.isArray(data.ratings) ? data.ratings : [];
+
+    const listHtml = ratings.length
+      ? ratings.map((r) => {
+        const name = Utils.escapeHtml(String(r.raterName || 'Student'));
+        const createdAt = r.createdAt ? new Date(r.createdAt) : null;
+        const dateText = createdAt && !Number.isNaN(createdAt.valueOf()) ? createdAt.toLocaleDateString() : '';
+        const feedback = String(r.feedback || '').trim();
+        return `
+          <div style="padding: 1rem; border: 1px solid var(--border-light); border-radius: 12px; background: white;">
+            <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem;">
+              <div style="font-weight: 800;">${name}</div>
+              <div style="display:flex; align-items:center; gap: 0.5rem; color: var(--text-secondary);">
+                <span>${starsHtml(r.rating)}</span>
+                <span style="font-weight: 700;">${Number(r.rating || 0)}</span>
+              </div>
+            </div>
+            ${dateText ? `<div style="margin-top: 0.25rem; font-size: 0.875rem; color: var(--text-secondary);">${Utils.escapeHtml(dateText)}</div>` : ''}
+            <div style="margin-top: 0.75rem; color: var(--text-primary); line-height: 1.6;">
+              ${feedback ? Utils.escapeHtml(feedback) : '<span style="color: var(--text-secondary); font-style: italic;">No written feedback</span>'}
+            </div>
+          </div>
+        `;
+      }).join('')
+      : '<div style="text-align:center; padding: 2rem; color: var(--text-secondary);">No feedback yet.</div>';
+
+    const content = `
+      <div style="padding: 2rem;">
+        <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <div style="font-size: 1.5rem; font-weight: 800;">Feedback</div>
+            <div style="color: var(--text-secondary);">${avg.toFixed(1)} average • ${total} rating${total === 1 ? '' : 's'}</div>
+          </div>
+          <button class="btn btn-secondary" onclick="closeModal('ratings-feedback-modal')">Close</button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap: 0.75rem; margin-bottom: 1rem;">
+          <div style="color: #f59e0b;">${starsHtml(Math.round(avg))}</div>
+          <div style="font-weight: 800; font-size: 1.125rem;">${avg.toFixed(1)}</div>
+        </div>
+
+        <div style="display:grid; gap: 0.75rem; max-height: 60vh; overflow: auto; padding-right: 0.25rem;">
+          ${listHtml}
+        </div>
+      </div>
+    `;
+
+    const modalBody = document.querySelector('#ratings-feedback-modal .modal');
+    if (modalBody) modalBody.innerHTML = content;
+  } catch (e) {
+    const msg = Utils.escapeHtml(String(e?.message || 'Failed to load feedback'));
+    const modalBody = document.querySelector('#ratings-feedback-modal .modal');
+    if (modalBody) {
+      modalBody.innerHTML = `
+        <div style="padding: 2rem;">
+          <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;">
+            <div style="font-size: 1.5rem; font-weight: 800;">Feedback</div>
+            <button class="btn btn-secondary" onclick="closeModal('ratings-feedback-modal')">Close</button>
+          </div>
+          <div style="padding: 1rem; border-radius: 12px; background: rgba(239, 68, 68, 0.10); color: var(--red-primary); font-weight: 700;">${msg}</div>
+        </div>
+      `;
+    }
+  }
 }
 
 function renderCreateSessionHomePage() {
@@ -5481,7 +5601,7 @@ async function handleLogin(event) {
       AppState.currentUser = data.user;
       sessionStorage.setItem('isLoggedIn', 'true');
       sessionStorage.setItem('user', JSON.stringify(data.user));
-      Router.navigate('dashboard');
+      Router.navigate(data.user?.role === 'admin' ? 'admin' : 'dashboard');
     } else {
       setAuthError('login-error', formatValidationErrors(data) || 'Login failed');
     }
@@ -5525,7 +5645,7 @@ async function handleRegister(event) {
       AppState.currentUser = result.user;
       sessionStorage.setItem('isLoggedIn', 'true');
       sessionStorage.setItem('user', JSON.stringify(result.user));
-      Router.navigate('dashboard');
+      Router.navigate(result.user?.role === 'admin' ? 'admin' : 'dashboard');
     } else {
       setAuthError('register-error', formatValidationErrors(result) || 'Registration failed');
     }
@@ -6021,6 +6141,9 @@ function closeModal(modalId) {
   }
 }
 
+// Make available for inline onclick="closeModal(...)" handlers
+window.closeModal = closeModal;
+
 function selectRating(rating) {
   // Backwards-compatible helper (used by older markup)
   window.StarRating?.setValue('rating-control', rating);
@@ -6108,7 +6231,7 @@ function showAchievementDetailsModal(achievementId) {
         <div style="font-weight: 700; margin-bottom: 0.5rem;">How to earn it</div>
         <div style="color: var(--text-secondary); line-height: 1.6;">${Utils.escapeHtml(achievement.description)}</div>
         ${notYetTracked.has(id)
-          ? '<div style="margin-top: 0.75rem; color: var(--text-secondary); font-style: italic;">Note: this achievement isn\'t fully tracked yet, so it may stay locked for now.</div>'
+          ? '<div style="margin-top: 0.75rem; color: var(--text-secondary); font-style: italic;"> </div>'
           : ''
         }
       </div>
@@ -7297,6 +7420,7 @@ document.addEventListener('DOMContentLoaded', () => {
       '/login': 'login',
       '/register': 'register',
       '/dashboard': 'dashboard',
+      '/admin': 'admin',
       '/profile': 'profile',
       '/messages': 'messages',
       '/sessions': 'sessions',
@@ -7315,7 +7439,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       const target = routeMap[path];
-      Router.navigate(target && target !== 'login' && target !== 'register' ? target : 'dashboard');
+      const safeTarget = target && target !== 'login' && target !== 'register' ? target : 'dashboard';
+
+      // Admins land on Admin Panel unless they explicitly deep-link elsewhere
+      if (user.role === 'admin' && (safeTarget === 'dashboard' || safeTarget === 'search')) {
+        Router.navigate('admin');
+      } else {
+        Router.navigate(safeTarget);
+      }
 
       // Keep Messages unread badge updated in the sidebar
       startUnreadMessagesPolling();
