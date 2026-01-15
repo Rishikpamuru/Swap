@@ -1,25 +1,297 @@
-# 📊 Database Entity-Relationship Diagram
+# SkillSwap Database Schema & Entity-Relationship Documentation
 
-**SkillSwap - Web Application Team Competition**  
+**BPA Web Application Team – SkillSwap**  
 **Reedy HS BPA Chapter | Frisco, Texas | 2026**
 
 ---
 
-## 🗃️ Database Architecture Overview
+## 1. Database Architecture Overview
 
 | Property | Value |
-|----------|-------|
-| **Database System** | SQLite 3 |
-| **Total Tables** | 12 |
-| **Total Relationships** | 15+ Foreign Keys |
-| **Normalization Level** | Third Normal Form (3NF) |
-| **Indexes** | 8 |
-| **Triggers** | 5 |
-| **Views** | 3 |
+|--------|-------|
+| Database System | SQLite 3 |
+| Driver | better-sqlite3 (sync) + sqlite3 (async) |
+| Total Tables | 12 |
+| Foreign Key Relationships | 15+ |
+| Indexes | 8 |
+| Triggers | 5 |
+| Views | 3 |
+| Normalization Level | Third Normal Form (3NF) |
 
 ---
 
-## 📋 Conceptual ER Diagram
+## 2. Entity-Relationship Diagram (Conceptual)
+ROLES (1) ──── (N) USERS ──── (1) USER_PROFILES
+USERS (1) ──── (N) SKILLS ──── (N) SKILL_REQUESTS ──── (1) SESSIONS ──── (1) RATINGS
+USERS (1) ──── (N) SESSION_OFFERS ──── (N) SESSION_OFFER_SLOTS
+USERS (1) ──── (N) MESSAGES (sender / receiver)
+USERS (1) ──── (N) ACHIEVEMENTS
+USERS (1) ──── (N) AUDIT_LOGS
+
+---
+
+## 3. Core Entities and Table Definitions
+
+### 3.1 ROLES
+Defines role-based access control (RBAC).
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK, AUTOINCREMENT |
+| name | TEXT | UNIQUE, NOT NULL |
+| permissions | TEXT | NOT NULL (JSON array) |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+---
+
+### 3.2 USERS
+Handles authentication and account lifecycle.
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK, AUTOINCREMENT |
+| username | TEXT | UNIQUE, NOT NULL |
+| email | TEXT | UNIQUE, NOT NULL |
+| password_hash | TEXT | NOT NULL |
+| role_id | INTEGER | FK → roles(id) |
+| status | TEXT | DEFAULT 'active' |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+| updated_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+---
+
+### 3.3 USER_PROFILES
+Extended user information (1:1 relationship).
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK |
+| user_id | INTEGER | FK → users(id), UNIQUE |
+| full_name | TEXT | |
+| bio | TEXT | |
+| profile_image | TEXT | |
+| privacy_level | TEXT | DEFAULT 'public' |
+| school | TEXT | |
+| grade_level | TEXT | |
+| updated_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+---
+
+### 3.4 SKILLS
+Skills offered or sought by users.
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK |
+| user_id | INTEGER | FK → users(id), ON DELETE CASCADE |
+| skill_name | TEXT | NOT NULL |
+| skill_type | TEXT | offered / sought |
+| proficiency | TEXT | |
+| description | TEXT | |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+---
+
+### 3.5 SKILL_REQUESTS
+Direct skill exchange requests.
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK |
+| requester_id | INTEGER | FK → users(id) |
+| provider_id | INTEGER | FK → users(id) |
+| skill_id | INTEGER | FK → skills(id) |
+| status | TEXT | pending / accepted / declined |
+| message | TEXT | |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+| updated_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+---
+
+### 3.6 SESSIONS
+Scheduled learning sessions.
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK |
+| request_id | INTEGER | FK → skill_requests(id) |
+| tutor_id | INTEGER | FK → users(id) |
+| student_id | INTEGER | FK → users(id) |
+| skill_id | INTEGER | FK → skills(id) |
+| scheduled_date | DATETIME | NOT NULL |
+| duration | INTEGER | |
+| location | TEXT | |
+| status | TEXT | scheduled / completed / cancelled |
+| notes | TEXT | |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+| completed_at | DATETIME | |
+
+---
+
+### 3.7 RATINGS
+Post-session feedback (1:1 with sessions).
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK |
+| session_id | INTEGER | FK → sessions(id), UNIQUE |
+| rater_id | INTEGER | FK → users(id) |
+| rated_id | INTEGER | FK → users(id) |
+| rating | INTEGER | CHECK (1–5) |
+| feedback | TEXT | |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+---
+
+### 3.8 SESSION_OFFERS
+Public tutor offers.
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK |
+| tutor_id | INTEGER | FK → users(id) |
+| skill_id | INTEGER | FK → skills(id) |
+| description | TEXT | |
+| location | TEXT | |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+| updated_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+---
+
+### 3.9 SESSION_OFFER_SLOTS
+Available time slots for offers.
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK |
+| offer_id | INTEGER | FK → session_offers(id), ON DELETE CASCADE |
+| slot_date | DATE | NOT NULL |
+| slot_time | TIME | NOT NULL |
+| duration | INTEGER | DEFAULT 60 |
+| is_taken | INTEGER | DEFAULT 0 |
+
+---
+
+### 3.10 MESSAGES
+Internal messaging system.
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK |
+| sender_id | INTEGER | FK → users(id) |
+| receiver_id | INTEGER | FK → users(id) |
+| subject | TEXT | NOT NULL |
+| content | TEXT | NOT NULL |
+| read_status | INTEGER | DEFAULT 0 |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+| read_at | DATETIME | |
+
+---
+
+### 3.11 ACHIEVEMENTS
+Gamification and engagement tracking.
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK |
+| user_id | INTEGER | FK → users(id), ON DELETE CASCADE |
+| badge_name | TEXT | NOT NULL |
+| badge_type | TEXT | |
+| description | TEXT | |
+| earned_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+---
+
+### 3.12 AUDIT_LOGS
+Security and administrative auditing.
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK |
+| user_id | INTEGER | FK → users(id) |
+| action | TEXT | NOT NULL |
+| entity_type | TEXT | NOT NULL |
+| entity_id | INTEGER | |
+| old_value | TEXT | |
+| new_value | TEXT | |
+| ip_address | TEXT | |
+| user_agent | TEXT | |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+---
+
+## 4. Indexes, Triggers, and Views
+
+- **Indexes:** Optimized for authentication, messaging, sessions, and auditing (8 total)
+- **Triggers:** Auto-update timestamp fields on users, profiles, requests, and offers
+- **Views:**
+  - `v_user_details`
+  - `v_session_summary`
+  - `v_user_ratings`
+
+---
+
+## 5. Referential Integrity Rules (Summary)
+
+| Parent | Child | On Delete |
+|------|-------|----------|
+| roles | users | RESTRICT |
+| users | profiles, skills, messages, achievements | CASCADE |
+| skills | skill_requests | CASCADE |
+| skill_requests | sessions | CASCADE |
+| sessions | ratings | CASCADE |
+| session_offers | offer_slots | CASCADE |
+
+---
+
+## 6. Normalization Compliance
+
+### First Normal Form (1NF) ✅
+- Atomic attributes only  
+- No repeating groups  
+
+### Second Normal Form (2NF) ✅
+- No partial dependencies  
+
+### Third Normal Form (3NF) ✅
+- No transitive dependencies  
+
+**Examples:**
+- Authentication separated from profile data
+- Roles isolated from users
+- Ratings separated from sessions
+- Audit logs independent of business logic
+
+---
+
+## 7. Security Implementation
+
+| Measure | Implementation |
+|------|----------------|
+| Password Security | bcrypt (12 rounds) |
+| Session Handling | httpOnly cookies |
+| Access Control | RBAC |
+| SQL Injection Prevention | Parameterized queries |
+| XSS Prevention | Input sanitization |
+| Audit Trail | Full admin logging |
+| Rate Limiting | 100 requests / 15 minutes |
+
+---
+
+## 8. BPA Rubric Alignment
+
+| Requirement | Status |
+|-----------|--------|
+| ER Diagram | ✅ |
+| All Entities Defined | ✅ |
+| PK/FK Marked | ✅ |
+| Relationships Labeled | ✅ |
+| Normalization Explained | ✅ |
+| Physical Schema Included | ✅ |
+
+---
+
+##  Conceptual ER Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
@@ -148,125 +420,7 @@
 
 ---
 
-## 📐 Relationship Summary
-
-| Relationship | Type | From → To | Description |
-|--------------|------|-----------|-------------|
-| Role → Users | 1:N | roles.id → users.role_id | One role has many users |
-| User → Profile | 1:1 | users.id → user_profiles.user_id | One user, one profile |
-| User → Skills | 1:N | users.id → skills.user_id | User has many skills |
-| User → Messages | 1:N | users.id → messages.sender_id/receiver_id | Users send/receive messages |
-| User → Achievements | 1:N | users.id → achievements.user_id | User earns many badges |
-| User → Audit Logs | 1:N | users.id → audit_logs.user_id | User creates audit entries |
-| Skill → Skill Requests | 1:N | skills.id → skill_requests.skill_id | Skill requested many times |
-| Skill Request → Sessions | 1:N | skill_requests.id → sessions.request_id | Request creates sessions |
-| Session → Rating | 1:1 | sessions.id → ratings.session_id | One rating per session |
-| User → Session Offers | 1:N | users.id → session_offers.tutor_id | Tutor creates offers |
-| Session Offer → Slots | 1:N | session_offers.id → session_offer_slots.offer_id | Offer has many slots |
-
----
-
-## 🔑 Key Notation
-
-| Symbol | Meaning |
-|--------|---------|
-| **PK** | Primary Key (auto-increment) |
-| **FK** | Foreign Key (references another table) |
-| **UQ** | Unique constraint |
-| **1:1** | One-to-one relationship |
-| **1:N** | One-to-many relationship |
-| **N:M** | Many-to-many relationship |
-
----
-
-## 📊 Cardinality Matrix
-
-| Table A | Table B | Cardinality | Notes |
-|---------|---------|-------------|-------|
-| roles | users | 1:N | Role has many users |
-| users | user_profiles | 1:1 | Exactly one profile per user |
-| users | skills | 1:N | User has many skills |
-| users | messages | 1:N (×2) | As sender and receiver |
-| users | sessions | 1:N (×2) | As tutor and student |
-| skills | skill_requests | 1:N | Skill requested multiple times |
-| skill_requests | sessions | 1:N | Request may lead to multiple sessions |
-| sessions | ratings | 1:1 | One rating per completed session |
-| users | achievements | 1:N | User earns multiple badges |
-| users | audit_logs | 1:N | User actions tracked |
-| session_offers | session_offer_slots | 1:N | Offer has multiple time slots |
-
----
-
-## 🛡️ Referential Integrity Rules
-
-| Parent Table | Child Table | On Delete | On Update |
-|--------------|-------------|-----------|-----------|
-| roles | users | RESTRICT | CASCADE |
-| users | user_profiles | CASCADE | CASCADE |
-| users | skills | CASCADE | CASCADE |
-| users | messages | CASCADE | CASCADE |
-| users | achievements | CASCADE | CASCADE |
-| users | audit_logs | SET NULL | CASCADE |
-| skills | skill_requests | CASCADE | CASCADE |
-| skill_requests | sessions | CASCADE | CASCADE |
-| sessions | ratings | CASCADE | CASCADE |
-| session_offers | session_offer_slots | CASCADE | CASCADE |
-
----
-
-## 📐 Normalization Analysis
-
-### First Normal Form (1NF) ✅
-- All attributes contain atomic values
-- No repeating groups or arrays in columns
-- Each column has a unique name
-- Order of rows/columns doesn't matter
-
-### Second Normal Form (2NF) ✅
-- Meets 1NF requirements
-- All non-key attributes depend on the entire primary key
-- No partial dependencies (no composite keys with partial deps)
-
-### Third Normal Form (3NF) ✅
-- Meets 2NF requirements
-- No transitive dependencies
-- Non-key attributes depend only on the primary key
-
-**Examples of 3NF Compliance:**
-- User authentication (users) separated from profile data (user_profiles)
-- Role definitions (roles) separated from user assignments
-- Skills as separate entities linked by foreign keys
-- Session ratings separate from sessions themselves
-- Audit logs independent with nullable user reference
-
----
-
-## 📁 Physical Schema Details
-
-See [Database_Schema.md](Database_Schema.md) for complete table definitions including:
-- Column data types
-- Constraints
-- Default values
-- Indexes
-- Triggers
-- Views
-
----
-
-## 🎯 BPA Rubric Compliance
-
-| Requirement | Status | Evidence |
-|-------------|--------|----------|
-| ER Diagram included | ✅ | This document |
-| All entities shown | ✅ | 12 tables documented |
-| Relationships labeled | ✅ | Cardinality on all relationships |
-| Primary keys marked | ✅ | PK notation used |
-| Foreign keys marked | ✅ | FK notation used |
-| Normalization documented | ✅ | 1NF, 2NF, 3NF analysis |
-
----
-
 **Document Version:** 2.0  
 **Last Updated:** January 14, 2026  
 **Team:** Jyothir Manchu, Aaryan Porwal, Rishik Pamuru  
-**Chapter:** Reedy HS BPA Chapter, Frisco, Texas
+**Chapter:** Reedy High School BPA – Frisco, Texas
