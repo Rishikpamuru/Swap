@@ -9,62 +9,119 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-// Database file path - use local fallback if volume path fails
+// Database file path
 const VOLUME_DB_PATH = process.env.DB_PATH;
 const LOCAL_DB_PATH = path.join(__dirname, '..', 'skillswap.db');
 
+// Railway volume mount settings
+const VOLUME_WAIT_MAX_MS = 30000;  // Wait up to 30s for volume
+const VOLUME_WAIT_INTERVAL_MS = 500;
+
 /**
- * Get the best available database path
+ * Sleep helper
  */
-function getDatabasePath() {
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Check if the volume directory is mounted and writable
+ */
+function isVolumeMounted(dirPath) {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    const testFile = path.join(dirPath, '.mount-test-' + Date.now());
+    fs.writeFileSync(testFile, 'ok');
+    fs.unlinkSync(testFile);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Wait for volume mount (Railway mounts volumes after container start)
+ */
+async function waitForVolumeMount(dirPath) {
+  const start = Date.now();
+  console.log(`⏳ Waiting for volume mount at ${dirPath}...`);
+  
+  while (Date.now() - start < VOLUME_WAIT_MAX_MS) {
+    if (isVolumeMounted(dirPath)) {
+      console.log(`✅ Volume mounted and writable: ${dirPath}`);
+      return true;
+    }
+    await sleep(VOLUME_WAIT_INTERVAL_MS);
+  }
+  
+  console.log(`⚠️ Volume not mounted after ${VOLUME_WAIT_MAX_MS / 1000}s`);
+  return false;
+}
+
+/**
+ * Get the database path, waiting for volume if configured
+ */
+async function getDatabasePath() {
   if (VOLUME_DB_PATH) {
     const dbDir = path.dirname(VOLUME_DB_PATH);
-    try {
-      // Try to create/access the volume directory
-      if (!fs.existsSync(dbDir)) {
-        fs.mkdirSync(dbDir, { recursive: true });
-      }
-      // Test write access
-      const testFile = path.join(dbDir, '.write-test');
-      fs.writeFileSync(testFile, 'test');
-      fs.unlinkSync(testFile);
+    const mounted = await waitForVolumeMount(dbDir);
+    if (mounted) {
       console.log(`📁 Using volume database: ${VOLUME_DB_PATH}`);
       return VOLUME_DB_PATH;
-    } catch (err) {
-      console.log(`⚠️ Volume not ready, using local database: ${LOCAL_DB_PATH}`);
-      return LOCAL_DB_PATH;
     }
+    // Fall back to local only if volume never mounts
+    console.log(`⚠️ Volume unavailable, using local database: ${LOCAL_DB_PATH}`);
+    return LOCAL_DB_PATH;
   }
   console.log(`📁 Using local database: ${LOCAL_DB_PATH}`);
   return LOCAL_DB_PATH;
 }
 
 /**
+ * Open SQLite database with retry on SQLITE_CANTOPEN
+ */
+function openDatabase(dbPath, retries = 5, delayMs = 1000) {
+  return new Promise((resolve, reject) => {
+    const attempt = (remaining) => {
+      const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
+        if (err) {
+          if (err.code === 'SQLITE_CANTOPEN' && remaining > 0) {
+            console.log(`⏳ DB open failed, retrying in ${delayMs}ms... (${remaining} left)`);
+            setTimeout(() => attempt(remaining - 1), delayMs);
+          } else {
+            console.error('Error connecting SQLITE_CANTOPEN:', err.message);
+            reject(err);
+          }
+        } else {
+          resolve(db);
+        }
+      });
+    };
+    attempt(retries);
+  });
+}
+
+/**
  * Initialize database connection with proper configuration
  */
 async function initializeDatabase() {
-  const DB_PATH = getDatabasePath();
+  const DB_PATH = await getDatabasePath();
   
+  const db = await openDatabase(DB_PATH);
+  console.log('✅ SQLite connected');
+  console.log('📁 Database file:', DB_PATH);
+
   return new Promise((resolve, reject) => {
-    // Create database connection
-    const db = new sqlite3.Database(DB_PATH, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
+    // Enable foreign key constraints
+    db.run('PRAGMA foreign_keys = ON', (err) => {
       if (err) {
-        console.error('Error connecting', err.message); 
+        console.error('❌ Error enabling foreign keys:', err.message);
         reject(err);
       } else {
-        console.log('SQLiteconfirm');
-        console.log('📁 Database file:', DB_PATH);
-        
-        // Enable foreign key constraints
-        db.run('PRAGMA foreign_keys = ON', (err) => {
-          if (err) {
-            console.error('❌ Error enabling foreign keys:', err.message);
-            reject(err);
-          } else {
-            console.log(' key constraints enabled');
-            resolve(db);
-          }
-        });
+        console.log('🔑 Foreign key constraints enabled');
+        resolve(db);
       }
     });
   });
