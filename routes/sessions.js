@@ -282,6 +282,31 @@ router.patch('/:id', async (req, res) => {
       } else {
         await runQuery(db, 'UPDATE sessions SET status = ? WHERE id = ?', [status, sessionId]);
       }
+
+      // Send system message on cancellation
+      if (status === 'cancelled') {
+        // Get session details for the message
+        const sessionDetails = await getOne(db, `
+          SELECT s.*, sk.skill_name AS skillName
+          FROM sessions s
+          JOIN skills sk ON sk.id = s.skill_id
+          WHERE s.id = ?
+        `, [sessionId]);
+
+        const isCancelledByTutor = Number(session.tutor_id) === Number(userId);
+        const otherUserId = isCancelledByTutor ? session.student_id : session.tutor_id;
+        const scheduledDate = sessionDetails?.scheduled_date 
+          ? new Date(sessionDetails.scheduled_date).toLocaleString()
+          : 'the scheduled time';
+        const skillName = sessionDetails?.skillName || 'the session';
+
+        // Send message to the other party
+        const cancelMessage = `A session for "${skillName}" scheduled on ${scheduledDate} has been cancelled by the ${isCancelledByTutor ? 'tutor' : 'student'}.`;
+        await runQuery(db, `
+          INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
+          VALUES (?, ?, ?, ?, 0)
+        `, [userId, otherUserId, 'Session Cancelled', cancelMessage]);
+      }
     }
 
     const updated = await getOne(db, 'SELECT * FROM sessions WHERE id = ?', [sessionId]);

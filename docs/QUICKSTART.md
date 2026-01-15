@@ -37,12 +37,6 @@ Email: admin@skillswap.local
 Password: AdminPass123!
 ```
 
-### Student
-```
-Email: alice.johnson@school.edu
-Password: Student123!
-```
-
 ---
 
 ## ✅ Quick Feature Tour

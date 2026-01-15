@@ -93,6 +93,9 @@ router.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
     const fullName = (req.body.fullName || `${req.body.firstName || ''} ${req.body.lastName || ''}`.trim()).trim();
     const bio = (req.body.bio || '').trim();
+    const isUnder16 = req.body.isUnder16 ? 1 : 0;
+    // If under 16, default to private privacy
+    const privacyLevel = isUnder16 ? 'private' : 'public';
     const skillsOffer = Array.isArray(req.body.skillsOffer)
       ? req.body.skillsOffer
       : typeof req.body.skillsOffer === 'string'
@@ -134,9 +137,9 @@ router.post('/register', async (req, res) => {
     
     // Create profile for user
     await runQuery(db, `
-      INSERT INTO user_profiles (user_id, full_name, bio, privacy_level)
-      VALUES (?, ?, ?, 'public')
-    `, [userId, fullName, bio]);
+      INSERT INTO user_profiles (user_id, full_name, bio, privacy_level, is_under_16)
+      VALUES (?, ?, ?, ?, ?)
+    `, [userId, fullName, bio, privacyLevel, isUnder16]);
 
     // Insert skills
     const offerClean = skillsOffer.map(s => String(s).trim()).filter(Boolean);

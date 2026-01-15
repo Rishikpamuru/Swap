@@ -43,14 +43,18 @@ router.get('/', async (req, res) => {
 
   try {
     let where = `o.status = 'open'
-        AND u.status = 'active'
-        AND o.tutor_id != ?`;
-    const params = [userId];
+        AND u.status = 'active'`;
+    const params = [];
 
-    if (tutorIdFilter != null) {
+    // Only exclude own offers when browsing (no specific tutor filter)
+    if (tutorIdFilter == null) {
+      where += ` AND o.tutor_id != ?`;
+      params.push(userId);
+    } else {
       where += ` AND o.tutor_id = ?`;
       params.push(tutorIdFilter);
     }
+    
     if (skillIdFilter != null) {
       where += ` AND o.skill_id = ?`;
       params.push(skillIdFilter);
@@ -65,6 +69,8 @@ router.get('/', async (req, res) => {
         COALESCE(o.notes, '') AS notes,
         o.location_type AS locationType,
         COALESCE(o.location, '') AS location,
+        COALESCE(o.is_group, 0) AS isGroup,
+        COALESCE(o.max_participants, 1) AS maxParticipants,
         o.status,
         o.created_at AS createdAt,
         u.username AS tutorUsername,
@@ -149,6 +155,8 @@ router.get('/mine', async (req, res) => {
         COALESCE(o.notes, '') AS notes,
         o.location_type AS locationType,
         COALESCE(o.location, '') AS location,
+        COALESCE(o.is_group, 0) AS isGroup,
+        COALESCE(o.max_participants, 1) AS maxParticipants,
         o.status,
         o.created_at AS createdAt,
         sk.skill_name AS skillName
@@ -226,6 +234,8 @@ router.post('/', async (req, res) => {
   const notes = String(req.body.notes || '').trim();
   const locationType = String(req.body.locationType || '').trim();
   const location = String(req.body.location || '').trim();
+  const isGroup = req.body.isGroup ? 1 : 0;
+  const maxParticipants = isGroup ? Math.max(2, Math.min(50, toInt(req.body.maxParticipants) || 10)) : 1;
   const slots = Array.isArray(req.body.slots) ? req.body.slots : [];
 
   if (!skillId) {
@@ -266,9 +276,9 @@ router.post('/', async (req, res) => {
     }
 
     const offerResult = await runQuery(db, `
-      INSERT INTO session_offers (tutor_id, skill_id, title, notes, location_type, location, status)
-      VALUES (?, ?, ?, ?, ?, ?, 'open')
-    `, [tutorId, skillId, title, notes || null, locationType, locationType === 'in-person' ? location : null]);
+      INSERT INTO session_offers (tutor_id, skill_id, title, notes, location_type, location, is_group, max_participants, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open')
+    `, [tutorId, skillId, title, notes || null, locationType, locationType === 'in-person' ? location : null, isGroup, maxParticipants]);
 
     for (const slot of normalizedSlots) {
       await runQuery(db, `

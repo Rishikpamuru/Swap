@@ -258,7 +258,7 @@ router.get('/profile/:id', validateSession, async (req, res) => {
     const user = await getOne(db, `
       SELECT u.id, u.username, u.email, u.status, u.created_at,
              p.full_name, p.bio, p.profile_image, p.privacy_level,
-             p.school, p.grade_level, r.name as role
+             COALESCE(p.is_under_16, 0) as is_under_16, r.name as role
       FROM users u
       LEFT JOIN user_profiles p ON u.id = p.user_id
       LEFT JOIN roles r ON u.role_id = r.id
@@ -306,6 +306,24 @@ router.get('/profile/:id', validateSession, async (req, res) => {
     const averageRating = avg ? Math.round(Number(avg) * 10) / 10 : 0;
     const totalRatings = Number(ratingAvgRow?.total_ratings || 0);
 
+    // Get session offers for this user
+    const sessionOffers = await getAll(db, `
+      SELECT 
+        so.id,
+        so.title,
+        so.notes,
+        so.location_type AS locationType,
+        so.location,
+        so.status,
+        sk.skill_name AS skillName,
+        (SELECT MIN(sos.scheduled_date) FROM session_offer_slots sos WHERE sos.offer_id = so.id) AS nextSlot
+      FROM session_offers so
+      JOIN skills sk ON sk.id = so.skill_id
+      WHERE so.tutor_id = ? AND so.status = 'open'
+      ORDER BY so.created_at DESC
+      LIMIT 10
+    `, [user.id]);
+
     const payload = {
       id: user.id,
       username: user.username,
@@ -314,16 +332,16 @@ router.get('/profile/:id', validateSession, async (req, res) => {
       fullName: user.full_name || '',
       bio: user.bio || '',
       profileImage: user.profile_image || '',
-      school: user.school || '',
-      gradeLevel: user.grade_level || '',
       privacyLevel: user.privacy_level || 'public',
+      isUnder16: user.is_under_16 === 1,
       status: user.status,
       dateJoined: user.created_at,
       skillsOffer,
       skillsSeek,
       totalSessions,
       averageRating,
-      totalRatings
+      totalRatings,
+      sessionOffers
     };
     
     res.json({ success: true, user: payload });
@@ -348,13 +366,14 @@ router.put('/profile', validateSession, async (req, res) => {
       return res.status(400).json({ success: false, errors: validation.errors });
     }
     
-    const { full_name, bio, privacy_level, school, grade_level } = req.body;
+    const { full_name, bio, privacy_level, is_under_16 } = req.body;
+    const isUnder16 = is_under_16 ? 1 : 0;
     
     await runQuery(db, `
       UPDATE user_profiles 
-      SET full_name = ?, bio = ?, privacy_level = ?, school = ?, grade_level = ?
+      SET full_name = ?, bio = ?, privacy_level = ?, is_under_16 = ?
       WHERE user_id = ?
-    `, [full_name, bio, privacy_level, school, grade_level, userId]);
+    `, [full_name, bio, privacy_level, isUnder16, userId]);
     
     res.json({ success: true, message: 'Profile updated successfully' });
   } catch (error) {

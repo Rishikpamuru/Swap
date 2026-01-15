@@ -46,8 +46,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   bio TEXT CHECK (length(bio) <= 500),
   profile_image TEXT,
   privacy_level TEXT DEFAULT 'public', -- public, friends, private
-  school TEXT,
-  grade_level TEXT,
+  is_under_16 INTEGER DEFAULT 0, -- 0 = no, 1 = yes (enables extra privacy)
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   CHECK (privacy_level IN ('public', 'friends', 'private'))
@@ -129,13 +128,16 @@ CREATE TABLE IF NOT EXISTS session_offers (
   notes TEXT,
   location_type TEXT NOT NULL DEFAULT 'online', -- online, in-person
   location TEXT,
+  is_group INTEGER NOT NULL DEFAULT 0, -- 0 = individual, 1 = group session
+  max_participants INTEGER DEFAULT 1, -- max students for group sessions
   status TEXT NOT NULL DEFAULT 'open', -- open, closed
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (tutor_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE,
   CHECK (status IN ('open', 'closed')),
-  CHECK (location_type IN ('online', 'in-person'))
+  CHECK (location_type IN ('online', 'in-person')),
+  CHECK (max_participants >= 1)
 );
 
 -- ============================================

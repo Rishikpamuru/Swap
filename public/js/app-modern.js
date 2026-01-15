@@ -478,6 +478,32 @@ const Utils = {
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   },
 
+  /**
+   * Generate a Google Calendar "Add Event" URL
+   * @param {object} options - { title, start (Date), duration (minutes), description, location }
+   * @returns {string} Google Calendar URL
+   */
+  getGoogleCalendarUrl({ title, start, duration = 60, description = '', location = '' }) {
+    const startDate = new Date(start);
+    const endDate = new Date(startDate.getTime() + duration * 60 * 1000);
+    
+    // Format: YYYYMMDDTHHMMSS (no dashes, colons, or timezone - will be local)
+    const formatGCalDate = (d) => {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+    };
+    
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: title || 'SkillSwap Session',
+      dates: `${formatGCalDate(startDate)}/${formatGCalDate(endDate)}`,
+      details: description,
+      location: location
+    });
+    
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  },
+
   formatDateTime(dateLike) {
     if (!dateLike) return '';
     const d = new Date(dateLike);
@@ -993,12 +1019,11 @@ const Components = {
         </div>
         <div class="achievement-info">
           <div class="achievement-name">${achievement.name}</div>
-          <div class="achievement-description">${achievement.description}</div>
           ${achievement.unlocked
         ? (achievement.date
           ? `<span class="achievement-date">${Utils.escapeHtml(Utils.formatDate(achievement.date))}</span>`
           : '<span class="achievement-date">Unlocked</span>')
-        : '<div class="achievement-unlock">How To Get</div>'
+        : '<div class="achievement-unlock" style="color: var(--text-secondary); font-style: italic;">Locked</div>'
       }
         </div>
       </div>
@@ -1176,6 +1201,16 @@ function renderRegisterPage() {
             <div class="form-group">
               <textarea name="bio" class="form-textarea" placeholder="About Me" required style="min-height: 110px;"></textarea>
               <div class="form-helper">Tell us a bit about yourself (max 500 characters)</div>
+            </div>
+
+            <div class="form-group" style="background: var(--yellow-light, #fef3c7); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--yellow-500, #eab308);">
+              <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer;">
+                <input type="checkbox" name="isUnder16" id="is-under-16-checkbox" style="width: 1.25rem; height: 1.25rem; margin-top: 0.1rem; cursor: pointer;">
+                <div>
+                  <span style="font-weight: 600; color: var(--text-primary);">I am under 16 years old</span>
+                  <div style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem;">If checked, your profile will have additional privacy protections and your profile will be set to private by default.</div>
+                </div>
+              </label>
             </div>
             
             <button type="submit" class="btn btn-primary btn-lg btn-full">Sign Up</button>
@@ -1668,6 +1703,12 @@ async function renderLearnOffersPage() {
         ? 'Online'
         : (o.location ? Utils.escapeHtml(o.location) : 'In-person');
 
+      const isGroup = Number(o.isGroup) === 1;
+      const maxParticipants = Number(o.maxParticipants) || 1;
+      const groupBadge = isGroup 
+        ? `<div style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.75rem; background: var(--blue-light, #dbeafe); color: var(--blue-primary); border-radius: 999px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem;"><i class="fas fa-users"></i> Group (max ${maxParticipants})</div>`
+        : '';
+
       return `
             <div class="user-card" style="display:flex; flex-direction: column; gap: 0.75rem;">
               <div style="display:flex; align-items:center; gap: 1rem;">
@@ -1677,6 +1718,7 @@ async function renderLearnOffersPage() {
                   <div style="color: var(--text-secondary);">@${Utils.escapeHtml(o.tutorUsername || '')}</div>
                 </div>
               </div>
+              ${groupBadge}
               <div style="font-weight: 800;">${Utils.escapeHtml(o.skillName || '')}</div>
               <div style="color: var(--text-secondary); font-size: 0.95rem;">${Utils.escapeHtml(o.title || '')}</div>
               ${o.notes ? `<div style="color: var(--text-secondary); font-size: 0.95rem;">${Utils.escapeHtml(o.notes)}</div>` : ''}
@@ -2267,7 +2309,8 @@ async function openUserProfileModal(userId) {
               </div>
 
               <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                <button type="button" class="user-profile-message-btn btn btn-primary" data-user-id="${u.id}" data-username="${Utils.escapeHtml(u.username || '')}" style="padding: 0.875rem 2rem; font-size: 1rem;">Message</button>
+                <button type="button" class="user-profile-request-btn btn btn-primary" data-user-id="${u.id}" data-username="${Utils.escapeHtml(u.username || '')}" data-full-name="${Utils.escapeHtml(u.fullName || '')}" style="padding: 0.875rem 2rem; font-size: 1rem;"><i class="fas fa-calendar-plus"></i> Request Session</button>
+                <button type="button" class="user-profile-message-btn btn btn-secondary" data-user-id="${u.id}" data-username="${Utils.escapeHtml(u.username || '')}" style="padding: 0.875rem 2rem; font-size: 1rem;"><i class="fas fa-envelope"></i> Message</button>
                 <button type="button" class="user-profile-close-bottom-btn btn btn-secondary" style="padding: 0.875rem 2rem; font-size: 1rem;">Close</button>
               </div>
             </div>
@@ -2291,6 +2334,12 @@ async function openUserProfileModal(userId) {
     document.querySelector('.user-profile-message-btn')?.addEventListener('click', () => {
       close();
       startDmWithUser(Number(u.id), String(u.username || ''), String(u.fullName || ''), String(u.profileImage || ''));
+    });
+    
+    // Request Session button handler
+    document.querySelector('.user-profile-request-btn')?.addEventListener('click', () => {
+      close();
+      requestTutorSession(Number(u.id), String(u.username || ''), String(u.fullName || ''));
     });
   } catch (e) {
     console.error('Open user profile modal error:', e);
@@ -2588,6 +2637,15 @@ function renderSessionCard(session) {
   // Show "Rate Session" button for students on completed sessions they haven't rated yet
   const showRateButton = session.status === 'completed' && !isTutor && !session.hasRated;
 
+  // Google Calendar link for scheduled sessions
+  const calendarUrl = session.status === 'scheduled' ? Utils.getGoogleCalendarUrl({
+    title: `SkillSwap: ${session.skillName} with ${isTutor ? session.studentFullName || session.studentUsername : session.tutorFullName || session.tutorUsername}`,
+    start: session.scheduledDate,
+    duration: session.duration || 60,
+    description: `SkillSwap tutoring session for ${session.skillName}. ${session.notes || ''}`,
+    location: session.meetingLink || session.location || ''
+  }) : '';
+
   return `
     <div class="user-card">
       ${avatarHtml}
@@ -2599,6 +2657,7 @@ function renderSessionCard(session) {
       <p class="user-info"><i class="fas fa-map-marker-alt"></i> ${session.location || 'TBD'}</p>
       ${meetingLinkHtml}
       ${session.status === 'scheduled' ? `
+        <a href="${Utils.escapeHtml(calendarUrl)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline" style="margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.35rem;"><i class="fab fa-google"></i> Add to Calendar</a>
         <button class="btn btn-sm btn-success session-action-btn" data-session-id="${session.id}" data-status="completed" data-is-tutor="${isTutor}" data-other-name="${Utils.escapeHtml(otherPerson.name)}" data-tutor-id="${session.tutorId}" style="margin-top: 0.5rem;">Mark Complete</button>
         <button class="btn btn-sm btn-outline session-action-btn" data-session-id="${session.id}" data-status="cancelled" style="margin-top: 0.5rem;">Cancel</button>
       ` : ''}
@@ -3058,6 +3117,20 @@ async function renderCreateSessionPage() {
                 <input type="text" name="address" class="form-input" id="address-input" placeholder="e.g., Library, Room 204, 123 Main St">
               </div>
 
+              <div class="form-group">
+                <label class="form-label" style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                  <input type="checkbox" name="isGroup" id="is-group-checkbox" style="width: 1.25rem; height: 1.25rem; cursor: pointer;" ${userSkills.length === 0 ? 'disabled' : ''}>
+                  <span>Group Session</span>
+                  <span style="font-weight: 400; color: var(--text-secondary); font-size: 0.875rem;">(allow multiple students to join)</span>
+                </label>
+              </div>
+
+              <div class="form-group" id="max-participants-field" style="display: none;">
+                <label class="form-label">Maximum Participants</label>
+                <input type="number" name="maxParticipants" class="form-input" id="max-participants-input" min="2" max="50" value="10" placeholder="e.g., 10">
+                <div class="form-helper">How many students can join this group session?</div>
+              </div>
+
               <div id="offer-form-message" style="display:none; margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 12px;"></div>
 
               <div style="display:flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap; margin-top: 1.25rem;">
@@ -3094,6 +3167,14 @@ async function renderCreateSessionPage() {
       addressInput.required = false;
       addressInput.value = '';
     }
+  });
+
+  // Handle group checkbox change
+  const isGroupCheckbox = document.getElementById('is-group-checkbox');
+  const maxParticipantsField = document.getElementById('max-participants-field');
+  
+  isGroupCheckbox?.addEventListener('change', (e) => {
+    maxParticipantsField.style.display = e.target.checked ? 'block' : 'none';
   });
 
   // Slots UI
@@ -3182,6 +3263,8 @@ async function createOfferFromForm(form) {
   const locationType = String(formData.get('locationType') || '').trim();
   const address = String(formData.get('address') || '').trim();
   const location = locationType === 'in-person' ? address : '';
+  const isGroup = document.getElementById('is-group-checkbox')?.checked || false;
+  const maxParticipants = isGroup ? (Number(document.getElementById('max-participants-input')?.value) || 10) : 1;
 
   const slots = Array.from(document.querySelectorAll('.slot-row')).map(row => {
     const date = String(row.querySelector('.slot-date')?.value || '').trim();
@@ -3216,6 +3299,8 @@ async function createOfferFromForm(form) {
         notes,
         locationType,
         location,
+        isGroup,
+        maxParticipants,
         slots
       })
     });
@@ -4349,7 +4434,7 @@ async function loadAdminUsers(searchTerm = '') {
                 <th style="padding: 1rem; text-align: left; font-weight: 600;">Username</th>
                 <th style="padding: 1rem; text-align: left; font-weight: 600;">Full Name</th>
                 <th style="padding: 1rem; text-align: left; font-weight: 600;">Email</th>
-                <th style="padding: 1rem; text-align: left; font-weight: 600;">Status</th>
+                <th style="padding: 1rem; text-align: left; font-weight: 600;">Privacy</th>
                 <th style="padding: 1rem; text-align: left; font-weight: 600;">Joined</th>
                 <th style="padding: 1rem; text-align: center; font-weight: 600;">Actions</th>
               </tr>
@@ -4360,7 +4445,7 @@ async function loadAdminUsers(searchTerm = '') {
                   <td style="padding: 1rem;">@${user.username}</td>
                   <td style="padding: 1rem;">${user.fullName || '-'}</td>
                   <td style="padding: 1rem;">${user.email}</td>
-                  <td style="padding: 1rem;"><span style="padding: 0.25rem 0.75rem; background: ${user.status === 'active' ? 'var(--green-light)' : 'var(--gray-light)'}; color: ${user.status === 'active' ? 'var(--green-primary)' : 'var(--text-secondary)'}; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 600;">${user.status}</span></td>
+                  <td style="padding: 1rem;"><span style="padding: 0.25rem 0.75rem; background: ${user.privacyLevel === 'public' ? 'var(--green-light)' : user.privacyLevel === 'friends' ? 'var(--yellow-light, #fef3c7)' : 'var(--gray-light)'}; color: ${user.privacyLevel === 'public' ? 'var(--green-primary)' : user.privacyLevel === 'friends' ? 'var(--yellow-600, #ca8a04)' : 'var(--text-secondary)'}; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 600;">${user.privacyLevel || 'public'}</span></td>
                   <td style="padding: 1rem;">${new Date(user.createdAt).toLocaleDateString()}</td>
                   <td style="padding: 1rem; text-align: center;">
                     ${user.id === currentUser?.id ? '<span style="color: var(--text-secondary); font-style: italic;">You</span>' : `<button class="delete-user-btn" data-user-id="${user.id}" data-username="${user.username}" style="background: var(--red-primary); color: white; padding: 0.5rem 1rem; border-radius: var(--radius-md); border: none; cursor: pointer; font-weight: 600;">Delete</button>`}
@@ -4853,7 +4938,12 @@ async function deleteAdminUser(userId, username) {
 
 // Delete a skill from the system (admin only)
 async function deleteAdminSkill(skillName) {
-  if (!confirm(`Are you sure you want to delete the skill "${skillName}"?\n\nThis will remove it from ALL users who have it listed.`)) {
+  const confirmed = await Utils.showConfirmModal(
+    `Are you sure you want to delete the skill "${skillName}"?\n\nThis will remove it from ALL users who have it listed.`,
+    'Delete Skill'
+  );
+  
+  if (!confirmed) {
     return;
   }
   
@@ -5179,6 +5269,7 @@ async function handleRegister(event) {
 
   const form = event.target;
   const formData = new FormData(form);
+  const isUnder16 = document.getElementById('is-under-16-checkbox')?.checked || false;
 
   const data = {
     username: formData.get('username'),
@@ -5186,7 +5277,8 @@ async function handleRegister(event) {
     password: formData.get('password'),
     confirmPassword: formData.get('confirmPassword'),
     fullName: formData.get('fullName'),
-    bio: formData.get('bio')
+    bio: formData.get('bio'),
+    isUnder16
   };
 
   try {
@@ -6235,6 +6327,7 @@ async function showUserProfileModal(userId) {
 
     const skillsOffer = (user.skillsOffer || []).map(s => typeof s === 'string' ? s : s.name);
     const skillsSeek = (user.skillsSeek || []).map(s => typeof s === 'string' ? s : s.name);
+    const sessionOffers = user.sessionOffers || [];
     const avgRating = Number(user.averageRating) || 0;
     const totalSessions = Number(user.totalSessions) || 0;
 
@@ -6242,6 +6335,21 @@ async function showUserProfileModal(userId) {
     const starsHtml = [1, 2, 3, 4, 5].map(i =>
       `<span style="color: ${i <= Math.round(avgRating) ? 'var(--yellow-500, #eab308)' : 'var(--border-light)'};">★</span>`
     ).join('');
+
+    // Generate session offers HTML
+    const sessionOffersHtml = sessionOffers.length > 0 ? sessionOffers.map(offer => `
+      <div style="padding: 0.75rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); margin-bottom: 0.5rem;">
+        <div style="font-weight: 600; color: var(--text-primary);">${Utils.escapeHtml(offer.title)}</div>
+        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem;">
+          <i class="fas fa-graduation-cap"></i> ${Utils.escapeHtml(offer.skillName)}
+          <span style="margin-left: 0.75rem;"><i class="fas fa-${offer.locationType === 'online' ? 'video' : 'map-marker-alt'}"></i> ${Utils.escapeHtml(offer.locationType)}</span>
+        </div>
+        ${offer.nextSlot ? `<div style="font-size: 0.75rem; color: var(--green-primary); margin-top: 0.25rem;"><i class="fas fa-calendar"></i> Next: ${new Date(offer.nextSlot).toLocaleDateString()}</div>` : ''}
+        <button class="btn btn-sm btn-primary user-profile-request-btn" data-offer-id="${offer.id}" data-user-id="${user.id}" style="margin-top: 0.5rem; font-size: 0.75rem; padding: 0.25rem 0.75rem;">
+          <i class="fas fa-calendar-plus"></i> Book Session
+        </button>
+      </div>
+    `).join('') : '<em style="color: var(--text-secondary);">No open session offers</em>';
 
     modal.innerHTML = `
       <div style="background: #ffffff; border-radius: var(--radius-xl); max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg);">
@@ -6292,6 +6400,13 @@ async function showUserProfileModal(userId) {
               ${skillsSeek.length ? skillsSeek.map(s => `<span style="padding: 0.35rem 0.75rem; border: 1.5px solid var(--green-primary); border-radius: 999px; font-size: 0.875rem; color: var(--text-primary);">${Utils.escapeHtml(s)}</span>`).join('') : '<em style="color: var(--text-secondary);">None listed</em>'}
             </div>
             
+            <div style="background: linear-gradient(135deg, var(--yellow-500, #eab308), #f59e0b); color: white; padding: 0.75rem 1rem; border-radius: var(--radius-lg); display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-top: 1rem;">
+              <i class="fas fa-calendar-alt"></i> Open Session Offers
+            </div>
+            <div style="padding: 1rem; max-height: 200px; overflow-y: auto;">
+              ${sessionOffersHtml}
+            </div>
+            
             <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end;">
               <button id="profile-modal-message-btn" class="btn btn-primary" style="min-width: 120px;">
                 <i class="fas fa-envelope"></i> Message
@@ -6309,6 +6424,22 @@ async function showUserProfileModal(userId) {
     modal.querySelector('#profile-modal-message-btn')?.addEventListener('click', () => {
       modal.remove();
       startDmWithUser(userId, user.username || '', user.fullName || '', user.profileImage || '');
+    });
+
+    // Handle Book Session buttons
+    modal.querySelectorAll('.user-profile-request-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const offerId = btn.dataset.offerId;
+        modal.remove();
+        // Navigate to offers page or open the book modal for this offer
+        Router.navigate('offers');
+        // Wait a bit for the page to load then trigger book
+        setTimeout(() => {
+          const bookBtn = document.querySelector(`[data-offer-id="${offerId}"] .btn-primary, .offer-card[data-id="${offerId}"] .btn-primary`);
+          if (bookBtn) bookBtn.click();
+        }, 500);
+      });
     });
 
   } catch (error) {
@@ -6430,6 +6561,16 @@ function openProfileEditor() {
                   </div>
                 </label>
               </div>
+            </div>
+
+            <div class="form-group" style="background: var(--yellow-light, #fef3c7); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--yellow-500, #eab308);">
+              <label style="display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer;">
+                <input type="checkbox" name="isUnder16" id="profile-is-under-16" ${user.isUnder16 ? 'checked' : ''} style="width: 1.25rem; height: 1.25rem; margin-top: 0.1rem; cursor: pointer;">
+                <div>
+                  <span style="font-weight: 600; color: var(--text-primary);"><i class="fas fa-child" style="margin-right: 0.35rem;"></i> I am under 16 years old</span>
+                  <div style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem;">When enabled, additional privacy protections are applied. Your email will be hidden from other users, and direct messaging may be restricted.</div>
+                </div>
+              </label>
             </div>
 
             <div class="form-group">
@@ -6706,6 +6847,7 @@ async function saveSettings(event) {
   const full_name = `${firstName} ${lastName}`.trim();
   const bio = String(document.getElementById('settings-bio')?.value || '').trim();
   const privacy_level = String(formData.get('privacyLevel') || 'public');
+  const is_under_16 = document.getElementById('profile-is-under-16')?.checked || false;
 
   const skillsOffer = String(formData.get('skillsOffer') || '')
     .split(',')
@@ -6725,8 +6867,7 @@ async function saveSettings(event) {
         full_name,
         bio,
         privacy_level,
-        school: null,
-        grade_level: null
+        is_under_16
       })
     });
     const profileData = await profileRes.json();

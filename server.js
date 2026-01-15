@@ -116,9 +116,9 @@ async function autoSeedIfEmpty(db) {
     `, ['admin', 'admin@skillswap.edu', adminPassword]);
     
     await runQuery(db, `
-      INSERT INTO user_profiles (user_id, full_name, bio, privacy_level, school, grade_level)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [adminResult.id, 'System Administrator', 'SkillSwap platform administrator', 'public', 'Reedy High School', '12']);
+      INSERT INTO user_profiles (user_id, full_name, bio, privacy_level, is_under_16)
+      VALUES (?, ?, ?, ?, ?)
+    `, [adminResult.id, 'System Administrator', 'SkillSwap platform administrator', 'public', 0]);
     
     // Create demo students
     const studentPassword = await hashPassword('Student123!');
@@ -137,8 +137,8 @@ async function autoSeedIfEmpty(db) {
       `, [s.username, s.email, studentPassword]);
       
       await runQuery(db, `
-        INSERT INTO user_profiles (user_id, full_name, bio, privacy_level, school, grade_level)
-        VALUES (?, ?, ?, 'public', 'Reedy High School', '11')
+        INSERT INTO user_profiles (user_id, full_name, bio, privacy_level, is_under_16)
+        VALUES (?, ?, ?, 'public', 0)
       `, [result.id, s.name, s.bio]);
     }
     

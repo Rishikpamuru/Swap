@@ -30,6 +30,7 @@ router.get('/users', async (req, res) => {
         u.status,
         u.created_at AS createdAt,
         COALESCE(p.full_name, '') AS fullName,
+        COALESCE(p.privacy_level, 'public') AS privacyLevel,
         r.name AS role
       FROM users u
       LEFT JOIN user_profiles p ON p.user_id = u.id
@@ -213,19 +214,19 @@ router.delete('/sessions/:id', async (req, res) => {
       }
       
       // Send message to tutor (creator) with reason
-      const tutorMessage = `Your session for "${session.skillName}" scheduled on ${new Date(session.scheduledDate).toLocaleString()} has been removed by an administrator. Reason: ${reason}`;
+      const tutorMessage = `Your session for "${session.skillName}" scheduled on ${new Date(session.scheduledDate).toLocaleString()} has been deleted by an administrator.\n\nReason: ${reason}`;
       await runQuery(db, `
         INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
         VALUES (?, ?, ?, ?, 0)
-      `, [adminId, session.tutorId, 'Session Removed', tutorMessage]);
+      `, [adminId, session.tutorId, 'Session Deleted by Admin', tutorMessage]);
       
       // Send message to student WITHOUT reason
       if (session.studentId) {
-        const studentMessage = `A session for "${session.skillName}" scheduled on ${new Date(session.scheduledDate).toLocaleString()} has been removed by an administrator.`;
+        const studentMessage = `A session for "${session.skillName}" scheduled on ${new Date(session.scheduledDate).toLocaleString()} has been deleted by an administrator.`;
         await runQuery(db, `
           INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
           VALUES (?, ?, ?, ?, 0)
-        `, [adminId, session.studentId, 'Session Removed', studentMessage]);
+        `, [adminId, session.studentId, 'Session Deleted by Admin', studentMessage]);
       }
       
       // Delete the session
