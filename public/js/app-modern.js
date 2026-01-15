@@ -5511,80 +5511,17 @@ function renderWorksCitedPage() {
       </div>
 
       <div style="background: white; border-radius: var(--radius-2xl); padding: 2rem; box-shadow: var(--shadow-md); max-width: 1000px; margin: 0 auto;">
-            <div style="margin-bottom: 2rem;">
-              <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Original Work Declaration</h2>
-              <p style="line-height: 1.6; color: var(--text-secondary);">This project represents 100% original code written by our team. All functionality, features, and implementations were developed specifically for this BPA competition without the use of prohibited frameworks or third-party code libraries beyond those explicitly allowed in the competition guidelines.</p>
-            </div>
-            
-            <div style="margin-bottom: 2rem;">
-              <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Technical Resources</h2>
-              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
-                <p style="font-weight: 600; margin-bottom: 0.25rem;">Express.js Documentation</p>
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Official documentation for Express web framework</p>
-                <a href="https://expressjs.com/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://expressjs.com/</a>
-              </div>
-              
-              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
-                <p style="font-weight: 600; margin-bottom: 0.25rem;">SQLite Documentation</p>
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Database design and SQL syntax reference</p>
-                <a href="https://www.sqlite.org/docs.html" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://www.sqlite.org/docs.html</a>
-              </div>
-              
-              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
-                <p style="font-weight: 600; margin-bottom: 0.25rem;">Node.js Documentation</p>
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Server-side JavaScript runtime reference</p>
-                <a href="https://nodejs.org/docs/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://nodejs.org/docs/</a>
-              </div>
-              
-              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
-                <p style="font-weight: 600; margin-bottom: 0.25rem;">MDN Web Docs</p>
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">HTML, CSS, and JavaScript reference</p>
-                <a href="https://developer.mozilla.org/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://developer.mozilla.org/</a>
-              </div>
-            </div>
-            
-            <div style="margin-bottom: 2rem;">
-              <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Design Resources</h2>
-              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
-                <p style="font-weight: 600; margin-bottom: 0.25rem;">Font Awesome Icons</p>
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Icon library for user interface (Free License)</p>
-                <a href="https://fontawesome.com/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://fontawesome.com/</a>
-              </div>
-              
-              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
-                <p style="font-weight: 600; margin-bottom: 0.25rem;">Google Fonts</p>
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Web typography resources</p>
-                <a href="https://fonts.google.com/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://fonts.google.com/</a>
-              </div>
-            </div>
-            
-            <div style="margin-bottom: 2rem;">
-              <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Security & Best Practices</h2>
-              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
-                <p style="font-weight: 600; margin-bottom: 0.25rem;">OWASP Security Guidelines</p>
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Web application security best practices</p>
-                <a href="https://owasp.org/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://owasp.org/</a>
-              </div>
-              
-              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
-                <p style="font-weight: 600; margin-bottom: 0.25rem;">bcrypt.js Documentation</p>
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Password hashing implementation reference</p>
-                <a href="https://www.npmjs.com/package/bcryptjs" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://www.npmjs.com/package/bcryptjs</a>
-              </div>
-            </div>
-            
-            <div style="margin-bottom: 2rem;">
-              <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Learning Resources</h2>
-              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
-                <p style="font-weight: 600; margin-bottom: 0.25rem;">Database Design Principles</p>
-                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Normalization and schema design concepts</p>
-                <a href="https://www.w3schools.com/sql/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://www.w3schools.com/sql/</a>
-              </div>
-            </div>
-            
-            <div style="background: var(--bg-light); border-radius: var(--radius-xl); padding: 1.5rem; margin-top: 2rem;">
-              <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; margin: 0;"><strong>Note:</strong> All external resources were used solely for reference and learning purposes. No code was directly copied from these sources. This project complies with all BPA competition guidelines regarding originality and permitted use of development tools and libraries.</p>
-            </div>
+        <div style="margin-bottom: 1.25rem;">
+          <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Original Work Declaration</h2>
+          <p style="line-height: 1.6; color: var(--text-secondary); margin: 0;">This project represents 100% original code written by our team. All functionality, features, and implementations were developed specifically for this BPA competition without the use of prohibited generators, templates, or third-party copied code.</p>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap; margin-bottom: 0.75rem;">
+          <a class="btn btn-secondary" href="/works-cited.md" target="_blank" rel="noopener" style="text-decoration: none;"><i class="fas fa-external-link-alt"></i> Open Markdown</a>
+          <button id="works-cited-copy-btn" class="btn btn-secondary"><i class="fas fa-copy"></i> Copy</button>
+        </div>
+
+        <pre id="works-cited-md" style="margin: 0; white-space: pre-wrap; word-break: break-word; padding: 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: 14px; max-height: 65vh; overflow: auto; font-size: 0.9rem; line-height: 1.45;"><i class="fas fa-spinner fa-spin"></i> Loading Works Cited...</pre>
             
             <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light); text-align: center; color: var(--text-secondary); font-size: 0.875rem;">
               <p style="margin-bottom: 0.5rem;"><strong>SkillSwap - Student Talent Exchange Platform</strong></p>
@@ -5634,6 +5571,8 @@ function renderWorksCitedPage() {
       e.preventDefault();
       Router.navigate('register');
     });
+
+    loadWorksCitedMarkdown();
     return;
   }
 
@@ -5647,6 +5586,39 @@ function renderWorksCitedPage() {
     </div>
   `;
   initializeSidebar();
+
+  loadWorksCitedMarkdown();
+}
+
+async function loadWorksCitedMarkdown() {
+  const pre = document.getElementById('works-cited-md');
+  if (!pre) return;
+
+  const copyBtn = document.getElementById('works-cited-copy-btn');
+
+  try {
+    const response = await fetch('/works-cited.md', { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error('Works Cited file not found');
+    }
+    const text = await response.text();
+    pre.textContent = text;
+
+    if (copyBtn) {
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast('Works Cited copied to clipboard', 'success');
+        } catch (err) {
+          console.error('Clipboard error:', err);
+          showToast('Copy failed (browser blocked clipboard)', 'error');
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Load works cited error:', error);
+    pre.textContent = `Failed to load Works Cited: ${error.message}\n\nOpen the Markdown directly: /works-cited.md`;
+  }
 }
 
 function renderAITutorPage() {
