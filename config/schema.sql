@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL UNIQUE,
   full_name TEXT,
+  school TEXT,
+  grade_level TEXT,
   bio TEXT CHECK (length(bio) <= 500),
   profile_image TEXT,
   privacy_level TEXT DEFAULT 'public', -- public, friends, private

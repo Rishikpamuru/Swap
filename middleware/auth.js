@@ -137,6 +137,10 @@ function requireAdmin(req, res, next) {
       message: 'Authentication required'
     });
   }
+
+  // Attach user data for downstream handlers (mirrors validateSession)
+  req.userId = req.session.userId;
+  req.userRole = req.session.userRole;
   
   if (req.session.userRole !== 'admin') {
     return res.status(403).json({

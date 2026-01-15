@@ -186,16 +186,51 @@ function ensureExtendedSchema(db) {
         if (err) return reject(err);
         
         const hasMeetingLink = columns.some(col => col.name === 'meeting_link');
-        if (!hasMeetingLink) {
-          db.run("ALTER TABLE sessions ADD COLUMN meeting_link TEXT", [], (err) => {
-            if (err && !err.message.includes('duplicate column')) {
-              console.error('Failed to add meeting_link column:', err);
-            }
-            resolve();
+        const addMeetingLink = () => {
+          if (hasMeetingLink) return Promise.resolve();
+          return new Promise((res) => {
+            db.run("ALTER TABLE sessions ADD COLUMN meeting_link TEXT", [], (err) => {
+              if (err && !String(err.message || '').includes('duplicate column')) {
+                console.error('Failed to add meeting_link column:', err);
+              }
+              res();
+            });
           });
-        } else {
-          resolve();
-        }
+        };
+
+        const ensureUserProfileColumns = () => {
+          return new Promise((res, rej) => {
+            db.all('PRAGMA table_info(user_profiles)', [], (err, cols) => {
+              if (err) return rej(err);
+              const names = new Set((cols || []).map(c => c.name));
+
+              const pending = [];
+              if (!names.has('school')) pending.push("ALTER TABLE user_profiles ADD COLUMN school TEXT");
+              if (!names.has('grade_level')) pending.push("ALTER TABLE user_profiles ADD COLUMN grade_level TEXT");
+
+              if (pending.length === 0) return res();
+
+              // Run sequentially
+              const runNext = () => {
+                const stmt = pending.shift();
+                if (!stmt) return res();
+                db.run(stmt, [], (err) => {
+                  if (err && !String(err.message || '').includes('duplicate column')) {
+                    console.error('Failed user_profiles migration:', err);
+                  }
+                  runNext();
+                });
+              };
+              runNext();
+            });
+          });
+        };
+
+        Promise.resolve()
+          .then(addMeetingLink)
+          .then(ensureUserProfileColumns)
+          .then(() => resolve())
+          .catch(reject);
       });
     });
   });
