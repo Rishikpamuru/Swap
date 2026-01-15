@@ -2139,6 +2139,12 @@ async function renderSearchPage() {
           ? 'Online'
           : (o.location ? Utils.escapeHtml(o.location) : 'In-person');
 
+        const isGroup = Boolean(Number(o.isGroup));
+        const maxParticipants = Math.max(2, Number(o.maxParticipants) || 2);
+        const groupLine = isGroup
+          ? `<div style="color: var(--text-secondary); font-size: 0.95rem;"><i class="fas fa-users"></i> Group session • Up to ${maxParticipants} students</div>`
+          : '';
+
         return `
               <div class="user-card" style="display:flex; flex-direction: column; gap: 0.75rem;">
                 <div style="display:flex; align-items:center; gap: 1rem;">
@@ -2152,6 +2158,7 @@ async function renderSearchPage() {
                 <div style="color: var(--text-secondary); font-size: 0.95rem;">${Utils.escapeHtml(o.title || '')}</div>
                 ${o.notes ? `<div style="color: var(--text-secondary); font-size: 0.95rem;">${Utils.escapeHtml(o.notes)}</div>` : ''}
                 <div style="color: var(--text-secondary); font-size: 0.95rem;"><i class="fas fa-map-marker-alt"></i> ${locationLine}</div>
+                ${groupLine}
                 <div>
                   <div style="font-weight: 800; font-size: 0.95rem;">Pick a time</div>
                   ${slotSelect}
@@ -2175,7 +2182,11 @@ async function renderSearchPage() {
             return;
           }
           btn.disabled = true;
-          await requestOfferSlot(offerId, slotId);
+          const offer = offers.find(x => Number(x.id) === Number(offerId));
+          await requestOfferSlot(offerId, slotId, offer ? {
+            isGroup: Boolean(Number(offer.isGroup)),
+            maxParticipants: Number(offer.maxParticipants) || 1
+          } : null);
           btn.disabled = false;
         });
       });
@@ -3335,7 +3346,7 @@ async function createOfferFromForm(form) {
   }
 }
 
-async function requestOfferSlot(offerId, slotId) {
+async function requestOfferSlot(offerId, slotId, offerMeta) {
   try {
     const response = await fetch(`/api/offers/${offerId}/request`, {
       method: 'POST',
@@ -3347,7 +3358,14 @@ async function requestOfferSlot(offerId, slotId) {
       showToast(data.message || 'Failed to request slot', 'error');
       return null;
     }
-    showToast('Request sent!', 'success');
+    const isGroup = Boolean(offerMeta?.isGroup);
+    const maxParticipants = Number(offerMeta?.maxParticipants) || 1;
+    showToast(
+      isGroup
+        ? `Request sent! (Group session • up to ${Math.max(2, maxParticipants)} students)`
+        : 'Request sent!',
+      'success'
+    );
     setTimeout(() => Router.navigate('dashboard'), 400);
     return data.requestId;
   } catch (error) {
@@ -6321,6 +6339,8 @@ async function showUserProfileModal(userId) {
 
     const user = data.user;
     const displayName = user.fullName || user.username || 'User';
+    const me = getCurrentUser();
+    const isMe = me?.id && Number(me.id) === Number(user.id);
     const avatarHtml = user.profileImage
       ? `<img src="${Utils.escapeHtml(user.profileImage)}" alt="${Utils.escapeHtml(displayName)}" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover;">`
       : `<div class="profile-avatar-large">${Utils.getInitials(displayName)}</div>`;
@@ -6408,6 +6428,11 @@ async function showUserProfileModal(userId) {
             </div>
             
             <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end;">
+              ${isMe ? '' : `
+                <button id="profile-modal-request-btn" class="btn btn-primary" style="min-width: 160px;">
+                  <i class="fas fa-calendar-plus"></i> Request Session
+                </button>
+              `}
               <button id="profile-modal-message-btn" class="btn btn-primary" style="min-width: 120px;">
                 <i class="fas fa-envelope"></i> Message
               </button>
@@ -6424,6 +6449,11 @@ async function showUserProfileModal(userId) {
     modal.querySelector('#profile-modal-message-btn')?.addEventListener('click', () => {
       modal.remove();
       startDmWithUser(userId, user.username || '', user.fullName || '', user.profileImage || '');
+    });
+
+    modal.querySelector('#profile-modal-request-btn')?.addEventListener('click', () => {
+      modal.remove();
+      requestTutorSession(Number(user.id), String(user.username || ''), String(user.fullName || ''));
     });
 
     // Handle Book Session buttons

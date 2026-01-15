@@ -312,7 +312,9 @@ router.post('/:offerId/request', async (req, res) => {
 
   try {
     const offer = await getOne(db, `
-      SELECT id, tutor_id AS tutorId, skill_id AS skillId, status
+      SELECT id, tutor_id AS tutorId, skill_id AS skillId, status,
+             COALESCE(is_group, 0) AS isGroup,
+             COALESCE(max_participants, 1) AS maxParticipants
       FROM session_offers
       WHERE id = ?
     `, [offerId]);
@@ -333,6 +335,20 @@ router.post('/:offerId/request', async (req, res) => {
 
     if (!slot || Number(slot.offerId) !== Number(offerId)) {
       return res.status(400).json({ success: false, message: 'Invalid slot' });
+    }
+
+    // For group sessions, enforce capacity per slot
+    if (Number(offer.isGroup) === 1) {
+      const maxParticipants = Math.max(2, Number(offer.maxParticipants) || 2);
+      const acceptedRow = await getOne(db, `
+        SELECT COUNT(*) AS acceptedCount
+        FROM session_requests
+        WHERE offer_id = ? AND slot_id = ? AND status = 'accepted'
+      `, [offerId, slotId]);
+      const acceptedCount = Number(acceptedRow?.acceptedCount) || 0;
+      if (acceptedCount >= maxParticipants) {
+        return res.status(400).json({ success: false, message: 'This group session time is full. Please choose another slot.' });
+      }
     }
 
     // Prevent duplicate pending request by same student for same offer
@@ -450,6 +466,8 @@ router.patch('/requests/:id', async (req, res) => {
         r.tutor_id AS tutorId,
         r.student_id AS studentId,
         o.skill_id AS skillId,
+        COALESCE(o.is_group, 0) AS isGroup,
+        COALESCE(o.max_participants, 1) AS maxParticipants,
         o.notes,
         o.location_type AS locationType,
         o.location,
@@ -478,6 +496,22 @@ router.patch('/requests/:id', async (req, res) => {
       return res.json({ success: true, message: 'Request declined' });
     }
 
+    const isGroup = Number(request.isGroup) === 1;
+    const maxParticipants = isGroup ? Math.max(2, Number(request.maxParticipants) || 2) : 1;
+
+    if (isGroup) {
+      const acceptedRow = await getOne(db, `
+        SELECT COUNT(*) AS acceptedCount
+        FROM session_requests
+        WHERE offer_id = ? AND slot_id = ? AND status = 'accepted'
+      `, [request.offerId, request.slotId]);
+      const acceptedCount = Number(acceptedRow?.acceptedCount) || 0;
+      if (acceptedCount >= maxParticipants) {
+        await runQuery(db, `UPDATE session_requests SET status = 'declined' WHERE id = ?`, [requestId]);
+        return res.status(400).json({ success: false, message: 'That group session time is already full.' });
+      }
+    }
+
     // Accept: create the actual scheduled session
     const sessionResult = await runQuery(db, `
       INSERT INTO sessions (tutor_id, student_id, skill_id, scheduled_date, duration, location, status, notes)
@@ -493,14 +527,52 @@ router.patch('/requests/:id', async (req, res) => {
     ]);
 
     await runQuery(db, `UPDATE session_requests SET status = 'accepted' WHERE id = ?`, [requestId]);
-    await runQuery(db, `UPDATE session_offers SET status = 'closed' WHERE id = ?`, [request.offerId]);
 
-    // Decline all other pending requests for this offer
-    await runQuery(db, `
-      UPDATE session_requests
-      SET status = 'declined'
-      WHERE offer_id = ? AND status = 'pending' AND id != ?
-    `, [request.offerId, requestId]);
+    if (!isGroup) {
+      await runQuery(db, `UPDATE session_offers SET status = 'closed' WHERE id = ?`, [request.offerId]);
+
+      // Decline all other pending requests for this offer (single-seat offer)
+      await runQuery(db, `
+        UPDATE session_requests
+        SET status = 'declined'
+        WHERE offer_id = ? AND status = 'pending' AND id != ?
+      `, [request.offerId, requestId]);
+    } else {
+      // For group offers, only decline others once this slot hits capacity.
+      const acceptedRow2 = await getOne(db, `
+        SELECT COUNT(*) AS acceptedCount
+        FROM session_requests
+        WHERE offer_id = ? AND slot_id = ? AND status = 'accepted'
+      `, [request.offerId, request.slotId]);
+      const acceptedCount2 = Number(acceptedRow2?.acceptedCount) || 0;
+
+      if (acceptedCount2 >= maxParticipants) {
+        await runQuery(db, `
+          UPDATE session_requests
+          SET status = 'declined'
+          WHERE offer_id = ? AND slot_id = ? AND status = 'pending'
+        `, [request.offerId, request.slotId]);
+      }
+
+      // Close the offer only when ALL slots are full.
+      const slotCounts = await getAll(db, `
+        SELECT s.id AS slotId,
+               COALESCE(a.acceptedCount, 0) AS acceptedCount
+        FROM session_offer_slots s
+        LEFT JOIN (
+          SELECT slot_id, COUNT(*) AS acceptedCount
+          FROM session_requests
+          WHERE offer_id = ? AND status = 'accepted'
+          GROUP BY slot_id
+        ) a ON a.slot_id = s.id
+        WHERE s.offer_id = ?
+      `, [request.offerId, request.offerId]);
+
+      const allSlotsFull = (slotCounts || []).length > 0 && slotCounts.every(r => (Number(r.acceptedCount) || 0) >= maxParticipants);
+      if (allSlotsFull) {
+        await runQuery(db, `UPDATE session_offers SET status = 'closed' WHERE id = ?`, [request.offerId]);
+      }
+    }
 
     res.json({ success: true, message: 'Request accepted', sessionId: sessionResult.id });
   } catch (error) {
