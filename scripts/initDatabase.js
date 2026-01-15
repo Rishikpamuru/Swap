@@ -48,13 +48,13 @@ async function initDB() {
     ]);
     
     await runQuery(db, 
-      'INSERT INTO roles (name, permissions) VALUES (?, ?)',
-      ['admin', adminPermissions]
+      'INSERT OR IGNORE INTO roles (id, name, permissions) VALUES (?, ?, ?)',
+      [1, 'admin', adminPermissions]
     );
     
     await runQuery(db,
-      'INSERT INTO roles (name, permissions) VALUES (?, ?)',
-      ['student', studentPermissions]
+      'INSERT OR IGNORE INTO roles (id, name, permissions) VALUES (?, ?, ?)',
+      [2, 'student', studentPermissions]
     );
     
     console.log('✅ Roles created: admin, student\n');

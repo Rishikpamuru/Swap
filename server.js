@@ -14,7 +14,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 // Database initialization
-const { initializeDatabase, ensureExtendedSchema } = require('./config/database');
+const { initializeDatabase, ensureBaseSchema, ensureExtendedSchema } = require('./config/database');
 
 // Middleware
 const { logAudit } = require('./middleware/audit');
@@ -34,6 +34,24 @@ const aiRoutes = require('./routes/ai');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+function parseTrustProxySetting(value) {
+  if (value === undefined || value === null || value === '') return 1;
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === 'false' || normalized === '0' || normalized === 'off' || normalized === 'no') return false;
+  if (normalized === 'true' || normalized === '1' || normalized === 'on' || normalized === 'yes') return 1;
+
+  const parsedNumber = Number(normalized);
+  if (Number.isFinite(parsedNumber)) return parsedNumber;
+  return 1;
+}
+
+// Hosting platforms often set X-Forwarded-For; rate limiting requires trust proxy.
+app.set('trust proxy', parseTrustProxySetting(process.env.TRUST_PROXY));
+
+const rateLimitEnabled = !['0', 'false', 'off', 'no'].includes(
+  String(process.env.RATE_LIMIT_ENABLED ?? 'off').trim().toLowerCase()
+);
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
@@ -47,27 +65,34 @@ app.use(helmet({
   }
 }));
 
-// Rate limiting to prevent abuse
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 1000,
-  message: { success: false, message: 'Too many requests. Please try again later.' }
-});
+// Rate limiting (optional)
+let limiter = (req, res, next) => next();
+let messagesLimiter = (req, res, next) => next();
 
-// Messaging uses polling/search; allow a higher threshold there.
-const messagesLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 2000,
-  message: { success: false, message: 'Too many requests. Please try again later.' }
-});
+if (rateLimitEnabled) {
+  limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
+    message: { success: false, message: 'Too many requests. Please try again later.' }
+  });
 
-// Apply default limiter to all API routes except messaging
-app.use('/api/', (req, res, next) => {
-  if (req.path && req.path.startsWith('/messages')) {
-    return next();
-  }
-  return limiter(req, res, next);
-});
+  // Messaging uses polling/search; allow a higher threshold there.
+  messagesLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 2000,
+    message: { success: false, message: 'Too many requests. Please try again later.' }
+  });
+
+  // Apply default limiter to all API routes except messaging
+  app.use('/api/', (req, res, next) => {
+    if (req.path && req.path.startsWith('/messages')) {
+      return next();
+    }
+    return limiter(req, res, next);
+  });
+} else {
+  console.log('⚠️ Rate limiting disabled (set RATE_LIMIT_ENABLED=on to enable)');
+}
 
 // Body parser middleware
 app.use(express.json());
@@ -156,6 +181,9 @@ async function startServer() {
     // Initialize database
     database = await initializeDatabase();
     app.locals.db = database;
+
+    // Ensure base schema exists (users/roles/etc)
+    await ensureBaseSchema(database);
 
     // Lightweight migrations / optional tables
     await ensureExtendedSchema(database);

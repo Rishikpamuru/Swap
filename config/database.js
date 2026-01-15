@@ -50,6 +50,42 @@ async function initializeDatabase() {
 }
 
 /**
+ * Ensure the core schema exists (users/roles/etc).
+ * If the database file was deleted or created empty, the app should self-heal.
+ */
+async function ensureBaseSchema(db) {
+  const exists = await tablesExist(db);
+  if (exists) return;
+
+  const schemaPath = path.join(__dirname, 'schema.sql');
+  console.log('🧱 Core tables missing; initializing schema from:', schemaPath);
+  await executeSQLFile(db, schemaPath);
+
+  const adminPermissions = JSON.stringify([
+    'user.create', 'user.read', 'user.update', 'user.delete',
+    'session.manage', 'message.moderate', 'report.view',
+    'audit.view', 'admin.access'
+  ]);
+
+  const studentPermissions = JSON.stringify([
+    'profile.manage', 'skill.manage', 'session.create',
+    'message.send', 'rating.create'
+  ]);
+
+  await runQuery(
+    db,
+    'INSERT OR IGNORE INTO roles (id, name, permissions) VALUES (?, ?, ?)',
+    [1, 'admin', adminPermissions]
+  );
+
+  await runQuery(
+    db,
+    'INSERT OR IGNORE INTO roles (id, name, permissions) VALUES (?, ?, ?)',
+    [2, 'student', studentPermissions]
+  );
+}
+
+/**
  * Execute SQL file for database setup
  */
 function executeSQLFile(db, filePath) {
@@ -244,6 +280,7 @@ async function tablesExist(db) {
 module.exports = {
   initializeDatabase,
   executeSQLFile,
+  ensureBaseSchema,
   ensureExtendedSchema,
   runQuery,
   getOne,
