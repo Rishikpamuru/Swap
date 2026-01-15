@@ -1,11 +1,11 @@
-# 🚀 SkillSwap - Quick Start Guide
+# SkillSwap - Quick Start Guide
 
 **Complete setup instructions for judges, developers, and team members.**  
 **Reedy HS BPA Chapter | Frisco, Texas | 2026**
 
 ---
 
-## 📋 Prerequisites Checklist
+## Prerequisites
 
 Before starting, ensure you have:
 
@@ -19,7 +19,7 @@ Before starting, ensure you have:
 
 ---
 
-## ⚡ Quick Setup (Under 3 Minutes)
+## Quick Setup
 
 ### Step 1: Verify Node.js Installation
 
@@ -62,10 +62,10 @@ npm run seed-db
 
 **Expected Output:**
 ```
-✅ Database initialized successfully
-✅ 12 tables created
-✅ Indexes and triggers created
-✅ Demo data seeded: 6 users, 20 skills, 15 sessions
+- Database initialized successfully
+- 12 tables created
+- Indexes and triggers created
+- Demo data seeded: 6 users, 20 skills, 15 sessions
 ```
 
 ### Step 4: Start Server
@@ -76,10 +76,10 @@ npm start
 
 **Expected Output:**
 ```
-🚀 SkillSwap server running on http://localhost:3000
-📊 Environment: development
-🔒 Security features enabled
-✅ Database connected successfully
+- SkillSwap server running on http://localhost:3000
+- Environment: development
+- Security features enabled
+- Database connected successfully
 ```
 
 ### Step 5: Access Application
@@ -92,7 +92,7 @@ http://localhost:3000
 
 ---
 
-## 🎭 Demo Accounts
+## Demo Accounts
 
 ### Administrator Account
 
@@ -113,15 +113,15 @@ http://localhost:3000
 | Emma Williams | `emma@skillswap.edu` | `Student123!` |
 
 All student accounts have:
-- ✅ Complete profiles with bio and privacy settings
-- ✅ Multiple skills (offered and sought)
-- ✅ Session history
-- ✅ Messages exchanged
-- ✅ Ratings given/received
+- Complete profiles with bio and privacy settings
+- Multiple skills (offered and sought)
+- Session history
+- Messages exchanged
+- Ratings given/received
 
 ---
 
-## 🧪 Feature Testing Checklist
+## Feature Testing Checklist
 
 ### User Features
 
@@ -238,7 +238,7 @@ Login as admin (`admin@skillswap.local` / `AdminPass123!`):
 
 ---
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -292,7 +292,7 @@ npm run seed-db
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 BPA_Web/
@@ -324,7 +324,7 @@ BPA_Web/
 
 ---
 
-## 🚀 Production Deployment
+## Production Deployment
 
 ### Environment Setup
 
@@ -354,39 +354,6 @@ OPENAI_API_KEY=sk-your-key-here  # Optional for AI features
    ```bash
    npm start
    ```
-
-### Recommended Hosting
-
-- **Heroku**: Easy Node.js deployment
-- **Vercel**: Good for static + serverless
-- **Railway**: Modern, simple deployment
-- **DigitalOcean App Platform**: Full control
-
----
-
-## ✅ Pre-Presentation Checklist
-
-- [ ] Server starts without errors
-- [ ] All demo accounts accessible
-- [ ] Admin panel fully functional
-- [ ] All features tested
-- [ ] Database has sample data
-- [ ] Browser cleared of old sessions
-- [ ] Backup of working project saved
-- [ ] Team can explain all code
-- [ ] Documentation printed (if required)
-
----
-
-## 📞 Support
-
-If you encounter issues:
-
-1. Check Troubleshooting section above
-2. Review error messages in terminal
-3. Check browser console for frontend errors
-4. Verify Node.js and npm versions
-
 ---
 
 **Document Version:** 2.0  
