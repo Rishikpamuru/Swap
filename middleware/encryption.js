@@ -18,8 +18,8 @@ const KEY_LENGTH = 32; // 256 bits for AES-256
 function getEncryptionKey() {
     const key = process.env.ENCRYPTION_KEY;
     if (!key) {
-        console.warn('⚠️  WARNING: ENCRYPTION_KEY not set in environment. Using fallback key.');
-        console.warn('⚠️  For production, set ENCRYPTION_KEY as a 64-character hex string.');
+        console.warn('  WARNING: ENCRYPTION_KEY not set in environment. Using fallback key.');
+        console.warn('  For production, set ENCRYPTION_KEY as a 64-character hex string.');
         // Fallback key for development (NOT SECURE FOR PRODUCTION)
         return Buffer.from('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', 'hex');
     }
@@ -35,8 +35,6 @@ function getEncryptionKey() {
 
 /**
  * Encrypt sensitive data
- * @param {string} plaintext - The data to encrypt
- * @returns {string} - Encrypted data as base64 string (iv:authTag:ciphertext)
  */
 function encrypt(plaintext) {
     if (!plaintext || typeof plaintext !== 'string') {
@@ -70,8 +68,6 @@ function encrypt(plaintext) {
 
 /**
  * Decrypt encrypted data
- * @param {string} encryptedData - The encrypted data (base64 string from encrypt())
- * @returns {string} - Decrypted plaintext
  */
 function decrypt(encryptedData) {
     if (!encryptedData || typeof encryptedData !== 'string') {
@@ -103,8 +99,6 @@ function decrypt(encryptedData) {
 
 /**
  * Check if a string appears to be encrypted
- * @param {string} data - The data to check
- * @returns {boolean} - True if the data appears to be encrypted
  */
 function isEncrypted(data) {
     if (!data || typeof data !== 'string') {
@@ -113,7 +107,6 @@ function isEncrypted(data) {
 
     try {
         const decoded = Buffer.from(data, 'base64');
-        // Encrypted data should be at least IV + AUTH_TAG + some ciphertext
         return decoded.length > IV_LENGTH + AUTH_TAG_LENGTH;
     } catch {
         return false;
@@ -122,8 +115,6 @@ function isEncrypted(data) {
 
 /**
  * Hash data for comparison (one-way, non-reversible)
- * @param {string} data - The data to hash
- * @returns {string} - SHA-256 hash of the data
  */
 function hash(data) {
     return crypto.createHash('sha256').update(data).digest('hex');
@@ -131,8 +122,6 @@ function hash(data) {
 
 /**
  * Generate a secure random token
- * @param {number} length - Length of the token in bytes
- * @returns {string} - Hex-encoded random token
  */
 function generateToken(length = 32) {
     return crypto.randomBytes(length).toString('hex');
@@ -140,8 +129,6 @@ function generateToken(length = 32) {
 
 /**
  * Encrypt an email address for storage
- * @param {string} email - The email to encrypt
- * @returns {string} - Encrypted email
  */
 function encryptEmail(email) {
     return encrypt(email.toLowerCase().trim());
@@ -149,8 +136,6 @@ function encryptEmail(email) {
 
 /**
  * Decrypt an email address
- * @param {string} encryptedEmail - The encrypted email
- * @returns {string} - Decrypted email
  */
 function decryptEmail(encryptedEmail) {
     return decrypt(encryptedEmail);
