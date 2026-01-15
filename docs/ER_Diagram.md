@@ -22,10 +22,15 @@
 
 ## 2. Entity-Relationship Diagram (Conceptual)
 ROLES (1) ──── (N) USERS ──── (1) USER_PROFILES
+
 USERS (1) ──── (N) SKILLS ──── (N) SKILL_REQUESTS ──── (1) SESSIONS ──── (1) RATINGS
+
 USERS (1) ──── (N) SESSION_OFFERS ──── (N) SESSION_OFFER_SLOTS
+
 USERS (1) ──── (N) MESSAGES (sender / receiver)
+
 USERS (1) ──── (N) ACHIEVEMENTS
+
 USERS (1) ──── (N) AUDIT_LOGS
 
 ---
