@@ -362,27 +362,7 @@ Security and administrative auditing.
 
 ---
 
-## 6. Normalization Compliance
-
-### First Normal Form (1NF) ✅
-- Atomic attributes only  
-- No repeating groups  
-
-### Second Normal Form (2NF) ✅
-- No partial dependencies  
-
-### Third Normal Form (3NF) ✅
-- No transitive dependencies  
-
-**Examples:**
-- Authentication separated from profile data
-- Roles isolated from users
-- Ratings separated from sessions
-- Audit logs independent of business logic
-
----
-
-## 7. Security Implementation
+## 6. Security Implementation
 
 | Measure | Implementation |
 |------|----------------|
@@ -396,18 +376,6 @@ Security and administrative auditing.
 
 ---
 
-## 8. BPA Rubric Alignment
-
-| Requirement | Status |
-|-----------|--------|
-| ER Diagram | ✅ |
-| All Entities Defined | ✅ |
-| PK/FK Marked | ✅ |
-| Relationships Labeled | ✅ |
-| Normalization Explained | ✅ |
-| Physical Schema Included | ✅ |
-
----
 
 **Document Version:** 2.0  
 **Last Updated:** January 14, 2026  
