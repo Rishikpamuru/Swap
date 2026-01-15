@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - SkillSwap</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script>
+    // This legacy page used /js/app.js (now removed). Redirect to SPA.
+    window.location.replace('/register');
+  </script>
+</head>
+<body>
+  <header>
+    <nav class="navbar container">
+      <a href="/" class="navbar-brand"><img src="/logo.jpg" alt="SkillSwap Logo" style="height: 40px; vertical-align: middle; margin-right: 8px;">SkillSwap</a>
+      <ul class="navbar-nav"></ul>
+    </nav>
+  </header>
+
+  <main>
+    <div class="container" style="max-width: 600px; padding-top: 2rem;">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title text-center">Create Your Account</h2>
+          <p class="text-center" style="color: var(--text-secondary);">
+            Join the skill-sharing community
+          </p>
+        </div>
+        
+        <form id="register-form" class="card-body">
+          <div class="grid grid-cols-2">
+            <div class="form-group">
+              <label for="first_name">First Name <span class="required">*</span></label>
+              <input type="text" id="first_name" name="first_name" required 
+                     placeholder="John" maxlength="100">
+            </div>
+            
+            <div class="form-group">
+              <label for="last_name">Last Name <span class="required">*</span></label>
+              <input type="text" id="last_name" name="last_name" required 
+                     placeholder="Doe" maxlength="100">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="email">Email Address <span class="required">*</span></label>
+            <input type="email" id="email" name="email" required 
+                   placeholder="your.email@school.edu"
+                   autocomplete="email">
+            <span class="form-help">Use your school email address</span>
+          </div>
+          
+          <div class="form-group">
+            <label for="school">School Name</label>
+            <input type="text" id="school" name="school" 
+                   placeholder="Your High School" maxlength="200">
+          </div>
+          
+          <div class="form-group">
+            <label for="grade_level">Grade Level</label>
+            <select id="grade_level" name="grade_level">
+              <option value="">Select grade...</option>
+              <option value="9">9th Grade</option>
+              <option value="10">10th Grade</option>
+              <option value="11">11th Grade</option>
+              <option value="12">12th Grade</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="password">Password <span class="required">*</span></label>
+            <input type="password" id="password" name="password" required 
+                   placeholder="Create a strong password"
+                   autocomplete="new-password">
+            <span class="form-help">
+              Minimum 8 characters with uppercase, lowercase, number, and special character
+            </span>
+          </div>
+          
+          <div class="form-group">
+            <label for="confirm_password">Confirm Password <span class="required">*</span></label>
+            <input type="password" id="confirm_password" name="confirm_password" required 
+                   placeholder="Re-enter your password"
+                   autocomplete="new-password">
+          </div>
+          
+          <div class="form-group">
+            <label for="bio">About Me (Optional)</label>
+            <textarea id="bio" name="bio" rows="3" 
+                      placeholder="Tell us a bit about yourself and your interests..."
+                      maxlength="1000"></textarea>
+            <span class="form-help">This will appear on your profile</span>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 0.5rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <input type="checkbox" id="agree_terms" required>
+              <span>I agree to the Terms of Service and Privacy Policy <span class="required">*</span></span>
+            </label>
+          </div>
+          
+          <div class="form-group">
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+              Create Account
+            </button>
+          </div>
+        </form>
+        
+        <div class="card-footer" style="display: block; text-align: center;">
+          <p>Already have an account? <a href="/login">Sign in</a></p>
+        </div>
+      </div>
+      
+      <div class="alert alert-info" style="margin-top: 1rem;">
+        <strong>🔒 Your privacy matters:</strong> We'll never share your email or personal information with third parties. You control who sees your profile.
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container footer-bottom">
+      <p>&copy; 2025-2026 SkillSwap - BPA Web Application Team</p>
+    </div>
+  </footer>
+
+</body>
+</html>
