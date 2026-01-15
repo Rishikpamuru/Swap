@@ -11,9 +11,9 @@
 |--------|-------|
 | Database System | SQLite 3 |
 | Driver | better-sqlite3 (sync) + sqlite3 (async) |
-| Total Tables | 12 |
+| Total Tables | 13 |
 | Foreign Key Relationships | 15+ |
-| Indexes | 8 |
+| Indexes | 18 |
 | Triggers | 5 |
 | Views | 3 |
 | Normalization Level | Third Normal Form (3NF) |
@@ -237,12 +237,16 @@ Scheduled learning sessions.
 |------|------|-------------|
 | id | INTEGER | PK |
 | request_id | INTEGER | FK → skill_requests(id) |
+| offer_id | INTEGER | FK → session_offers(id) |
+| slot_id | INTEGER | FK → session_offer_slots(id) |
+| is_group | INTEGER | DEFAULT 0 |
 | tutor_id | INTEGER | FK → users(id) |
 | student_id | INTEGER | FK → users(id) |
 | skill_id | INTEGER | FK → skills(id) |
 | scheduled_date | DATETIME | NOT NULL |
 | duration | INTEGER | |
 | location | TEXT | |
+| meeting_link | TEXT | |
 | status | TEXT | scheduled / completed / cancelled |
 | notes | TEXT | |
 | created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
@@ -298,7 +302,23 @@ Available time slots for offers.
 
 ---
 
-### 3.10 MESSAGES
+### 3.10 SESSION_REQUESTS
+Students request a specific offer + time slot.
+
+| Column | Type | Constraints |
+|------|------|-------------|
+| id | INTEGER | PK |
+| offer_id | INTEGER | FK → session_offers(id), ON DELETE CASCADE |
+| slot_id | INTEGER | FK → session_offer_slots(id), ON DELETE CASCADE |
+| tutor_id | INTEGER | FK → users(id) |
+| student_id | INTEGER | FK → users(id) |
+| status | TEXT | pending / accepted / declined / cancelled |
+| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+| updated_at | DATETIME | DEFAULT CURRENT_TIMESTAMP |
+
+---
+
+### 3.11 MESSAGES
 Internal messaging system.
 
 | Column | Type | Constraints |
@@ -314,7 +334,7 @@ Internal messaging system.
 
 ---
 
-### 3.11 ACHIEVEMENTS
+### 3.12 ACHIEVEMENTS
 Gamification and engagement tracking.
 
 | Column | Type | Constraints |
@@ -328,7 +348,7 @@ Gamification and engagement tracking.
 
 ---
 
-### 3.12 AUDIT_LOGS
+### 3.13 AUDIT_LOGS
 Security and administrative auditing.
 
 | Column | Type | Constraints |
@@ -348,7 +368,7 @@ Security and administrative auditing.
 
 ## 4. Indexes, Triggers, and Views
 
-- **Indexes:** Optimized for authentication, messaging, sessions, and auditing (8 total)
+- **Indexes:** Optimized for authentication, messaging, sessions, and auditing (18 total)
 - **Triggers:** Auto-update timestamp fields on users, profiles, requests, and offers
 - **Views:**
   - `v_user_details`
@@ -362,11 +382,14 @@ Security and administrative auditing.
 | Parent | Child | On Delete |
 |------|-------|----------|
 | roles | users | RESTRICT |
-| users | profiles, skills, messages, achievements | CASCADE |
+| users | user_profiles, skills, messages, achievements | CASCADE |
 | skills | skill_requests | CASCADE |
-| skill_requests | sessions | CASCADE |
+| skill_requests | sessions | SET NULL |
 | sessions | ratings | CASCADE |
-| session_offers | offer_slots | CASCADE |
+| session_offers | session_offer_slots, session_requests | CASCADE |
+| session_offer_slots | session_requests | CASCADE |
+| session_offers | sessions | SET NULL |
+| session_offer_slots | sessions | SET NULL |
 
 ---
 

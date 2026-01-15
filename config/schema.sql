@@ -98,6 +98,9 @@ CREATE TABLE IF NOT EXISTS skill_requests (
 CREATE TABLE IF NOT EXISTS sessions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   request_id INTEGER,
+  offer_id INTEGER, -- Link to a public session offer (if created from an offer)
+  slot_id INTEGER, -- Link to the selected offer slot (if created from an offer)
+  is_group INTEGER NOT NULL DEFAULT 0, -- 1 if this session is part of a group offer
   tutor_id INTEGER NOT NULL,
   student_id INTEGER NOT NULL,
   skill_id INTEGER NOT NULL,
@@ -110,6 +113,8 @@ CREATE TABLE IF NOT EXISTS sessions (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   completed_at DATETIME,
   FOREIGN KEY (request_id) REFERENCES skill_requests(id) ON DELETE SET NULL,
+  FOREIGN KEY (offer_id) REFERENCES session_offers(id) ON DELETE SET NULL,
+  FOREIGN KEY (slot_id) REFERENCES session_offer_slots(id) ON DELETE SET NULL,
   FOREIGN KEY (tutor_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE,

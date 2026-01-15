@@ -123,13 +123,16 @@ function ensureExtendedSchema(db) {
       notes TEXT,
       location_type TEXT NOT NULL DEFAULT 'online',
       location TEXT,
+      is_group INTEGER NOT NULL DEFAULT 0,
+      max_participants INTEGER DEFAULT 1,
       status TEXT NOT NULL DEFAULT 'open',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (tutor_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE,
       CHECK (status IN ('open', 'closed')),
-      CHECK (location_type IN ('online', 'in-person'))
+      CHECK (location_type IN ('online', 'in-person')),
+      CHECK (max_participants >= 1)
     );
 
     CREATE TABLE IF NOT EXISTS session_offer_slots (
@@ -198,6 +201,61 @@ function ensureExtendedSchema(db) {
           });
         };
 
+        const ensureSessionsColumns = () => {
+          return new Promise((res, rej) => {
+            db.all('PRAGMA table_info(sessions)', [], (err, cols) => {
+              if (err) return rej(err);
+              const names = new Set((cols || []).map(c => c.name));
+
+              const pending = [];
+              if (!names.has('offer_id')) pending.push('ALTER TABLE sessions ADD COLUMN offer_id INTEGER');
+              if (!names.has('slot_id')) pending.push('ALTER TABLE sessions ADD COLUMN slot_id INTEGER');
+              if (!names.has('is_group')) pending.push('ALTER TABLE sessions ADD COLUMN is_group INTEGER NOT NULL DEFAULT 0');
+
+              if (pending.length === 0) return res();
+
+              const runNext = () => {
+                const stmt = pending.shift();
+                if (!stmt) return res();
+                db.run(stmt, [], (err) => {
+                  if (err && !String(err.message || '').includes('duplicate column')) {
+                    console.error('Failed sessions migration:', err);
+                  }
+                  runNext();
+                });
+              };
+              runNext();
+            });
+          });
+        };
+
+        const ensureSessionOfferColumns = () => {
+          return new Promise((res, rej) => {
+            db.all('PRAGMA table_info(session_offers)', [], (err, cols) => {
+              if (err) return rej(err);
+              const names = new Set((cols || []).map(c => c.name));
+
+              const pending = [];
+              if (!names.has('is_group')) pending.push('ALTER TABLE session_offers ADD COLUMN is_group INTEGER NOT NULL DEFAULT 0');
+              if (!names.has('max_participants')) pending.push('ALTER TABLE session_offers ADD COLUMN max_participants INTEGER DEFAULT 1');
+
+              if (pending.length === 0) return res();
+
+              const runNext = () => {
+                const stmt = pending.shift();
+                if (!stmt) return res();
+                db.run(stmt, [], (err) => {
+                  if (err && !String(err.message || '').includes('duplicate column')) {
+                    console.error('Failed session_offers migration:', err);
+                  }
+                  runNext();
+                });
+              };
+              runNext();
+            });
+          });
+        };
+
         const ensureUserProfileColumns = () => {
           return new Promise((res, rej) => {
             db.all('PRAGMA table_info(user_profiles)', [], (err, cols) => {
@@ -228,6 +286,8 @@ function ensureExtendedSchema(db) {
 
         Promise.resolve()
           .then(addMeetingLink)
+          .then(ensureSessionOfferColumns)
+          .then(ensureSessionsColumns)
           .then(ensureUserProfileColumns)
           .then(() => resolve())
           .catch(reject);

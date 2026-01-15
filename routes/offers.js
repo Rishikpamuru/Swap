@@ -304,10 +304,18 @@ router.post('/:offerId/request', async (req, res) => {
   const studentId = req.userId;
 
   const offerId = toInt(req.params.offerId);
-  const slotId = toInt(req.body.slotId);
+  let slotId = toInt(req.body.slotId);
+  const proposedDate = String(req.body.proposedDate || '').trim();
+  const proposedTime = String(req.body.proposedTime || '').trim();
+  const proposedDuration = toInt(req.body.duration) || 60;
 
-  if (!offerId || !slotId) {
-    return res.status(400).json({ success: false, message: 'Offer and slot are required' });
+  if (!offerId) {
+    return res.status(400).json({ success: false, message: 'Offer is required' });
+  }
+
+  const hasProposed = !slotId && proposedDate && proposedTime;
+  if (!slotId && !hasProposed) {
+    return res.status(400).json({ success: false, message: 'Slot is required (or propose a new date/time)' });
   }
 
   try {
@@ -325,6 +333,41 @@ router.post('/:offerId/request', async (req, res) => {
 
     if (Number(offer.tutorId) === Number(studentId)) {
       return res.status(400).json({ success: false, message: 'You cannot request your own offer' });
+    }
+
+    if (hasProposed) {
+      const scheduledDate = toIsoDateTime(proposedDate, proposedTime);
+      if (!scheduledDate) {
+        return res.status(400).json({ success: false, message: 'Invalid proposed date/time' });
+      }
+      const dt = new Date(scheduledDate);
+      if (Number.isNaN(dt.getTime())) {
+        return res.status(400).json({ success: false, message: 'Invalid proposed date/time' });
+      }
+      // prevent absurd dates (basic sanity)
+      const now = Date.now();
+      if (dt.getTime() < now - 5 * 60 * 1000) {
+        return res.status(400).json({ success: false, message: 'Proposed time must be in the future' });
+      }
+      const duration = Math.max(15, Math.min(240, proposedDuration));
+
+      // Reuse an existing identical slot if it exists
+      const existingSlot = await getOne(db, `
+        SELECT id
+        FROM session_offer_slots
+        WHERE offer_id = ? AND scheduled_date = ? AND COALESCE(duration, 60) = ?
+        LIMIT 1
+      `, [offerId, scheduledDate, duration]);
+
+      if (existingSlot?.id) {
+        slotId = Number(existingSlot.id);
+      } else {
+        const slotRes = await runQuery(db, `
+          INSERT INTO session_offer_slots (offer_id, scheduled_date, duration)
+          VALUES (?, ?, ?)
+        `, [offerId, scheduledDate, duration]);
+        slotId = slotRes.id;
+      }
     }
 
     const slot = await getOne(db, `
@@ -514,8 +557,8 @@ router.patch('/requests/:id', async (req, res) => {
 
     // Accept: create the actual scheduled session
     const sessionResult = await runQuery(db, `
-      INSERT INTO sessions (tutor_id, student_id, skill_id, scheduled_date, duration, location, status, notes)
-      VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?)
+      INSERT INTO sessions (tutor_id, student_id, skill_id, scheduled_date, duration, location, status, notes, offer_id, slot_id, is_group)
+      VALUES (?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?)
     `, [
       request.tutorId,
       request.studentId,
@@ -523,7 +566,10 @@ router.patch('/requests/:id', async (req, res) => {
       request.scheduledDate,
       request.duration || 60,
       request.locationType === 'in-person' ? (request.location || null) : 'Online',
-      request.notes || null
+      request.notes || null,
+      request.offerId,
+      request.slotId,
+      isGroup ? 1 : 0
     ]);
 
     await runQuery(db, `UPDATE session_requests SET status = 'accepted' WHERE id = ?`, [requestId]);
@@ -578,6 +624,75 @@ router.patch('/requests/:id', async (req, res) => {
   } catch (error) {
     console.error('Update request error:', error);
     res.status(500).json({ success: false, message: 'Failed to update request' });
+  }
+});
+
+/**
+ * POST /api/offers/:offerId/cancel
+ * Tutor cancels (closes) an open offer. Any pending requests for that offer are cancelled.
+ */
+router.post('/:offerId/cancel', async (req, res) => {
+  const db = req.app.locals.db;
+  const tutorId = req.userId;
+  const offerId = toInt(req.params.offerId);
+
+  if (!offerId) {
+    return res.status(400).json({ success: false, message: 'Invalid offerId' });
+  }
+
+  try {
+    const offer = await getOne(db, `
+      SELECT id, tutor_id AS tutorId, status, title
+      FROM session_offers
+      WHERE id = ?
+    `, [offerId]);
+
+    if (!offer) {
+      return res.status(404).json({ success: false, message: 'Offer not found' });
+    }
+
+    if (Number(offer.tutorId) !== Number(tutorId)) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
+    if (String(offer.status) !== 'open') {
+      return res.status(400).json({ success: false, message: 'Offer is not open' });
+    }
+
+    await runQuery(db, `UPDATE session_offers SET status = 'closed' WHERE id = ?`, [offerId]);
+
+    // Cancel any pending requests for this offer
+    await runQuery(db, `
+      UPDATE session_requests
+      SET status = 'cancelled'
+      WHERE offer_id = ? AND status = 'pending'
+    `, [offerId]);
+
+    // Notify any students who had pending requests
+    const pendingStudents = await getAll(db, `
+      SELECT DISTINCT student_id AS studentId
+      FROM session_requests
+      WHERE offer_id = ? AND status = 'cancelled'
+    `, [offerId]);
+
+    for (const row of (pendingStudents || [])) {
+      const studentId = Number(row.studentId);
+      if (!studentId) continue;
+      await runQuery(db, `
+        INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
+        VALUES (?, ?, ?, ?, 0)
+      `, [
+        tutorId,
+        studentId,
+        'Session offer cancelled',
+        `The tutor has cancelled the offer "${String(offer.title || 'Session Offer')}". Please browse other open offers to request a different time.`
+      ]);
+    }
+
+    res.json({ success: true, message: 'Offer cancelled' });
+  } catch (error) {
+    console.error('Cancel offer error:', error);
+    res.status(500).json({ success: false, message: 'Failed to cancel offer' });
   }
 });
 

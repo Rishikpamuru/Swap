@@ -53,19 +53,20 @@ This installs ~15 packages in approximately 30 seconds.
 ### Step 3: Initialize Database
 
 ```bash
-# Create database and all tables
-npm run init-db
+# Option A (recommended): do nothing here
+# The server will auto-create/migrate skillswap.db on first start.
 
-# Load demo data (RECOMMENDED for testing)
+# Option B: create a fresh DB + load demo data (recommended for judging/testing)
+npm run init-db
 npm run seed-db
 ```
 
 **Expected Output:**
 ```
 - Database initialized successfully
-- 12 tables created
-- Indexes and triggers created
-- Demo data seeded: 6 users, 20 skills, 15 sessions
+- Tables, indexes, triggers, and views created
+- Runtime migrations applied (if needed)
+- Demo data seeded (if you ran seed-db)
 ```
 
 ### Step 4: Start Server

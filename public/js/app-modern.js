@@ -1012,7 +1012,7 @@ const Components = {
 
   achievementCard(achievement) {
     return `
-      <div class="achievement-card">
+      <div class="achievement-card ${achievement.unlocked ? 'unlocked' : ''}" data-achievement-id="${achievement.id}" role="button" tabindex="0" aria-label="${Utils.escapeHtml(achievement.name)} achievement details">
         <div class="achievement-icon-container">
           <span class="achievement-icon ${achievement.unlocked ? '' : 'locked'}">${achievement.icon}</span>
           ${achievement.unlocked ? '<span class="achievement-sparkles"><i class="fas fa-star"></i></span>' : ''}
@@ -1552,6 +1552,11 @@ function renderDashboardPage() {
                   <div style="flex-shrink:0; text-align:right;">
                     <div style="font-weight: 800; color: ${pending ? 'var(--blue-primary)' : 'var(--text-secondary)'};">${pending} pending</div>
                     <div style="font-size: 0.85rem; color: var(--text-secondary);">requests</div>
+                    <div style="margin-top: 0.5rem; display:flex; justify-content:flex-end;">
+                      <button class="btn btn-sm btn-outline dash-cancel-offer" data-offer-id="${o.id}" style="border-color: var(--red-primary); color: var(--red-primary);">
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1559,6 +1564,34 @@ function renderDashboardPage() {
           }).join('');
         }
       }
+
+      // Wire offer cancellation buttons
+      document.querySelectorAll('.dash-cancel-offer').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const offerId = Number(btn.getAttribute('data-offer-id'));
+          if (!offerId) return;
+
+          const ok = confirm('Cancel this offer? Pending requests will be cancelled.');
+          if (!ok) return;
+
+          btn.disabled = true;
+          try {
+            const res = await fetch(`/api/offers/${offerId}/cancel`, { method: 'POST' });
+            const data = res.ok ? await res.json() : null;
+            if (!res.ok || !data?.success) {
+              showToast(data?.message || 'Failed to cancel offer', 'error');
+              btn.disabled = false;
+              return;
+            }
+            showToast('Offer cancelled', 'success');
+            Router.navigate('dashboard');
+          } catch (e) {
+            console.error('Cancel offer error:', e);
+            showToast('Failed to cancel offer', 'error');
+            btn.disabled = false;
+          }
+        });
+      });
 
       // Wire request actions
       document.querySelectorAll('.offer-request-action').forEach(btn => {
@@ -2147,7 +2180,7 @@ async function renderSearchPage() {
 
         return `
               <div class="user-card" style="display:flex; flex-direction: column; gap: 0.75rem;">
-                <div style="display:flex; align-items:center; gap: 1rem;">
+                <div class="open-session-profile" role="button" tabindex="0" data-user-id="${o.tutorId}" style="display:flex; align-items:center; gap: 1rem; cursor: pointer;">
                   ${avatar}
                   <div style="flex: 1; min-width:0;">
                     <div style="font-weight: 800; font-size: 1.125rem;">${Utils.escapeHtml(name)}</div>
@@ -2171,6 +2204,22 @@ async function renderSearchPage() {
       }).join('')}
         </div>
       `;
+
+      // Enable profile open from open sessions panel
+      container.querySelectorAll('.open-session-profile').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const uid = Number(el.getAttribute('data-user-id'));
+          if (!uid) return;
+          openUserProfileModal(uid);
+        });
+        el.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          e.preventDefault();
+          const uid = Number(el.getAttribute('data-user-id'));
+          if (!uid) return;
+          openUserProfileModal(uid);
+        });
+      });
 
       document.querySelectorAll('.open-session-request-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -2238,6 +2287,27 @@ async function openUserProfileModal(userId) {
     const profileImage = u.profileImage
       ? `<img src="${u.profileImage}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
       : Utils.getInitials(displayName || u.username || 'U');
+
+    const sessionOffers = Array.isArray(u.sessionOffers) ? u.sessionOffers : [];
+    const sessionOffersHtml = sessionOffers.length > 0
+      ? sessionOffers.map(offer => {
+        const next = offer.nextSlot ? new Date(offer.nextSlot) : null;
+        const nextText = next ? next.toLocaleDateString() : '';
+        return `
+          <div style="padding: 0.85rem 1rem; border: 1px solid var(--border-light); border-radius: 12px; margin-bottom: 0.75rem;">
+            <div style="font-weight: 800; color: var(--text-primary);">${Utils.escapeHtml(offer.title || 'Session Offer')}</div>
+            <div style="margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.95rem; display:flex; gap: 0.75rem; flex-wrap: wrap;">
+              <span><i class="fas fa-graduation-cap"></i> ${Utils.escapeHtml(offer.skillName || '')}</span>
+              <span><i class="fas fa-${offer.locationType === 'online' ? 'video' : 'map-marker-alt'}"></i> ${Utils.escapeHtml(offer.locationType || '')}</span>
+              ${nextText ? `<span style="color: var(--green-primary);"><i class="fas fa-calendar"></i> Next: ${Utils.escapeHtml(nextText)}</span>` : ''}
+            </div>
+            <button class="btn btn-sm btn-primary user-profile-request-offer-btn" data-user-id="${u.id}" data-username="${Utils.escapeHtml(u.username || '')}" data-full-name="${Utils.escapeHtml(u.fullName || '')}" style="margin-top: 0.65rem;">
+              <i class="fas fa-calendar-plus"></i> Request Session
+            </button>
+          </div>
+        `;
+      }).join('')
+      : '<span style="color: #1f2937; font-size: 1rem;">No open session offers right now</span>';
 
     const modalHtml = `
       <div id="user-profile-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 1rem;">
@@ -2319,6 +2389,17 @@ async function openUserProfileModal(userId) {
                 </div>
               </div>
 
+              <div style="margin-bottom: 2rem;">
+                <div style="background: linear-gradient(135deg, var(--yellow-500, #eab308) 0%, #f59e0b 100%); padding: 0.75rem 1.25rem; border-radius: 8px; margin-bottom: 1rem;">
+                  <div style="font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.75rem; color: white;">
+                    <i class="fas fa-calendar-alt" style="font-size: 1.25rem;"></i> Open Session Offers
+                  </div>
+                </div>
+                <div style="padding: 0 1rem; max-height: 220px; overflow-y: auto;">
+                  ${sessionOffersHtml}
+                </div>
+              </div>
+
               <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                 <button type="button" class="user-profile-request-btn btn btn-primary" data-user-id="${u.id}" data-username="${Utils.escapeHtml(u.username || '')}" data-full-name="${Utils.escapeHtml(u.fullName || '')}" style="padding: 0.875rem 2rem; font-size: 1rem;"><i class="fas fa-calendar-plus"></i> Request Session</button>
                 <button type="button" class="user-profile-message-btn btn btn-secondary" data-user-id="${u.id}" data-username="${Utils.escapeHtml(u.username || '')}" style="padding: 0.875rem 2rem; font-size: 1rem;"><i class="fas fa-envelope"></i> Message</button>
@@ -2351,6 +2432,14 @@ async function openUserProfileModal(userId) {
     document.querySelector('.user-profile-request-btn')?.addEventListener('click', () => {
       close();
       requestTutorSession(Number(u.id), String(u.username || ''), String(u.fullName || ''));
+    });
+
+    document.querySelectorAll('#user-profile-modal .user-profile-request-offer-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        close();
+        requestTutorSession(Number(u.id), String(u.username || ''), String(u.fullName || ''));
+      });
     });
   } catch (e) {
     console.error('Open user profile modal error:', e);
@@ -2612,11 +2701,15 @@ async function renderYourSessionsPage() {
 function renderSessionCard(session) {
   const user = getCurrentUser();
   const isTutor = session.tutorId === user?.id;
+  const isGroupSession = Boolean(Number(session.isGroup));
+  const groupCount = Number(session.groupParticipantCount) || 0;
+  const groupNames = Array.isArray(session.groupParticipantNames) ? session.groupParticipantNames : [];
+
   const otherPerson = isTutor ? {
-    id: session.studentId,
-    name: session.studentFullName || session.studentUsername,
-    username: session.studentUsername,
-    profileImage: session.studentProfileImage
+    id: isGroupSession ? null : session.studentId,
+    name: isGroupSession ? `Group Session${groupCount ? ` (${groupCount} students)` : ''}` : (session.studentFullName || session.studentUsername),
+    username: isGroupSession ? '' : session.studentUsername,
+    profileImage: isGroupSession ? '' : session.studentProfileImage
   } : {
     id: session.tutorId,
     name: session.tutorFullName || session.tutorUsername,
@@ -2628,9 +2721,10 @@ function renderSessionCard(session) {
   const dateStr = date.toLocaleDateString();
   const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+  const canViewProfile = Boolean(otherPerson.id);
   const avatarHtml = otherPerson.profileImage
-    ? `<img src="${Utils.escapeHtml(otherPerson.profileImage)}" alt="${Utils.escapeHtml(otherPerson.name)}" class="user-avatar" style="cursor: pointer; object-fit: cover;" data-view-profile="${otherPerson.id}">`
-    : `<div class="user-avatar" style="cursor: pointer;" data-view-profile="${otherPerson.id}">${Utils.getInitials(otherPerson.name)}</div>`;
+    ? `<img src="${Utils.escapeHtml(otherPerson.profileImage)}" alt="${Utils.escapeHtml(otherPerson.name)}" class="user-avatar" style="cursor: ${canViewProfile ? 'pointer' : 'default'}; object-fit: cover;" ${canViewProfile ? `data-view-profile="${otherPerson.id}"` : ''}>`
+    : `<div class="user-avatar" style="cursor: ${canViewProfile ? 'pointer' : 'default'};" ${canViewProfile ? `data-view-profile="${otherPerson.id}"` : ''}>${Utils.getInitials(otherPerson.name)}</div>`;
 
   // Meeting link display (for online sessions)
   let meetingLinkHtml = '';
@@ -2650,7 +2744,7 @@ function renderSessionCard(session) {
 
   // Google Calendar link for scheduled sessions
   const calendarUrl = session.status === 'scheduled' ? Utils.getGoogleCalendarUrl({
-    title: `SkillSwap: ${session.skillName} with ${isTutor ? session.studentFullName || session.studentUsername : session.tutorFullName || session.tutorUsername}`,
+    title: `SkillSwap: ${session.skillName} with ${isTutor ? (isGroupSession ? 'Group' : (session.studentFullName || session.studentUsername)) : (session.tutorFullName || session.tutorUsername)}`,
     start: session.scheduledDate,
     duration: session.duration || 60,
     description: `SkillSwap tutoring session for ${session.skillName}. ${session.notes || ''}`,
@@ -2660,8 +2754,9 @@ function renderSessionCard(session) {
   return `
     <div class="user-card">
       ${avatarHtml}
-      <h3 class="user-name" style="cursor: pointer;" data-view-profile="${otherPerson.id}">${otherPerson.name}</h3>
-      <p class="user-title">@${otherPerson.username}</p>
+      <h3 class="user-name" style="cursor: ${canViewProfile ? 'pointer' : 'default'};" ${canViewProfile ? `data-view-profile="${otherPerson.id}"` : ''}>${Utils.escapeHtml(otherPerson.name)}</h3>
+      ${otherPerson.username ? `<p class="user-title">@${Utils.escapeHtml(otherPerson.username)}</p>` : '<p class="user-title">&nbsp;</p>'}
+      ${isTutor && isGroupSession ? `<p class="user-info"><i class="fas fa-users"></i> ${groupCount || groupNames.length || 0} students${groupNames.length ? ` • ${Utils.escapeHtml(groupNames.slice(0, 4).join(', '))}${groupNames.length > 4 ? '…' : ''}` : ''}</p>` : ''}
       <p class="user-info"><i class="fas fa-book"></i> ${session.skillName}</p>
       <p class="user-info"><i class="fas fa-calendar"></i> ${dateStr}</p>
       <p class="user-info"><i class="fas fa-clock"></i> ${timeStr}${session.duration ? ` (${session.duration}min)` : ''}</p>
@@ -2858,6 +2953,36 @@ async function renderRequestSessionPage() {
                   <div id="req-slot-meta" class="form-helper" style="display:none;"></div>
                 </div>
 
+                <div style="margin-top: 0.75rem; padding: 0.75rem 1rem; border: 1px dashed var(--border-light); border-radius: var(--radius-lg);">
+                  <button type="button" class="btn btn-ghost" id="req-propose-toggle" style="padding: 0; height: auto;">Can't make these times? Request a new time slot</button>
+                  <div id="req-propose-panel" style="display:none; margin-top: 0.75rem;">
+                    <div class="form-group" style="margin-top: 0;">
+                      <label class="form-label">Which offer should this apply to?</label>
+                      <select id="req-propose-offer" class="form-select" disabled>
+                        <option value="">Select a skill first…</option>
+                      </select>
+                      <div class="form-helper">This will add a new slot to the tutor's offer and create a pending request.</div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                      <div>
+                        <label class="form-label" style="margin-bottom: 0.35rem;">Date</label>
+                        <input type="date" id="req-propose-date" class="form-input">
+                      </div>
+                      <div>
+                        <label class="form-label" style="margin-bottom: 0.35rem;">Time</label>
+                        <input type="time" id="req-propose-time" class="form-input">
+                      </div>
+                      <div>
+                        <label class="form-label" style="margin-bottom: 0.35rem;">Duration (min)</label>
+                        <input type="number" id="req-propose-duration" class="form-input" min="15" max="240" value="60">
+                      </div>
+                    </div>
+                    <div style="margin-top: 0.75rem; display:flex; justify-content: flex-end;">
+                      <button type="button" class="btn btn-outline" id="req-propose-send" disabled>Send New Time Request</button>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="form-group">
                   <label class="form-label">Notes (optional)</label>
                   <textarea id="req-notes" class="form-textarea" placeholder="Anything the tutor should know?" maxlength="1000" style="min-height: 110px;"></textarea>
@@ -2895,6 +3020,13 @@ async function renderRequestSessionPage() {
   const slotMeta = document.getElementById('req-slot-meta');
   const notesEl = document.getElementById('req-notes');
   const submitBtn = document.getElementById('req-submit');
+  const proposeToggle = document.getElementById('req-propose-toggle');
+  const proposePanel = document.getElementById('req-propose-panel');
+  const proposeOffer = document.getElementById('req-propose-offer');
+  const proposeDate = document.getElementById('req-propose-date');
+  const proposeTime = document.getElementById('req-propose-time');
+  const proposeDuration = document.getElementById('req-propose-duration');
+  const proposeSend = document.getElementById('req-propose-send');
 
   btnBack?.addEventListener('click', () => Router.navigate('search'));
   btnCancel?.addEventListener('click', () => Router.navigate('search'));
@@ -2986,6 +3118,22 @@ async function renderRequestSessionPage() {
     }).join('');
     slotMeta.style.display = 'none';
     submitBtn.disabled = true;
+
+    // Populate propose-offer list for this skill
+    if (proposeOffer) {
+      const uniqueOffers = [];
+      const seen = new Set();
+      for (const it of items) {
+        const k = String(it.offerId);
+        if (seen.has(k)) continue;
+        seen.add(k);
+        uniqueOffers.push({ offerId: it.offerId, title: it.offerTitle || 'Offer' });
+      }
+      proposeOffer.disabled = uniqueOffers.length === 0;
+      proposeOffer.innerHTML = uniqueOffers.length
+        ? '<option value="">Select an offer…</option>' + uniqueOffers.map(o => `<option value="${o.offerId}">${Utils.escapeHtml(o.title)}</option>`).join('')
+        : '<option value="">No offers for this skill</option>';
+    }
   };
 
   skillSelect.addEventListener('change', refreshSlots);
@@ -3003,6 +3151,74 @@ async function renderRequestSessionPage() {
     if (picked) {
       slotMeta.textContent = `Location: ${picked.locationLine}`;
       slotMeta.style.display = 'block';
+
+      // Keep propose-offer in sync with selected slot
+      if (proposeOffer) {
+        proposeOffer.value = String(picked.offerId);
+      }
+    }
+  });
+
+  const updateProposeSendEnabled = () => {
+    if (!proposeSend) return;
+    const offerId = Number(proposeOffer?.value || 0);
+    const d = String(proposeDate?.value || '').trim();
+    const t = String(proposeTime?.value || '').trim();
+    proposeSend.disabled = !(offerId && d && t);
+  };
+
+  proposeToggle?.addEventListener('click', () => {
+    if (!proposePanel) return;
+    proposePanel.style.display = proposePanel.style.display === 'none' ? 'block' : 'none';
+  });
+
+  proposeOffer?.addEventListener('change', updateProposeSendEnabled);
+  proposeDate?.addEventListener('input', updateProposeSendEnabled);
+  proposeTime?.addEventListener('input', updateProposeSendEnabled);
+  proposeDuration?.addEventListener('input', updateProposeSendEnabled);
+
+  proposeSend?.addEventListener('click', async () => {
+    showReqError('');
+    const offerId = Number(proposeOffer?.value || 0);
+    const d = String(proposeDate?.value || '').trim();
+    const t = String(proposeTime?.value || '').trim();
+    const dur = Number(proposeDuration?.value || 60) || 60;
+    if (!offerId || !d || !t) {
+      showReqError('Please select an offer and choose a date/time');
+      return;
+    }
+
+    proposeSend.disabled = true;
+    try {
+      const res = await fetch(`/api/offers/${offerId}/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ proposedDate: d, proposedTime: t, duration: dur })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to request new time');
+
+      const note = String(notesEl?.value || '').trim();
+      if (note) {
+        try {
+          await fetch(`/api/messages/with/${tutorId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ content: `Session request note: ${note}` })
+          });
+        } catch (err) {
+          console.warn('Failed to send note DM:', err);
+        }
+      }
+
+      showToast('New time requested!', 'success');
+      setTimeout(() => Router.navigate('dashboard'), 300);
+    } catch (err) {
+      console.error('Request new time error:', err);
+      showReqError(err.message || 'Failed to request new time');
+      proposeSend.disabled = false;
     }
   });
 
@@ -3526,11 +3742,6 @@ async function renderAchievementsPage() {
         <div class="page-container">
           <div class="page-header">
             <h1 class="page-title">Achievements</h1>
-            <div style="background: var(--red-primary); color: white; padding: 0.75rem 2rem; border-radius: var(--radius-xl); display: inline-block; margin-top: 1rem; font-weight: 700; position: relative;">
-              <div style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-top: 20px solid transparent; border-bottom: 20px solid transparent; border-right: 30px solid var(--red-primary);"></div>
-              My Awards
-              <div style="position: absolute; right: -30px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-top: 20px solid transparent; border-bottom: 20px solid transparent; border-left: 30px solid var(--red-primary);"></div>
-            </div>
           </div>
           
           <div class="achievement-grid" id="achievement-grid">
@@ -5863,6 +6074,80 @@ function showNotifications() {
     document.getElementById('notifications-modal').classList.add('show');
   }, 10);
 }
+
+function showAchievementDetailsModal(achievementId) {
+  const id = Number(achievementId);
+  if (!id) return;
+
+  const achievement = (Array.isArray(AppState.achievements) ? AppState.achievements : []).find(a => Number(a.id) === id)
+    || (Array.isArray(MockData.achievements) ? MockData.achievements : []).find(a => Number(a.id) === id);
+  if (!achievement) return;
+
+  const notYetTracked = new Set([2, 27, 29, 31, 34, 35, 36, 37, 38, 39, 40]);
+
+  const statusPill = achievement.unlocked
+    ? '<span style="display:inline-block; padding: 0.25rem 0.75rem; border-radius: 999px; background: rgba(34, 197, 94, 0.12); color: var(--green-primary); font-weight: 700; font-size: 0.875rem;">Unlocked</span>'
+    : '<span style="display:inline-block; padding: 0.25rem 0.75rem; border-radius: 999px; background: rgba(239, 68, 68, 0.10); color: var(--red-primary); font-weight: 700; font-size: 0.875rem;">Locked</span>';
+
+  const modalContent = `
+    <div style="padding: 2rem;">
+      <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem;">
+        <div style="display:flex; align-items:center; gap: 0.75rem;">
+          <div style="width: 52px; height: 52px; border-radius: 999px; border: 3px solid var(--navy-dark); display:flex; align-items:center; justify-content:center; background: white;">
+            <span style="font-size: 1.75rem;">${achievement.icon}</span>
+          </div>
+          <div>
+            <div style="font-size: 1.5rem; font-weight: 800;">${Utils.escapeHtml(achievement.name)}</div>
+            <div style="margin-top: 0.25rem;">${statusPill}</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary" onclick="closeModal('achievement-details-modal')">Close</button>
+      </div>
+
+      <div style="background: var(--bg-light); border-radius: var(--radius-xl); padding: 1.25rem;">
+        <div style="font-weight: 700; margin-bottom: 0.5rem;">How to earn it</div>
+        <div style="color: var(--text-secondary); line-height: 1.6;">${Utils.escapeHtml(achievement.description)}</div>
+        ${notYetTracked.has(id)
+          ? '<div style="margin-top: 0.75rem; color: var(--text-secondary); font-style: italic;">Note: this achievement isn\'t fully tracked yet, so it may stay locked for now.</div>'
+          : ''
+        }
+      </div>
+    </div>
+  `;
+
+  // Ensure only one instance exists
+  const existing = document.getElementById('achievement-details-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.innerHTML = Components.modal(modalContent, 'achievement-details-modal');
+  document.body.appendChild(modal);
+  setTimeout(() => {
+    const el = document.getElementById('achievement-details-modal');
+    if (el) el.classList.add('show');
+  }, 10);
+}
+
+// Delegated handlers for achievement cards (rendered dynamically)
+document.addEventListener('click', (e) => {
+  const card = e.target?.closest?.('.achievement-card');
+  if (!card) return;
+  if (!card.closest('#achievement-grid')) return;
+  const achievementId = Number(card.getAttribute('data-achievement-id'));
+  if (!achievementId) return;
+  showAchievementDetailsModal(achievementId);
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const card = e.target?.closest?.('.achievement-card');
+  if (!card) return;
+  if (!card.closest('#achievement-grid')) return;
+  const achievementId = Number(card.getAttribute('data-achievement-id'));
+  if (!achievementId) return;
+  e.preventDefault();
+  showAchievementDetailsModal(achievementId);
+});
 
 async function createSession(event) {
   event.preventDefault();

@@ -290,7 +290,13 @@ router.get('/profile/:id', validateSession, async (req, res) => {
     const skillsSeek = skills.filter(s => s.skill_type === 'sought').map(s => s.skill_name);
 
     const sessionCountRow = await getOne(db, `
-      SELECT COUNT(*) as cnt
+      SELECT COUNT(DISTINCT
+        CASE
+          WHEN COALESCE(is_group, 0) = 1 AND offer_id IS NOT NULL AND slot_id IS NOT NULL
+            THEN printf('g:%d:%d', offer_id, slot_id)
+          ELSE printf('i:%d', id)
+        END
+      ) as cnt
       FROM sessions
       WHERE tutor_id = ? OR student_id = ?
     `, [user.id, user.id]);

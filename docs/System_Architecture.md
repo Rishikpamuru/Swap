@@ -81,6 +81,8 @@ erDiagram
     USERS ||--o{ SESSION_OFFERS : "creates"
     SESSION_OFFERS ||--o{ SESSION_OFFER_SLOTS : "has"
     SESSION_OFFERS ||--o{ SESSION_REQUESTS : "receives"
+    SESSION_OFFERS ||--o{ SESSIONS : "creates"
+    SESSION_OFFER_SLOTS ||--o{ SESSIONS : "schedules"
     
     ROLES {
         int id PK
@@ -120,10 +122,41 @@ erDiagram
         int tutor_id FK
         int student_id FK
         int skill_id FK
+        int offer_id FK
+        int slot_id FK
+        boolean is_group
         datetime scheduled_date
         int duration
         string status
         string meeting_link
+    }
+
+    SESSION_OFFERS {
+        int id PK
+        int tutor_id FK
+        int skill_id FK
+        string title
+        string location_type
+        string location
+        boolean is_group
+        int max_participants
+        string status
+    }
+
+    SESSION_OFFER_SLOTS {
+        int id PK
+        int offer_id FK
+        datetime scheduled_date
+        int duration
+    }
+
+    SESSION_REQUESTS {
+        int id PK
+        int offer_id FK
+        int slot_id FK
+        int tutor_id FK
+        int student_id FK
+        string status
     }
     
     RATINGS {

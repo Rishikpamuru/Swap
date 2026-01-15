@@ -189,6 +189,42 @@ router.delete('/sessions/:id', async (req, res) => {
         INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
         VALUES (?, ?, ?, ?, 0)
       `, [adminId, offer.tutorId, 'Session Offer Removed', tutorMessage]);
+
+      // Notify any students who requested/accepted this offer
+      const requestStudents = await getAll(db, `
+        SELECT DISTINCT student_id AS studentId
+        FROM session_requests
+        WHERE offer_id = ? AND status IN ('pending', 'accepted')
+      `, [sessionId]);
+
+      // Notify any students who already have a scheduled session created from this offer
+      const sessionStudents = await getAll(db, `
+        SELECT DISTINCT student_id AS studentId
+        FROM sessions
+        WHERE offer_id = ?
+      `, [sessionId]);
+
+      const studentIds = new Set();
+      for (const r of requestStudents || []) if (r?.studentId) studentIds.add(Number(r.studentId));
+      for (const r of sessionStudents || []) if (r?.studentId) studentIds.add(Number(r.studentId));
+
+      if (studentIds.size > 0) {
+        const studentMessage = `A session offer for "${offer.skillName}" ("${offer.title}") has been removed by an administrator. Any related requests have been cancelled.`;
+        for (const sid of studentIds) {
+          if (!sid) continue;
+          await runQuery(db, `
+            INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
+            VALUES (?, ?, ?, ?, 0)
+          `, [adminId, sid, 'Session Offer Removed', studentMessage]);
+        }
+      }
+
+      // Cancel any scheduled sessions that were created from this offer
+      await runQuery(db, `
+        UPDATE sessions
+        SET status = 'cancelled', offer_id = NULL, slot_id = NULL, is_group = 0
+        WHERE offer_id = ? AND status = 'scheduled'
+      `, [sessionId]);
       
       // Delete the session offer (cascade deletes slots and requests)
       await runQuery(db, 'DELETE FROM session_offers WHERE id = ?', [sessionId]);

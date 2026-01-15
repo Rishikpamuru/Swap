@@ -29,6 +29,9 @@ router.get('/', async (req, res) => {
         s.tutor_id AS tutorId,
         s.student_id AS studentId,
         s.skill_id AS skillId,
+        s.offer_id AS offerId,
+        s.slot_id AS slotId,
+        COALESCE(s.is_group, 0) AS isGroup,
         s.scheduled_date AS scheduledDate,
         s.duration,
         s.location,
@@ -71,8 +74,65 @@ router.get('/', async (req, res) => {
 
     sql += ' ORDER BY datetime(s.scheduled_date) ASC';
 
-    const sessions = await getAll(db, sql, params);
-    res.json({ success: true, sessions });
+    const rows = await getAll(db, sql, params);
+
+    // Aggregate tutor-side group sessions so they behave like a single group entity in the UI.
+    // Student-side stays per-student.
+    const grouped = [];
+    const groupMap = new Map();
+
+    for (const s of rows || []) {
+      const isTutorSide = Number(s.tutorId) === Number(userId);
+      const isGroup = Number(s.isGroup) === 1 && s.offerId != null && s.slotId != null;
+
+      if (!isTutorSide || !isGroup) {
+        grouped.push(s);
+        continue;
+      }
+
+      const key = `${s.offerId}:${s.slotId}`;
+      if (!groupMap.has(key)) {
+        groupMap.set(key, {
+          base: s,
+          participants: []
+        });
+      }
+
+      const entry = groupMap.get(key);
+      entry.participants.push({
+        id: s.studentId,
+        name: (s.studentFullName || s.studentUsername || '').trim(),
+        username: (s.studentUsername || '').trim()
+      });
+    }
+
+    for (const [_, entry] of groupMap.entries()) {
+      const base = entry.base;
+      const participants = entry.participants || [];
+
+      // Derive a single status/meetingLink for the group card
+      const allRows = rows.filter(r => Number(r.isGroup) === 1 && Number(r.offerId) === Number(base.offerId) && Number(r.slotId) === Number(base.slotId) && Number(r.tutorId) === Number(userId));
+      const meetingLink = allRows.find(r => r.meetingLink)?.meetingLink || base.meetingLink || null;
+      const statusSet = new Set(allRows.map(r => String(r.status || '')));
+      const status = statusSet.has('scheduled') ? 'scheduled' : (statusSet.has('completed') ? 'completed' : 'cancelled');
+
+      grouped.push({
+        ...base,
+        meetingLink,
+        status,
+        studentId: null,
+        studentUsername: '',
+        studentFullName: `${participants.length} students`,
+        studentProfileImage: '',
+        groupParticipantCount: participants.length,
+        groupParticipantNames: participants.map(p => p.name || p.username).filter(Boolean)
+      });
+    }
+
+    // Keep ordering stable
+    grouped.sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime());
+
+    res.json({ success: true, sessions: grouped });
   } catch (error) {
     console.error('Sessions list error:', error);
     res.status(500).json({ success: false, message: 'Failed to load sessions' });
@@ -257,7 +317,7 @@ router.patch('/:id', async (req, res) => {
   }
 
   try {
-    const session = await getOne(db, 'SELECT id, tutor_id, student_id FROM sessions WHERE id = ?', [sessionId]);
+    const session = await getOne(db, 'SELECT id, tutor_id, student_id, offer_id, slot_id, COALESCE(is_group, 0) AS is_group FROM sessions WHERE id = ?', [sessionId]);
     if (!session) {
       return res.status(404).json({ success: false, message: 'Session not found' });
     }
@@ -267,20 +327,36 @@ router.patch('/:id', async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
+    const isTutorSide = Number(session.tutor_id) === Number(userId);
+    const isGroupSession = Number(session.is_group) === 1 && session.offer_id != null && session.slot_id != null;
+
     // Handle meeting link update (only tutor can set meeting link)
     if (meetingLink !== undefined) {
-      if (Number(session.tutor_id) !== Number(userId)) {
+      if (!isTutorSide) {
         return res.status(403).json({ success: false, message: 'Only the tutor can set the meeting link' });
       }
-      await runQuery(db, 'UPDATE sessions SET meeting_link = ? WHERE id = ?', [meetingLink || null, sessionId]);
+      if (isGroupSession) {
+        await runQuery(db, 'UPDATE sessions SET meeting_link = ? WHERE tutor_id = ? AND offer_id = ? AND slot_id = ?', [meetingLink || null, userId, session.offer_id, session.slot_id]);
+      } else {
+        await runQuery(db, 'UPDATE sessions SET meeting_link = ? WHERE id = ?', [meetingLink || null, sessionId]);
+      }
     }
 
     // Handle status update
     if (status) {
+      const applyToGroup = isGroupSession && isTutorSide;
       if (status === 'completed') {
-        await runQuery(db, 'UPDATE sessions SET status = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?', [status, sessionId]);
+        if (applyToGroup) {
+          await runQuery(db, 'UPDATE sessions SET status = ?, completed_at = CURRENT_TIMESTAMP WHERE tutor_id = ? AND offer_id = ? AND slot_id = ?', [status, userId, session.offer_id, session.slot_id]);
+        } else {
+          await runQuery(db, 'UPDATE sessions SET status = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?', [status, sessionId]);
+        }
       } else {
-        await runQuery(db, 'UPDATE sessions SET status = ? WHERE id = ?', [status, sessionId]);
+        if (applyToGroup) {
+          await runQuery(db, 'UPDATE sessions SET status = ? WHERE tutor_id = ? AND offer_id = ? AND slot_id = ?', [status, userId, session.offer_id, session.slot_id]);
+        } else {
+          await runQuery(db, 'UPDATE sessions SET status = ? WHERE id = ?', [status, sessionId]);
+        }
       }
 
       // Send system message on cancellation
@@ -293,19 +369,35 @@ router.patch('/:id', async (req, res) => {
           WHERE s.id = ?
         `, [sessionId]);
 
-        const isCancelledByTutor = Number(session.tutor_id) === Number(userId);
-        const otherUserId = isCancelledByTutor ? session.student_id : session.tutor_id;
+        const isCancelledByTutor = isTutorSide;
         const scheduledDate = sessionDetails?.scheduled_date 
           ? new Date(sessionDetails.scheduled_date).toLocaleString()
           : 'the scheduled time';
         const skillName = sessionDetails?.skillName || 'the session';
 
-        // Send message to the other party
         const cancelMessage = `A session for "${skillName}" scheduled on ${scheduledDate} has been cancelled by the ${isCancelledByTutor ? 'tutor' : 'student'}.`;
-        await runQuery(db, `
-          INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
-          VALUES (?, ?, ?, ?, 0)
-        `, [userId, otherUserId, 'Session Cancelled', cancelMessage]);
+
+        if (isGroupSession && isCancelledByTutor) {
+          const students = await getAll(db, `
+            SELECT DISTINCT student_id AS studentId
+            FROM sessions
+            WHERE tutor_id = ? AND offer_id = ? AND slot_id = ?
+          `, [userId, session.offer_id, session.slot_id]);
+
+          for (const row of students || []) {
+            if (!row?.studentId) continue;
+            await runQuery(db, `
+              INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
+              VALUES (?, ?, ?, ?, 0)
+            `, [userId, row.studentId, 'Session Cancelled', cancelMessage]);
+          }
+        } else {
+          const otherUserId = isCancelledByTutor ? session.student_id : session.tutor_id;
+          await runQuery(db, `
+            INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
+            VALUES (?, ?, ?, ?, 0)
+          `, [userId, otherUserId, 'Session Cancelled', cancelMessage]);
+        }
       }
     }
 
