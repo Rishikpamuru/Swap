@@ -76,7 +76,7 @@ router.get('/', async (req, res) => {
 
     const rows = await getAll(db, sql, params);
 
-    // Aggregate tutor-side group sessions so they behave like a single group entity in the UI.
+    // Group tutor-side group sessions so they behave like a single card in the UI.
     // Student-side stays per-student.
     const grouped = [];
     const groupMap = new Map();
@@ -163,7 +163,7 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    // Verify skill exists and belongs to current user (offered)
+    // Verify skill exists and belongs to current user
     const skill = await getOne(db, 'SELECT id, user_id, skill_type FROM skills WHERE id = ?', [skillIdInt]);
     if (!skill || Number(skill.user_id) !== Number(userId) || skill.skill_type !== 'offered') {
       return res.status(400).json({ success: false, message: 'Invalid skill or you do not offer this skill' });
@@ -212,7 +212,7 @@ router.post('/request', async (req, res) => {
   }
 
   try {
-    // Verify skill exists and belongs to tutor (offered)
+    // Verify skill exists and belongs to tutor
     const skill = await getOne(db, 'SELECT id, user_id, skill_type FROM skills WHERE id = ?', [skillIdInt]);
     if (!skill || Number(skill.user_id) !== Number(tutorIdInt) || skill.skill_type !== 'offered') {
       return res.status(400).json({ success: false, message: 'Invalid skill or tutor does not offer this skill' });
@@ -330,7 +330,7 @@ router.patch('/:id', async (req, res) => {
     const isTutorSide = Number(session.tutor_id) === Number(userId);
     const isGroupSession = Number(session.is_group) === 1 && session.offer_id != null && session.slot_id != null;
 
-    // Handle meeting link update (only tutor can set meeting link)
+    // Handle meeting link update
     if (meetingLink !== undefined) {
       if (!isTutorSide) {
         return res.status(403).json({ success: false, message: 'Only the tutor can set the meeting link' });
@@ -361,7 +361,6 @@ router.patch('/:id', async (req, res) => {
 
       // Send system message on cancellation
       if (status === 'cancelled') {
-        // Get session details for the message
         const sessionDetails = await getOne(db, `
           SELECT s.*, sk.skill_name AS skillName
           FROM sessions s
