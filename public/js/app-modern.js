@@ -4496,6 +4496,7 @@ async function renderAdminPage() {
           <div style="margin-bottom: 2rem;">
             <div style="display: flex; gap: 1rem; border-bottom: 2px solid var(--border-light); flex-wrap: wrap;">
               <button class="admin-tab active" data-tab="reports" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid var(--blue-primary); font-weight: 600; cursor: pointer;"><i class="fas fa-chart-bar"></i> Reports</button>
+              <button class="admin-tab" data-tab="audit" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);"><i class="fas fa-clipboard-list"></i> Audit Log</button>
               <button class="admin-tab" data-tab="public-sessions" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);">Public Sessions</button>
               <button class="admin-tab" data-tab="private-sessions" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);">Private Sessions</button>
               <button class="admin-tab" data-tab="users" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);">Users</button>
@@ -4953,6 +4954,8 @@ function switchAdminTab(tab) {
   // Load content
   if (tab === 'reports') {
     loadAdminReports();
+  } else if (tab === 'audit') {
+    loadAdminAuditLogs();
   } else if (tab === 'public-sessions') {
     loadAdminSessions('public');
   } else if (tab === 'private-sessions') {
@@ -4963,6 +4966,178 @@ function switchAdminTab(tab) {
     loadAdminSkills();
   } else if (tab === 'database') {
     loadAdminDatabase();
+  }
+}
+
+async function loadAdminAuditLogs(filters = {}) {
+  const contentDiv = document.getElementById('admin-content');
+  const limit = Math.min(200, Math.max(1, parseInt(filters.limit ?? 50) || 50));
+  const action = String(filters.action ?? '').trim();
+  const userId = String(filters.userId ?? '').trim();
+
+  contentDiv.innerHTML = `
+    <div style="background: white; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0;">Audit Log</h2>
+          <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary);">Tracks admin and sensitive actions for compliance and security.</p>
+        </div>
+        <button id="admin-audit-refresh" class="btn btn-secondary"><i class="fas fa-sync"></i> Refresh</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr 0.7fr; gap: 0.75rem; margin-bottom: 1rem; align-items: end;">
+        <div>
+          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;">Action contains</label>
+          <input id="admin-audit-action" type="text" placeholder="e.g., POST /api/admin/users" value="${Utils.escapeHtml(action)}" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;">User ID</label>
+          <input id="admin-audit-userId" type="number" min="1" placeholder="e.g., 12" value="${Utils.escapeHtml(userId)}" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+        </div>
+        <div>
+          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;">Limit</label>
+          <select id="admin-audit-limit" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: white;">
+            ${[25, 50, 100, 200].map(n => `<option value="${n}" ${n === limit ? 'selected' : ''}>${n}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div id="admin-audit-table" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem;"></i>
+        <p style="margin-top: 0.75rem;">Loading audit logs...</p>
+      </div>
+    </div>
+  `;
+
+  const tableDiv = document.getElementById('admin-audit-table');
+  const actionInput = document.getElementById('admin-audit-action');
+  const userIdInput = document.getElementById('admin-audit-userId');
+  const limitSelect = document.getElementById('admin-audit-limit');
+  const refreshBtn = document.getElementById('admin-audit-refresh');
+
+  let refreshTimeout = null;
+  const scheduleRefresh = () => {
+    if (refreshTimeout) clearTimeout(refreshTimeout);
+    refreshTimeout = setTimeout(() => {
+      loadAdminAuditLogs({
+        action: actionInput.value,
+        userId: userIdInput.value,
+        limit: limitSelect.value
+      });
+    }, 350);
+  };
+
+  actionInput.addEventListener('input', scheduleRefresh);
+  userIdInput.addEventListener('input', scheduleRefresh);
+  limitSelect.addEventListener('change', scheduleRefresh);
+  refreshBtn.addEventListener('click', () => loadAdminAuditLogs({
+    action: actionInput.value,
+    userId: userIdInput.value,
+    limit: limitSelect.value
+  }));
+
+  try {
+    const params = new URLSearchParams();
+    params.set('limit', String(limit));
+    if (action) params.set('action', action);
+    if (userId) params.set('userId', userId);
+
+    const response = await fetch(`/api/admin/audit-logs?${params.toString()}`);
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Failed to load audit logs');
+    }
+
+    const logs = Array.isArray(data.logs) ? data.logs : [];
+    if (!logs.length) {
+      tableDiv.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 1.5rem;">No audit logs found.</p>`;
+      return;
+    }
+
+    const tryPrettyJson = (value) => {
+      if (value === null || value === undefined) return '';
+      const s = typeof value === 'string' ? value : JSON.stringify(value);
+      if (!s) return '';
+      try {
+        const parsed = JSON.parse(s);
+        return JSON.stringify(parsed, null, 2);
+      } catch (_) {
+        return String(value);
+      }
+    };
+
+    tableDiv.innerHTML = `
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="text-align: left; border-bottom: 2px solid var(--border-light);">
+              <th style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">When</th>
+              <th style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">User</th>
+              <th style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">Action</th>
+              <th style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">Entity</th>
+              <th style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">IP</th>
+              <th style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${logs.map((log) => {
+              const when = Utils.formatDateTime(log.createdAt || log.created_at);
+              const who = (log.fullName || log.username || '').trim() || (log.userId ? `User ${log.userId}` : 'System');
+              const actionText = log.action || '';
+              const entity = `${log.entityType || ''}${log.entityId ? ` #${log.entityId}` : ''}`.trim() || '-';
+              const ip = log.ipAddress || '-';
+              const rowId = `audit-row-${log.id}`;
+              const detailsId = `audit-details-${log.id}`;
+              const oldValue = tryPrettyJson(log.oldValue);
+              const newValue = tryPrettyJson(log.newValue);
+              const hasDetails = Boolean(oldValue || newValue || log.userAgent);
+              return `
+                <tr id="${rowId}" style="border-bottom: 1px solid var(--border-light); vertical-align: top;">
+                  <td style="padding: 0.75rem; white-space: nowrap;">${Utils.escapeHtml(when || '')}</td>
+                  <td style="padding: 0.75rem;">${Utils.escapeHtml(who)}${log.userId ? ` <span style=\"color: var(--text-secondary);\">(#${Utils.escapeHtml(log.userId)})</span>` : ''}</td>
+                  <td style="padding: 0.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 0.85rem;">${Utils.escapeHtml(actionText)}</td>
+                  <td style="padding: 0.75rem;">${Utils.escapeHtml(entity)}</td>
+                  <td style="padding: 0.75rem; white-space: nowrap;">${Utils.escapeHtml(ip)}</td>
+                  <td style="padding: 0.75rem;">
+                    ${hasDetails ? `<button class=\"btn btn-secondary admin-audit-toggle\" data-audit-toggle=\"${detailsId}\" style=\"padding: 0.4rem 0.75rem; font-size: 0.85rem;\"><i class=\"fas fa-eye\"></i> View</button>` : '<span style="color: var(--text-secondary);">-</span>'}
+                  </td>
+                </tr>
+                ${hasDetails ? `
+                  <tr id="${detailsId}" style="display: none; background: var(--bg-secondary); border-bottom: 1px solid var(--border-light);">
+                    <td colspan="6" style="padding: 0.75rem;">
+                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                          <div style="font-weight: 700; margin-bottom: 0.5rem;">Old Value</div>
+                          <pre style="margin: 0; white-space: pre-wrap; word-break: break-word; padding: 0.75rem; background: white; border: 1px solid var(--border-light); border-radius: 10px; max-height: 240px; overflow: auto;">${Utils.escapeHtml(oldValue || '(none)')}</pre>
+                        </div>
+                        <div>
+                          <div style="font-weight: 700; margin-bottom: 0.5rem;">New Value</div>
+                          <pre style="margin: 0; white-space: pre-wrap; word-break: break-word; padding: 0.75rem; background: white; border: 1px solid var(--border-light); border-radius: 10px; max-height: 240px; overflow: auto;">${Utils.escapeHtml(newValue || '(none)')}</pre>
+                        </div>
+                      </div>
+                      ${log.userAgent ? `<div style=\"margin-top: 0.75rem; color: var(--text-secondary); font-size: 0.85rem;\"><strong>User Agent:</strong> ${Utils.escapeHtml(log.userAgent)}</div>` : ''}
+                    </td>
+                  </tr>
+                ` : ''}
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    tableDiv.querySelectorAll('.admin-audit-toggle').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.dataset.auditToggle;
+        if (!targetId) return;
+        const row = document.getElementById(targetId);
+        if (!row) return;
+        row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+      });
+    });
+  } catch (error) {
+    console.error('Load audit logs error:', error);
+    tableDiv.innerHTML = `<p style="text-align: center; color: var(--red-primary); padding: 2rem;">Failed to load audit logs: ${Utils.escapeHtml(error.message)}</p>`;
   }
 }
 
