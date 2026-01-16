@@ -43,23 +43,6 @@ npm start
 
 ---
 
-## Demo Accounts
-
-### Admin Account
-| Username | Password | Role |
-|----------|----------|------|
-| `admin` | `Admin123!` | Administrator |
-
-### Student Accounts (all use password: `Student123!`)
-| Username | Skills Offered |
-|----------|---------------|
-| `alice_math` | Mathematics, Calculus |
-| `bob_coder` | Python, JavaScript |
-| `carol_artist` | Drawing, Painting |
-| `david_music` | Guitar, Piano |
-| `emma_science` | Chemistry, Physics |
-
----
 
 ## System Architecture
 
@@ -246,24 +229,6 @@ node scripts/initDatabase.js
 # Start server
 npm start
 ```
-
----
-
-## Testing Checklist
-
-- [ ] User registration with validation
-- [ ] Login/logout flow
-- [ ] Profile editing with skill autocomplete
-- [ ] Session creation (public + private)
-- [ ] Session scheduling and completion
-- [ ] Rating submission after session
-- [ ] Messaging between users
-- [ ] Achievement unlocking
-- [ ] Admin user management
-- [ ] Admin session management
-- [ ] Admin skill overview
-- [ ] Reports and analytics
-- [ ] AI Tutor (SkillBot) functionality
 
 ---
 
