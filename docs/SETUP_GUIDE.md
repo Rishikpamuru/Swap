@@ -348,7 +348,7 @@ OPENAI_API_KEY=sk-your-key-here  # Optional for AI features
 2. **Initialize fresh database**
    ```bash
    npm run init-db
-   npm run seed-db  # Optional for demo
+   npm run seed-db  
    ```
 
 3. **Start server**
@@ -356,8 +356,3 @@ OPENAI_API_KEY=sk-your-key-here  # Optional for AI features
    npm start
    ```
 ---
-
-**Document Version:** 2.0  
-**Last Updated:** January 14, 2026  
-**Team:** Jyothir Manchu, Aaryan Porwal, Rishik Pamuru  
-**Chapter:** Reedy HS BPA Chapter, Frisco, Texas

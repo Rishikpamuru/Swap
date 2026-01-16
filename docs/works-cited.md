@@ -1,9 +1,5 @@
 # Works Cited
 
-**SkillSwap: Student Talent Exchange Platform**  
-**BPA Web Application Team Competition 2026**  
-**Reedy HS BPA Chapter - Frisco, Texas**
-
 ---
 
 ## Technologies & Frameworks
