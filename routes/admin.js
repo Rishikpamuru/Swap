@@ -9,7 +9,7 @@ const { getAll, getOne, runQuery, getDatabasePath } = require('../config/databas
 // Configure multer for DB file uploads
 const upload = multer({ 
   dest: path.join(__dirname, '..', 'uploads', 'temp'),
-  limits: { fileSize: 50 * 1024 * 1024 }
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB max
 });
 
 router.use(requireAdmin);
@@ -58,8 +58,10 @@ router.delete('/users/:id', async (req, res) => {
   }
   
   try {
+    // Delete all sessions where user is tutor or student
     await runQuery(db, 'DELETE FROM sessions WHERE tutor_id = ? OR student_id = ?', [userId, userId]);
     
+    // Delete the user
     await runQuery(db, 'DELETE FROM users WHERE id = ?', [userId]);
     
     res.json({ success: true, message: 'User and their sessions deleted successfully' });
@@ -76,12 +78,13 @@ router.delete('/users/:id', async (req, res) => {
  */
 router.get('/sessions', async (req, res) => {
   const db = req.app.locals.db;
-  const type = req.query.type || 'public';
+  const type = req.query.type || 'public'; // public or private
   
   try {
     let sessions;
     
     if (type === 'public') {
+      // Public sessions = session_offers (open offers anyone can request)
       sessions = await getAll(db, `
         SELECT
           so.id,
@@ -106,7 +109,7 @@ router.get('/sessions', async (req, res) => {
         ORDER BY so.created_at DESC
       `);
     } else {
-      // Private sessions
+      // Private sessions = booked sessions between two users
       sessions = await getAll(db, `
         SELECT
           s.id,
@@ -164,6 +167,7 @@ router.delete('/sessions/:id', async (req, res) => {
     const adminId = req.userId;
     
     if (type === 'public') {
+      // Delete session offer
       const offer = await getOne(db, `
         SELECT 
           so.id,
@@ -179,50 +183,14 @@ router.delete('/sessions/:id', async (req, res) => {
         return res.status(404).json({ success: false, message: 'Session offer not found' });
       }
       
-      // Send message to tutor
+      // Send message to tutor with reason
       const tutorMessage = `Your session offer "${offer.title}" for "${offer.skillName}" has been removed by an administrator. Reason: ${reason}`;
       await runQuery(db, `
         INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
         VALUES (?, ?, ?, ?, 0)
       `, [adminId, offer.tutorId, 'Session Offer Removed', tutorMessage]);
-
-      // Notify any students who requested/accepted this offer
-      const requestStudents = await getAll(db, `
-        SELECT DISTINCT student_id AS studentId
-        FROM session_requests
-        WHERE offer_id = ? AND status IN ('pending', 'accepted')
-      `, [sessionId]);
-
-      // Notify any students who already have a scheduled session created from this offer
-      const sessionStudents = await getAll(db, `
-        SELECT DISTINCT student_id AS studentId
-        FROM sessions
-        WHERE offer_id = ?
-      `, [sessionId]);
-
-      const studentIds = new Set();
-      for (const r of requestStudents || []) if (r?.studentId) studentIds.add(Number(r.studentId));
-      for (const r of sessionStudents || []) if (r?.studentId) studentIds.add(Number(r.studentId));
-
-      if (studentIds.size > 0) {
-        const studentMessage = `A session offer for "${offer.skillName}" ("${offer.title}") has been removed by an administrator. Any related requests have been cancelled.`;
-        for (const sid of studentIds) {
-          if (!sid) continue;
-          await runQuery(db, `
-            INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
-            VALUES (?, ?, ?, ?, 0)
-          `, [adminId, sid, 'Session Offer Removed', studentMessage]);
-        }
-      }
-
-      // Cancel any scheduled sessions that were created from this offer
-      await runQuery(db, `
-        UPDATE sessions
-        SET status = 'cancelled', offer_id = NULL, slot_id = NULL, is_group = 0
-        WHERE offer_id = ? AND status = 'scheduled'
-      `, [sessionId]);
       
-      // Delete the session offer
+      // Delete the session offer (cascade deletes slots and requests)
       await runQuery(db, 'DELETE FROM session_offers WHERE id = ?', [sessionId]);
       
       res.json({ success: true, message: 'Session offer deleted and notification sent' });
@@ -245,14 +213,14 @@ router.delete('/sessions/:id', async (req, res) => {
         return res.status(404).json({ success: false, message: 'Session not found' });
       }
       
-      // Send message to tutor with reason
+      // Send message to tutor (creator) with reason
       const tutorMessage = `Your session for "${session.skillName}" scheduled on ${new Date(session.scheduledDate).toLocaleString()} has been deleted by an administrator.\n\nReason: ${reason}`;
       await runQuery(db, `
         INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
         VALUES (?, ?, ?, ?, 0)
       `, [adminId, session.tutorId, 'Session Deleted by Admin', tutorMessage]);
       
-      // Send message to student without reason
+      // Send message to student WITHOUT reason
       if (session.studentId) {
         const studentMessage = `A session for "${session.skillName}" scheduled on ${new Date(session.scheduledDate).toLocaleString()} has been deleted by an administrator.`;
         await runQuery(db, `
@@ -351,6 +319,7 @@ router.put('/users/:id/status', async (req, res) => {
   }
   
   try {
+    // Get current user info for audit
     const user = await getOne(db, 'SELECT id, username, status FROM users WHERE id = ?', [userId]);
     
     if (!user) {
@@ -359,8 +328,10 @@ router.put('/users/:id/status', async (req, res) => {
     
     const oldStatus = user.status;
     
+    // Update user status
     await runQuery(db, 'UPDATE users SET status = ? WHERE id = ?', [status, userId]);
     
+    // Log the action
     await runQuery(db, `
       INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address, user_agent)
       VALUES (?, ?, 'users', ?, ?, ?, ?, ?)
@@ -374,6 +345,7 @@ router.put('/users/:id/status', async (req, res) => {
       req.get('User-Agent') || 'unknown'
     ]);
     
+    // Send notification message to the user
     const action = status === 'suspended' ? 'suspended' : 'reactivated';
     const message = status === 'suspended' 
       ? 'Your account has been suspended by an administrator. Please contact support for more information.'
@@ -452,6 +424,7 @@ router.put('/users/:id/role', async (req, res) => {
       req.get('User-Agent') || 'unknown'
     ]);
     
+    // Send notification message to the user
     await runQuery(db, `
       INSERT INTO messages (sender_id, receiver_id, subject, content, read_status)
       VALUES (?, ?, 'Role Updated', ?, 0)
@@ -665,7 +638,7 @@ router.delete('/skills/:skillName', async (req, res) => {
   }
   
   try {
-    // Delete all skills with this name
+    // Delete all skills with this name (case-insensitive)
     const result = await runQuery(db, `
       DELETE FROM skills WHERE LOWER(skill_name) = LOWER(?)
     `, [skillName]);
@@ -787,7 +760,7 @@ router.post('/database-import', upload.single('database'), async (req, res) => {
     const uploadedPath = req.file.path;
     const dbPath = getDatabasePath();
     
-    // Validate it's a SQLite file
+    // Validate it's a SQLite file (check header)
     const buffer = Buffer.alloc(16);
     const fd = fs.openSync(uploadedPath, 'r');
     fs.readSync(fd, buffer, 0, 16, 0);
@@ -819,6 +792,7 @@ router.post('/database-import', upload.single('database'), async (req, res) => {
     fs.copyFileSync(uploadedPath, dbPath);
     fs.unlinkSync(uploadedPath);
     
+    // Note: Server needs restart to use new DB
     res.json({ 
       success: true, 
       message: 'Database imported successfully. Server restart required.',
@@ -827,8 +801,8 @@ router.post('/database-import', upload.single('database'), async (req, res) => {
     
     // Auto-restart after response
     setTimeout(() => {
-      console.log(' Restarting server after database import...');
-      process.exit(0);
+      console.log('🔄 Restarting server after database import...');
+      process.exit(0); // Railway will auto-restart
     }, 1000);
     
   } catch (error) {

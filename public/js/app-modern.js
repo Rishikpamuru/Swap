@@ -630,12 +630,6 @@ const Router = {
   },
 
   navigate(page) {
-    // Admin UX: treat admin panel as the home page
-    const currentUser = getCurrentUser();
-    if (currentUser?.role === 'admin') {
-      if (page === 'dashboard' || page === 'search') page = 'admin';
-    }
-
     // Allow pages to clean up timers/listeners when navigating away
     if (typeof AppState.cleanup === 'function') {
       try {
@@ -894,15 +888,20 @@ const Components = {
         
         <nav class="sidebar-nav">
           ${isAdmin ? `
-          <a href="#" class="sidebar-nav-item" data-page="admin">
-            <span class="sidebar-nav-item-icon"><i class="fas fa-shield-alt"></i></span>
-            <span>Admin Panel</span>
+          <a href="#" class="sidebar-nav-item" data-page="search">
+            <span class="sidebar-nav-item-icon"><i class="fas fa-search"></i></span>
+            <span>Search</span>
           </a>
 
           <a href="#" class="sidebar-nav-item" data-page="messages">
             <span class="sidebar-nav-item-icon"><i class="fas fa-envelope"></i></span>
             <span>Messages</span>
             <span id="messages-unread-badge" class="notification-badge" style="position: static; margin-left: auto; width: 22px; height: 22px; font-size: 0.75rem; display: none;"></span>
+          </a>
+          
+          <a href="#" class="sidebar-nav-item" data-page="admin">
+            <span class="sidebar-nav-item-icon"><i class="fas fa-shield-alt"></i></span>
+            <span>Admin Panel</span>
           </a>
           ` : `
           <a href="#" class="sidebar-nav-item" data-page="dashboard">
@@ -1013,7 +1012,7 @@ const Components = {
 
   achievementCard(achievement) {
     return `
-      <div class="achievement-card ${achievement.unlocked ? 'unlocked' : ''}" data-achievement-id="${achievement.id}" role="button" tabindex="0" aria-label="${Utils.escapeHtml(achievement.name)} achievement details">
+      <div class="achievement-card">
         <div class="achievement-icon-container">
           <span class="achievement-icon ${achievement.unlocked ? '' : 'locked'}">${achievement.icon}</span>
           ${achievement.unlocked ? '<span class="achievement-sparkles"><i class="fas fa-star"></i></span>' : ''}
@@ -1033,8 +1032,8 @@ const Components = {
 
   modal(content, id = 'modal') {
     return `
-      <div class="modal-overlay" id="${id}">
-        <div class="modal" style="max-width: 1200px; width: 100%;">
+      <div class="modal-overlay" id="${id}" onclick="closeModal('${id}')">
+        <div class="modal" style="max-width: 1200px; width: 100%;" onclick="event.stopPropagation()">
           ${content}
         </div>
       </div>
@@ -1059,7 +1058,7 @@ const Components = {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" data-modal-close="rating-modal">Cancel</button>
+        <button class="btn btn-outline" onclick="closeModal('rating-modal')">Cancel</button>
         <button class="btn btn-primary" onclick="submitRating()">Submit</button>
       </div>
     `;
@@ -1283,9 +1282,6 @@ function renderDashboardPage() {
               <div style="font-size: 2rem; margin-bottom: 0.5rem;">⭐</div>
               <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Average Rating</h3>
               <p style="font-size: 2.5rem; font-weight: 700; color: var(--blue-primary);">${(user.averageRating || 0).toFixed(1)}</p>
-              <div style="margin-top: 0.75rem;">
-                <button class="btn btn-outline btn-sm" id="dash-view-feedback"><i class="fas fa-comments"></i> View Feedback</button>
-              </div>
             </div>
             
             <div style="background: white; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md);">
@@ -1387,10 +1383,6 @@ function renderDashboardPage() {
   document.getElementById('dash-offer-teach')?.addEventListener('click', () => Router.navigate('create-session-form'));
   document.getElementById('dash-find-session')?.addEventListener('click', () => Router.navigate('learn'));
   document.getElementById('dash-past-sessions')?.addEventListener('click', () => Router.navigate('past-sessions'));
-  document.getElementById('dash-view-feedback')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    showRatingsFeedbackModal();
-  });
 
   // Load offers + sessions widgets
   (async () => {
@@ -1560,11 +1552,6 @@ function renderDashboardPage() {
                   <div style="flex-shrink:0; text-align:right;">
                     <div style="font-weight: 800; color: ${pending ? 'var(--blue-primary)' : 'var(--text-secondary)'};">${pending} pending</div>
                     <div style="font-size: 0.85rem; color: var(--text-secondary);">requests</div>
-                    <div style="margin-top: 0.5rem; display:flex; justify-content:flex-end;">
-                      <button class="btn btn-sm btn-outline dash-cancel-offer" data-offer-id="${o.id}" style="border-color: var(--red-primary); color: var(--red-primary);">
-                        Cancel
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1572,34 +1559,6 @@ function renderDashboardPage() {
           }).join('');
         }
       }
-
-      // Wire offer cancellation buttons
-      document.querySelectorAll('.dash-cancel-offer').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const offerId = Number(btn.getAttribute('data-offer-id'));
-          if (!offerId) return;
-
-          const ok = confirm('Cancel this offer? Pending requests will be cancelled.');
-          if (!ok) return;
-
-          btn.disabled = true;
-          try {
-            const res = await fetch(`/api/offers/${offerId}/cancel`, { method: 'POST' });
-            const data = res.ok ? await res.json() : null;
-            if (!res.ok || !data?.success) {
-              showToast(data?.message || 'Failed to cancel offer', 'error');
-              btn.disabled = false;
-              return;
-            }
-            showToast('Offer cancelled', 'success');
-            Router.navigate('dashboard');
-          } catch (e) {
-            console.error('Cancel offer error:', e);
-            showToast('Failed to cancel offer', 'error');
-            btn.disabled = false;
-          }
-        });
-      });
 
       // Wire request actions
       document.querySelectorAll('.offer-request-action').forEach(btn => {
@@ -1630,118 +1589,6 @@ function renderDashboardPage() {
       document.getElementById('dashboard-my-offers')?.replaceChildren();
     }
   })();
-}
-
-async function showRatingsFeedbackModal() {
-  const me = getCurrentUser();
-  if (!me?.id) {
-    Router.navigate('login');
-    return;
-  }
-
-  const existing = document.getElementById('ratings-feedback-modal');
-  if (existing) existing.remove();
-
-  const loadingContent = `
-    <div style="padding: 2rem;">
-      <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;">
-        <div>
-          <div style="font-size: 1.5rem; font-weight: 800;">Feedback</div>
-          <div style="color: var(--text-secondary);">Ratings and comments you've received</div>
-        </div>
-        <button class="btn btn-secondary" data-modal-close="ratings-feedback-modal">Close</button>
-      </div>
-      <div style="text-align:center; padding: 2rem; color: var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i></div>
-    </div>
-  `;
-
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = Components.modal(loadingContent, 'ratings-feedback-modal');
-  document.body.appendChild(wrapper);
-  setTimeout(() => document.getElementById('ratings-feedback-modal')?.classList.add('show'), 10);
-
-  const starsHtml = (rating) => {
-    const r = Math.max(0, Math.min(5, Number(rating) || 0));
-    return Array.from({ length: 5 }, (_, i) => {
-      if (i < Math.floor(r)) return '<i class="fas fa-star" style="color: #fbbf24;"></i>';
-      return '<i class="far fa-star" style="color: #d1d5db;"></i>';
-    }).join('');
-  };
-
-  try {
-    const res = await fetch('/api/ratings/received?limit=50', { credentials: 'same-origin' });
-    const ct = String(res.headers.get('content-type') || '');
-    const data = ct.includes('application/json') ? await res.json() : null;
-    if (!res.ok || !data?.success) {
-      throw new Error(data?.message || 'Failed to load feedback');
-    }
-
-    const avg = Number(data.avgRating || 0);
-    const total = Number(data.totalRatings || 0);
-    const ratings = Array.isArray(data.ratings) ? data.ratings : [];
-
-    const listHtml = ratings.length
-      ? ratings.map((r) => {
-        const name = Utils.escapeHtml(String(r.raterName || 'Student'));
-        const createdAt = r.createdAt ? new Date(r.createdAt) : null;
-        const dateText = createdAt && !Number.isNaN(createdAt.valueOf()) ? createdAt.toLocaleDateString() : '';
-        const feedback = String(r.feedback || '').trim();
-        return `
-          <div style="padding: 1rem; border: 1px solid var(--border-light); border-radius: 12px; background: white;">
-            <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem;">
-              <div style="font-weight: 800;">${name}</div>
-              <div style="display:flex; align-items:center; gap: 0.5rem; color: var(--text-secondary);">
-                <span>${starsHtml(r.rating)}</span>
-                <span style="font-weight: 700;">${Number(r.rating || 0)}</span>
-              </div>
-            </div>
-            ${dateText ? `<div style="margin-top: 0.25rem; font-size: 0.875rem; color: var(--text-secondary);">${Utils.escapeHtml(dateText)}</div>` : ''}
-            <div style="margin-top: 0.75rem; color: var(--text-primary); line-height: 1.6;">
-              ${feedback ? Utils.escapeHtml(feedback) : '<span style="color: var(--text-secondary); font-style: italic;">No written feedback</span>'}
-            </div>
-          </div>
-        `;
-      }).join('')
-      : '<div style="text-align:center; padding: 2rem; color: var(--text-secondary);">No feedback yet.</div>';
-
-    const content = `
-      <div style="padding: 2rem;">
-        <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;">
-          <div>
-            <div style="font-size: 1.5rem; font-weight: 800;">Feedback</div>
-            <div style="color: var(--text-secondary);">${avg.toFixed(1)} average • ${total} rating${total === 1 ? '' : 's'}</div>
-          </div>
-          <button class="btn btn-secondary" data-modal-close="ratings-feedback-modal">Close</button>
-        </div>
-
-        <div style="display:flex; align-items:center; gap: 0.75rem; margin-bottom: 1rem;">
-          <div style="color: #f59e0b;">${starsHtml(Math.round(avg))}</div>
-          <div style="font-weight: 800; font-size: 1.125rem;">${avg.toFixed(1)}</div>
-        </div>
-
-        <div style="display:grid; gap: 0.75rem; max-height: 60vh; overflow: auto; padding-right: 0.25rem;">
-          ${listHtml}
-        </div>
-      </div>
-    `;
-
-    const modalBody = document.querySelector('#ratings-feedback-modal .modal');
-    if (modalBody) modalBody.innerHTML = content;
-  } catch (e) {
-    const msg = Utils.escapeHtml(String(e?.message || 'Failed to load feedback'));
-    const modalBody = document.querySelector('#ratings-feedback-modal .modal');
-    if (modalBody) {
-      modalBody.innerHTML = `
-        <div style="padding: 2rem;">
-          <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;">
-            <div style="font-size: 1.5rem; font-weight: 800;">Feedback</div>
-            <button class="btn btn-secondary" data-modal-close="ratings-feedback-modal">Close</button>
-          </div>
-          <div style="padding: 1rem; border-radius: 12px; background: rgba(239, 68, 68, 0.10); color: var(--red-primary); font-weight: 700;">${msg}</div>
-        </div>
-      `;
-    }
-  }
 }
 
 function renderCreateSessionHomePage() {
@@ -2292,15 +2139,9 @@ async function renderSearchPage() {
           ? 'Online'
           : (o.location ? Utils.escapeHtml(o.location) : 'In-person');
 
-        const isGroup = Boolean(Number(o.isGroup));
-        const maxParticipants = Math.max(2, Number(o.maxParticipants) || 2);
-        const groupLine = isGroup
-          ? `<div style="color: var(--text-secondary); font-size: 0.95rem;"><i class="fas fa-users"></i> Group session • Up to ${maxParticipants} students</div>`
-          : '';
-
         return `
               <div class="user-card" style="display:flex; flex-direction: column; gap: 0.75rem;">
-                <div class="open-session-profile" role="button" tabindex="0" data-user-id="${o.tutorId}" style="display:flex; align-items:center; gap: 1rem; cursor: pointer;">
+                <div style="display:flex; align-items:center; gap: 1rem;">
                   ${avatar}
                   <div style="flex: 1; min-width:0;">
                     <div style="font-weight: 800; font-size: 1.125rem;">${Utils.escapeHtml(name)}</div>
@@ -2311,7 +2152,6 @@ async function renderSearchPage() {
                 <div style="color: var(--text-secondary); font-size: 0.95rem;">${Utils.escapeHtml(o.title || '')}</div>
                 ${o.notes ? `<div style="color: var(--text-secondary); font-size: 0.95rem;">${Utils.escapeHtml(o.notes)}</div>` : ''}
                 <div style="color: var(--text-secondary); font-size: 0.95rem;"><i class="fas fa-map-marker-alt"></i> ${locationLine}</div>
-                ${groupLine}
                 <div>
                   <div style="font-weight: 800; font-size: 0.95rem;">Pick a time</div>
                   ${slotSelect}
@@ -2325,22 +2165,6 @@ async function renderSearchPage() {
         </div>
       `;
 
-      // Enable profile open from open sessions panel
-      container.querySelectorAll('.open-session-profile').forEach(el => {
-        el.addEventListener('click', (e) => {
-          const uid = Number(el.getAttribute('data-user-id'));
-          if (!uid) return;
-          openUserProfileModal(uid);
-        });
-        el.addEventListener('keydown', (e) => {
-          if (e.key !== 'Enter' && e.key !== ' ') return;
-          e.preventDefault();
-          const uid = Number(el.getAttribute('data-user-id'));
-          if (!uid) return;
-          openUserProfileModal(uid);
-        });
-      });
-
       document.querySelectorAll('.open-session-request-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
           const offerId = Number(btn.getAttribute('data-offer-id'));
@@ -2351,11 +2175,7 @@ async function renderSearchPage() {
             return;
           }
           btn.disabled = true;
-          const offer = offers.find(x => Number(x.id) === Number(offerId));
-          await requestOfferSlot(offerId, slotId, offer ? {
-            isGroup: Boolean(Number(offer.isGroup)),
-            maxParticipants: Number(offer.maxParticipants) || 1
-          } : null);
+          await requestOfferSlot(offerId, slotId);
           btn.disabled = false;
         });
       });
@@ -2407,27 +2227,6 @@ async function openUserProfileModal(userId) {
     const profileImage = u.profileImage
       ? `<img src="${u.profileImage}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
       : Utils.getInitials(displayName || u.username || 'U');
-
-    const sessionOffers = Array.isArray(u.sessionOffers) ? u.sessionOffers : [];
-    const sessionOffersHtml = sessionOffers.length > 0
-      ? sessionOffers.map(offer => {
-        const next = offer.nextSlot ? new Date(offer.nextSlot) : null;
-        const nextText = next ? next.toLocaleDateString() : '';
-        return `
-          <div style="padding: 0.85rem 1rem; border: 1px solid var(--border-light); border-radius: 12px; margin-bottom: 0.75rem;">
-            <div style="font-weight: 800; color: var(--text-primary);">${Utils.escapeHtml(offer.title || 'Session Offer')}</div>
-            <div style="margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.95rem; display:flex; gap: 0.75rem; flex-wrap: wrap;">
-              <span><i class="fas fa-graduation-cap"></i> ${Utils.escapeHtml(offer.skillName || '')}</span>
-              <span><i class="fas fa-${offer.locationType === 'online' ? 'video' : 'map-marker-alt'}"></i> ${Utils.escapeHtml(offer.locationType || '')}</span>
-              ${nextText ? `<span style="color: var(--green-primary);"><i class="fas fa-calendar"></i> Next: ${Utils.escapeHtml(nextText)}</span>` : ''}
-            </div>
-            <button class="btn btn-sm btn-primary user-profile-request-offer-btn" data-user-id="${u.id}" data-username="${Utils.escapeHtml(u.username || '')}" data-full-name="${Utils.escapeHtml(u.fullName || '')}" style="margin-top: 0.65rem;">
-              <i class="fas fa-calendar-plus"></i> Request Session
-            </button>
-          </div>
-        `;
-      }).join('')
-      : '<span style="color: #1f2937; font-size: 1rem;">No open session offers right now</span>';
 
     const modalHtml = `
       <div id="user-profile-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 1rem;">
@@ -2509,17 +2308,6 @@ async function openUserProfileModal(userId) {
                 </div>
               </div>
 
-              <div style="margin-bottom: 2rem;">
-                <div style="background: linear-gradient(135deg, var(--yellow-500, #eab308) 0%, #f59e0b 100%); padding: 0.75rem 1.25rem; border-radius: 8px; margin-bottom: 1rem;">
-                  <div style="font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.75rem; color: white;">
-                    <i class="fas fa-calendar-alt" style="font-size: 1.25rem;"></i> Open Session Offers
-                  </div>
-                </div>
-                <div style="padding: 0 1rem; max-height: 220px; overflow-y: auto;">
-                  ${sessionOffersHtml}
-                </div>
-              </div>
-
               <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                 <button type="button" class="user-profile-request-btn btn btn-primary" data-user-id="${u.id}" data-username="${Utils.escapeHtml(u.username || '')}" data-full-name="${Utils.escapeHtml(u.fullName || '')}" style="padding: 0.875rem 2rem; font-size: 1rem;"><i class="fas fa-calendar-plus"></i> Request Session</button>
                 <button type="button" class="user-profile-message-btn btn btn-secondary" data-user-id="${u.id}" data-username="${Utils.escapeHtml(u.username || '')}" style="padding: 0.875rem 2rem; font-size: 1rem;"><i class="fas fa-envelope"></i> Message</button>
@@ -2552,14 +2340,6 @@ async function openUserProfileModal(userId) {
     document.querySelector('.user-profile-request-btn')?.addEventListener('click', () => {
       close();
       requestTutorSession(Number(u.id), String(u.username || ''), String(u.fullName || ''));
-    });
-
-    document.querySelectorAll('#user-profile-modal .user-profile-request-offer-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        close();
-        requestTutorSession(Number(u.id), String(u.username || ''), String(u.fullName || ''));
-      });
     });
   } catch (e) {
     console.error('Open user profile modal error:', e);
@@ -2821,15 +2601,11 @@ async function renderYourSessionsPage() {
 function renderSessionCard(session) {
   const user = getCurrentUser();
   const isTutor = session.tutorId === user?.id;
-  const isGroupSession = Boolean(Number(session.isGroup));
-  const groupCount = Number(session.groupParticipantCount) || 0;
-  const groupNames = Array.isArray(session.groupParticipantNames) ? session.groupParticipantNames : [];
-
   const otherPerson = isTutor ? {
-    id: isGroupSession ? null : session.studentId,
-    name: isGroupSession ? `Group Session${groupCount ? ` (${groupCount} students)` : ''}` : (session.studentFullName || session.studentUsername),
-    username: isGroupSession ? '' : session.studentUsername,
-    profileImage: isGroupSession ? '' : session.studentProfileImage
+    id: session.studentId,
+    name: session.studentFullName || session.studentUsername,
+    username: session.studentUsername,
+    profileImage: session.studentProfileImage
   } : {
     id: session.tutorId,
     name: session.tutorFullName || session.tutorUsername,
@@ -2841,10 +2617,9 @@ function renderSessionCard(session) {
   const dateStr = date.toLocaleDateString();
   const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  const canViewProfile = Boolean(otherPerson.id);
   const avatarHtml = otherPerson.profileImage
-    ? `<img src="${Utils.escapeHtml(otherPerson.profileImage)}" alt="${Utils.escapeHtml(otherPerson.name)}" class="user-avatar" style="cursor: ${canViewProfile ? 'pointer' : 'default'}; object-fit: cover;" ${canViewProfile ? `data-view-profile="${otherPerson.id}"` : ''}>`
-    : `<div class="user-avatar" style="cursor: ${canViewProfile ? 'pointer' : 'default'};" ${canViewProfile ? `data-view-profile="${otherPerson.id}"` : ''}>${Utils.getInitials(otherPerson.name)}</div>`;
+    ? `<img src="${Utils.escapeHtml(otherPerson.profileImage)}" alt="${Utils.escapeHtml(otherPerson.name)}" class="user-avatar" style="cursor: pointer; object-fit: cover;" data-view-profile="${otherPerson.id}">`
+    : `<div class="user-avatar" style="cursor: pointer;" data-view-profile="${otherPerson.id}">${Utils.getInitials(otherPerson.name)}</div>`;
 
   // Meeting link display (for online sessions)
   let meetingLinkHtml = '';
@@ -2864,7 +2639,7 @@ function renderSessionCard(session) {
 
   // Google Calendar link for scheduled sessions
   const calendarUrl = session.status === 'scheduled' ? Utils.getGoogleCalendarUrl({
-    title: `SkillSwap: ${session.skillName} with ${isTutor ? (isGroupSession ? 'Group' : (session.studentFullName || session.studentUsername)) : (session.tutorFullName || session.tutorUsername)}`,
+    title: `SkillSwap: ${session.skillName} with ${isTutor ? session.studentFullName || session.studentUsername : session.tutorFullName || session.tutorUsername}`,
     start: session.scheduledDate,
     duration: session.duration || 60,
     description: `SkillSwap tutoring session for ${session.skillName}. ${session.notes || ''}`,
@@ -2874,9 +2649,8 @@ function renderSessionCard(session) {
   return `
     <div class="user-card">
       ${avatarHtml}
-      <h3 class="user-name" style="cursor: ${canViewProfile ? 'pointer' : 'default'};" ${canViewProfile ? `data-view-profile="${otherPerson.id}"` : ''}>${Utils.escapeHtml(otherPerson.name)}</h3>
-      ${otherPerson.username ? `<p class="user-title">@${Utils.escapeHtml(otherPerson.username)}</p>` : '<p class="user-title">&nbsp;</p>'}
-      ${isTutor && isGroupSession ? `<p class="user-info"><i class="fas fa-users"></i> ${groupCount || groupNames.length || 0} students${groupNames.length ? ` • ${Utils.escapeHtml(groupNames.slice(0, 4).join(', '))}${groupNames.length > 4 ? '…' : ''}` : ''}</p>` : ''}
+      <h3 class="user-name" style="cursor: pointer;" data-view-profile="${otherPerson.id}">${otherPerson.name}</h3>
+      <p class="user-title">@${otherPerson.username}</p>
       <p class="user-info"><i class="fas fa-book"></i> ${session.skillName}</p>
       <p class="user-info"><i class="fas fa-calendar"></i> ${dateStr}</p>
       <p class="user-info"><i class="fas fa-clock"></i> ${timeStr}${session.duration ? ` (${session.duration}min)` : ''}</p>
@@ -3073,36 +2847,6 @@ async function renderRequestSessionPage() {
                   <div id="req-slot-meta" class="form-helper" style="display:none;"></div>
                 </div>
 
-                <div style="margin-top: 0.75rem; padding: 0.75rem 1rem; border: 1px dashed var(--border-light); border-radius: var(--radius-lg);">
-                  <button type="button" class="btn btn-ghost" id="req-propose-toggle" style="padding: 0; height: auto;">Can't make these times? Request a new time slot</button>
-                  <div id="req-propose-panel" style="display:none; margin-top: 0.75rem;">
-                    <div class="form-group" style="margin-top: 0;">
-                      <label class="form-label">Which offer should this apply to?</label>
-                      <select id="req-propose-offer" class="form-select" disabled>
-                        <option value="">Select a skill first…</option>
-                      </select>
-                      <div class="form-helper">This will add a new slot to the tutor's offer and create a pending request.</div>
-                    </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
-                      <div>
-                        <label class="form-label" style="margin-bottom: 0.35rem;">Date</label>
-                        <input type="date" id="req-propose-date" class="form-input">
-                      </div>
-                      <div>
-                        <label class="form-label" style="margin-bottom: 0.35rem;">Time</label>
-                        <input type="time" id="req-propose-time" class="form-input">
-                      </div>
-                      <div>
-                        <label class="form-label" style="margin-bottom: 0.35rem;">Duration (min)</label>
-                        <input type="number" id="req-propose-duration" class="form-input" min="15" max="240" value="60">
-                      </div>
-                    </div>
-                    <div style="margin-top: 0.75rem; display:flex; justify-content: flex-end;">
-                      <button type="button" class="btn btn-outline" id="req-propose-send" disabled>Send New Time Request</button>
-                    </div>
-                  </div>
-                </div>
-
                 <div class="form-group">
                   <label class="form-label">Notes (optional)</label>
                   <textarea id="req-notes" class="form-textarea" placeholder="Anything the tutor should know?" maxlength="1000" style="min-height: 110px;"></textarea>
@@ -3140,13 +2884,6 @@ async function renderRequestSessionPage() {
   const slotMeta = document.getElementById('req-slot-meta');
   const notesEl = document.getElementById('req-notes');
   const submitBtn = document.getElementById('req-submit');
-  const proposeToggle = document.getElementById('req-propose-toggle');
-  const proposePanel = document.getElementById('req-propose-panel');
-  const proposeOffer = document.getElementById('req-propose-offer');
-  const proposeDate = document.getElementById('req-propose-date');
-  const proposeTime = document.getElementById('req-propose-time');
-  const proposeDuration = document.getElementById('req-propose-duration');
-  const proposeSend = document.getElementById('req-propose-send');
 
   btnBack?.addEventListener('click', () => Router.navigate('search'));
   btnCancel?.addEventListener('click', () => Router.navigate('search'));
@@ -3238,22 +2975,6 @@ async function renderRequestSessionPage() {
     }).join('');
     slotMeta.style.display = 'none';
     submitBtn.disabled = true;
-
-    // Populate propose-offer list for this skill
-    if (proposeOffer) {
-      const uniqueOffers = [];
-      const seen = new Set();
-      for (const it of items) {
-        const k = String(it.offerId);
-        if (seen.has(k)) continue;
-        seen.add(k);
-        uniqueOffers.push({ offerId: it.offerId, title: it.offerTitle || 'Offer' });
-      }
-      proposeOffer.disabled = uniqueOffers.length === 0;
-      proposeOffer.innerHTML = uniqueOffers.length
-        ? '<option value="">Select an offer…</option>' + uniqueOffers.map(o => `<option value="${o.offerId}">${Utils.escapeHtml(o.title)}</option>`).join('')
-        : '<option value="">No offers for this skill</option>';
-    }
   };
 
   skillSelect.addEventListener('change', refreshSlots);
@@ -3271,74 +2992,6 @@ async function renderRequestSessionPage() {
     if (picked) {
       slotMeta.textContent = `Location: ${picked.locationLine}`;
       slotMeta.style.display = 'block';
-
-      // Keep propose-offer in sync with selected slot
-      if (proposeOffer) {
-        proposeOffer.value = String(picked.offerId);
-      }
-    }
-  });
-
-  const updateProposeSendEnabled = () => {
-    if (!proposeSend) return;
-    const offerId = Number(proposeOffer?.value || 0);
-    const d = String(proposeDate?.value || '').trim();
-    const t = String(proposeTime?.value || '').trim();
-    proposeSend.disabled = !(offerId && d && t);
-  };
-
-  proposeToggle?.addEventListener('click', () => {
-    if (!proposePanel) return;
-    proposePanel.style.display = proposePanel.style.display === 'none' ? 'block' : 'none';
-  });
-
-  proposeOffer?.addEventListener('change', updateProposeSendEnabled);
-  proposeDate?.addEventListener('input', updateProposeSendEnabled);
-  proposeTime?.addEventListener('input', updateProposeSendEnabled);
-  proposeDuration?.addEventListener('input', updateProposeSendEnabled);
-
-  proposeSend?.addEventListener('click', async () => {
-    showReqError('');
-    const offerId = Number(proposeOffer?.value || 0);
-    const d = String(proposeDate?.value || '').trim();
-    const t = String(proposeTime?.value || '').trim();
-    const dur = Number(proposeDuration?.value || 60) || 60;
-    if (!offerId || !d || !t) {
-      showReqError('Please select an offer and choose a date/time');
-      return;
-    }
-
-    proposeSend.disabled = true;
-    try {
-      const res = await fetch(`/api/offers/${offerId}/request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ proposedDate: d, proposedTime: t, duration: dur })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to request new time');
-
-      const note = String(notesEl?.value || '').trim();
-      if (note) {
-        try {
-          await fetch(`/api/messages/with/${tutorId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify({ content: `Session request note: ${note}` })
-          });
-        } catch (err) {
-          console.warn('Failed to send note DM:', err);
-        }
-      }
-
-      showToast('New time requested!', 'success');
-      setTimeout(() => Router.navigate('dashboard'), 300);
-    } catch (err) {
-      console.error('Request new time error:', err);
-      showReqError(err.message || 'Failed to request new time');
-      proposeSend.disabled = false;
     }
   });
 
@@ -3682,7 +3335,7 @@ async function createOfferFromForm(form) {
   }
 }
 
-async function requestOfferSlot(offerId, slotId, offerMeta) {
+async function requestOfferSlot(offerId, slotId) {
   try {
     const response = await fetch(`/api/offers/${offerId}/request`, {
       method: 'POST',
@@ -3694,14 +3347,7 @@ async function requestOfferSlot(offerId, slotId, offerMeta) {
       showToast(data.message || 'Failed to request slot', 'error');
       return null;
     }
-    const isGroup = Boolean(offerMeta?.isGroup);
-    const maxParticipants = Number(offerMeta?.maxParticipants) || 1;
-    showToast(
-      isGroup
-        ? `Request sent! (Group session • up to ${Math.max(2, maxParticipants)} students)`
-        : 'Request sent!',
-      'success'
-    );
+    showToast('Request sent!', 'success');
     setTimeout(() => Router.navigate('dashboard'), 400);
     return data.requestId;
   } catch (error) {
@@ -3862,6 +3508,11 @@ async function renderAchievementsPage() {
         <div class="page-container">
           <div class="page-header">
             <h1 class="page-title">Achievements</h1>
+            <div style="background: var(--red-primary); color: white; padding: 0.75rem 2rem; border-radius: var(--radius-xl); display: inline-block; margin-top: 1rem; font-weight: 700; position: relative;">
+              <div style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-top: 20px solid transparent; border-bottom: 20px solid transparent; border-right: 30px solid var(--red-primary);"></div>
+              My Awards
+              <div style="position: absolute; right: -30px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-top: 20px solid transparent; border-bottom: 20px solid transparent; border-left: 30px solid var(--red-primary);"></div>
+            </div>
           </div>
           
           <div class="achievement-grid" id="achievement-grid">
@@ -4496,7 +4147,6 @@ async function renderAdminPage() {
           <div style="margin-bottom: 2rem;">
             <div style="display: flex; gap: 1rem; border-bottom: 2px solid var(--border-light); flex-wrap: wrap;">
               <button class="admin-tab active" data-tab="reports" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid var(--blue-primary); font-weight: 600; cursor: pointer;"><i class="fas fa-chart-bar"></i> Reports</button>
-              <button class="admin-tab" data-tab="audit" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);"><i class="fas fa-clipboard-list"></i> Audit Log</button>
               <button class="admin-tab" data-tab="public-sessions" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);">Public Sessions</button>
               <button class="admin-tab" data-tab="private-sessions" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);">Private Sessions</button>
               <button class="admin-tab" data-tab="users" style="padding: 1rem 2rem; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; cursor: pointer; color: var(--text-secondary);">Users</button>
@@ -4954,8 +4604,6 @@ function switchAdminTab(tab) {
   // Load content
   if (tab === 'reports') {
     loadAdminReports();
-  } else if (tab === 'audit') {
-    loadAdminAuditLogs();
   } else if (tab === 'public-sessions') {
     loadAdminSessions('public');
   } else if (tab === 'private-sessions') {
@@ -4966,178 +4614,6 @@ function switchAdminTab(tab) {
     loadAdminSkills();
   } else if (tab === 'database') {
     loadAdminDatabase();
-  }
-}
-
-async function loadAdminAuditLogs(filters = {}) {
-  const contentDiv = document.getElementById('admin-content');
-  const limit = Math.min(200, Math.max(1, parseInt(filters.limit ?? 50) || 50));
-  const action = String(filters.action ?? '').trim();
-  const userId = String(filters.userId ?? '').trim();
-
-  contentDiv.innerHTML = `
-    <div style="background: white; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0;">Audit Log</h2>
-          <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary);">Tracks admin and sensitive actions for compliance and security.</p>
-        </div>
-        <button id="admin-audit-refresh" class="btn btn-secondary"><i class="fas fa-sync"></i> Refresh</button>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1.2fr 1fr 0.7fr; gap: 0.75rem; margin-bottom: 1rem; align-items: end;">
-        <div>
-          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;">Action contains</label>
-          <input id="admin-audit-action" type="text" placeholder="e.g., POST /api/admin/users" value="${Utils.escapeHtml(action)}" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
-        </div>
-        <div>
-          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;">User ID</label>
-          <input id="admin-audit-userId" type="number" min="1" placeholder="e.g., 12" value="${Utils.escapeHtml(userId)}" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
-        </div>
-        <div>
-          <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;">Limit</label>
-          <select id="admin-audit-limit" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: white;">
-            ${[25, 50, 100, 200].map(n => `<option value="${n}" ${n === limit ? 'selected' : ''}>${n}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-
-      <div id="admin-audit-table" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem;"></i>
-        <p style="margin-top: 0.75rem;">Loading audit logs...</p>
-      </div>
-    </div>
-  `;
-
-  const tableDiv = document.getElementById('admin-audit-table');
-  const actionInput = document.getElementById('admin-audit-action');
-  const userIdInput = document.getElementById('admin-audit-userId');
-  const limitSelect = document.getElementById('admin-audit-limit');
-  const refreshBtn = document.getElementById('admin-audit-refresh');
-
-  let refreshTimeout = null;
-  const scheduleRefresh = () => {
-    if (refreshTimeout) clearTimeout(refreshTimeout);
-    refreshTimeout = setTimeout(() => {
-      loadAdminAuditLogs({
-        action: actionInput.value,
-        userId: userIdInput.value,
-        limit: limitSelect.value
-      });
-    }, 350);
-  };
-
-  actionInput.addEventListener('input', scheduleRefresh);
-  userIdInput.addEventListener('input', scheduleRefresh);
-  limitSelect.addEventListener('change', scheduleRefresh);
-  refreshBtn.addEventListener('click', () => loadAdminAuditLogs({
-    action: actionInput.value,
-    userId: userIdInput.value,
-    limit: limitSelect.value
-  }));
-
-  try {
-    const params = new URLSearchParams();
-    params.set('limit', String(limit));
-    if (action) params.set('action', action);
-    if (userId) params.set('userId', userId);
-
-    const response = await fetch(`/api/admin/audit-logs?${params.toString()}`);
-    const data = await response.json();
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || 'Failed to load audit logs');
-    }
-
-    const logs = Array.isArray(data.logs) ? data.logs : [];
-    if (!logs.length) {
-      tableDiv.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 1.5rem;">No audit logs found.</p>`;
-      return;
-    }
-
-    const tryPrettyJson = (value) => {
-      if (value === null || value === undefined) return '';
-      const s = typeof value === 'string' ? value : JSON.stringify(value);
-      if (!s) return '';
-      try {
-        const parsed = JSON.parse(s);
-        return JSON.stringify(parsed, null, 2);
-      } catch (_) {
-        return String(value);
-      }
-    };
-
-    tableDiv.innerHTML = `
-      <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr style="text-align: left; border-bottom: 2px solid var(--border-light);">
-              <th style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">When</th>
-              <th style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">User</th>
-              <th style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">Action</th>
-              <th style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">Entity</th>
-              <th style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">IP</th>
-              <th style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">Details</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${logs.map((log) => {
-              const when = Utils.formatDateTime(log.createdAt || log.created_at);
-              const who = (log.fullName || log.username || '').trim() || (log.userId ? `User ${log.userId}` : 'System');
-              const actionText = log.action || '';
-              const entity = `${log.entityType || ''}${log.entityId ? ` #${log.entityId}` : ''}`.trim() || '-';
-              const ip = log.ipAddress || '-';
-              const rowId = `audit-row-${log.id}`;
-              const detailsId = `audit-details-${log.id}`;
-              const oldValue = tryPrettyJson(log.oldValue);
-              const newValue = tryPrettyJson(log.newValue);
-              const hasDetails = Boolean(oldValue || newValue || log.userAgent);
-              return `
-                <tr id="${rowId}" style="border-bottom: 1px solid var(--border-light); vertical-align: top;">
-                  <td style="padding: 0.75rem; white-space: nowrap;">${Utils.escapeHtml(when || '')}</td>
-                  <td style="padding: 0.75rem;">${Utils.escapeHtml(who)}${log.userId ? ` <span style=\"color: var(--text-secondary);\">(#${Utils.escapeHtml(log.userId)})</span>` : ''}</td>
-                  <td style="padding: 0.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 0.85rem;">${Utils.escapeHtml(actionText)}</td>
-                  <td style="padding: 0.75rem;">${Utils.escapeHtml(entity)}</td>
-                  <td style="padding: 0.75rem; white-space: nowrap;">${Utils.escapeHtml(ip)}</td>
-                  <td style="padding: 0.75rem;">
-                    ${hasDetails ? `<button class=\"btn btn-secondary admin-audit-toggle\" data-audit-toggle=\"${detailsId}\" style=\"padding: 0.4rem 0.75rem; font-size: 0.85rem;\"><i class=\"fas fa-eye\"></i> View</button>` : '<span style="color: var(--text-secondary);">-</span>'}
-                  </td>
-                </tr>
-                ${hasDetails ? `
-                  <tr id="${detailsId}" style="display: none; background: var(--bg-secondary); border-bottom: 1px solid var(--border-light);">
-                    <td colspan="6" style="padding: 0.75rem;">
-                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div>
-                          <div style="font-weight: 700; margin-bottom: 0.5rem;">Old Value</div>
-                          <pre style="margin: 0; white-space: pre-wrap; word-break: break-word; padding: 0.75rem; background: white; border: 1px solid var(--border-light); border-radius: 10px; max-height: 240px; overflow: auto;">${Utils.escapeHtml(oldValue || '(none)')}</pre>
-                        </div>
-                        <div>
-                          <div style="font-weight: 700; margin-bottom: 0.5rem;">New Value</div>
-                          <pre style="margin: 0; white-space: pre-wrap; word-break: break-word; padding: 0.75rem; background: white; border: 1px solid var(--border-light); border-radius: 10px; max-height: 240px; overflow: auto;">${Utils.escapeHtml(newValue || '(none)')}</pre>
-                        </div>
-                      </div>
-                      ${log.userAgent ? `<div style=\"margin-top: 0.75rem; color: var(--text-secondary); font-size: 0.85rem;\"><strong>User Agent:</strong> ${Utils.escapeHtml(log.userAgent)}</div>` : ''}
-                    </td>
-                  </tr>
-                ` : ''}
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
-
-    tableDiv.querySelectorAll('.admin-audit-toggle').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const targetId = btn.dataset.auditToggle;
-        if (!targetId) return;
-        const row = document.getElementById(targetId);
-        if (!row) return;
-        row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
-      });
-    });
-  } catch (error) {
-    console.error('Load audit logs error:', error);
-    tableDiv.innerHTML = `<p style="text-align: center; color: var(--red-primary); padding: 2rem;">Failed to load audit logs: ${Utils.escapeHtml(error.message)}</p>`;
   }
 }
 
@@ -5511,17 +4987,80 @@ function renderWorksCitedPage() {
       </div>
 
       <div style="background: white; border-radius: var(--radius-2xl); padding: 2rem; box-shadow: var(--shadow-md); max-width: 1000px; margin: 0 auto;">
-        <div style="margin-bottom: 1.25rem;">
-          <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Original Work Declaration</h2>
-          <p style="line-height: 1.6; color: var(--text-secondary); margin: 0;">This project represents 100% original code written by our team. All functionality, features, and implementations were developed specifically for this BPA competition without the use of prohibited generators, templates, or third-party copied code.</p>
-        </div>
-
-        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap; margin-bottom: 0.75rem;">
-          <a class="btn btn-secondary" href="/works-cited.md" target="_blank" rel="noopener" style="text-decoration: none;"><i class="fas fa-external-link-alt"></i> Open Markdown</a>
-          <button id="works-cited-copy-btn" class="btn btn-secondary"><i class="fas fa-copy"></i> Copy</button>
-        </div>
-
-        <pre id="works-cited-md" style="margin: 0; white-space: pre-wrap; word-break: break-word; padding: 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: 14px; max-height: 65vh; overflow: auto; font-size: 0.9rem; line-height: 1.45;"><i class="fas fa-spinner fa-spin"></i> Loading Works Cited...</pre>
+            <div style="margin-bottom: 2rem;">
+              <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Original Work Declaration</h2>
+              <p style="line-height: 1.6; color: var(--text-secondary);">This project represents 100% original code written by our team. All functionality, features, and implementations were developed specifically for this BPA competition without the use of prohibited frameworks or third-party code libraries beyond those explicitly allowed in the competition guidelines.</p>
+            </div>
+            
+            <div style="margin-bottom: 2rem;">
+              <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Technical Resources</h2>
+              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
+                <p style="font-weight: 600; margin-bottom: 0.25rem;">Express.js Documentation</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Official documentation for Express web framework</p>
+                <a href="https://expressjs.com/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://expressjs.com/</a>
+              </div>
+              
+              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
+                <p style="font-weight: 600; margin-bottom: 0.25rem;">SQLite Documentation</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Database design and SQL syntax reference</p>
+                <a href="https://www.sqlite.org/docs.html" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://www.sqlite.org/docs.html</a>
+              </div>
+              
+              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
+                <p style="font-weight: 600; margin-bottom: 0.25rem;">Node.js Documentation</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Server-side JavaScript runtime reference</p>
+                <a href="https://nodejs.org/docs/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://nodejs.org/docs/</a>
+              </div>
+              
+              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
+                <p style="font-weight: 600; margin-bottom: 0.25rem;">MDN Web Docs</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">HTML, CSS, and JavaScript reference</p>
+                <a href="https://developer.mozilla.org/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://developer.mozilla.org/</a>
+              </div>
+            </div>
+            
+            <div style="margin-bottom: 2rem;">
+              <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Design Resources</h2>
+              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
+                <p style="font-weight: 600; margin-bottom: 0.25rem;">Font Awesome Icons</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Icon library for user interface (Free License)</p>
+                <a href="https://fontawesome.com/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://fontawesome.com/</a>
+              </div>
+              
+              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
+                <p style="font-weight: 600; margin-bottom: 0.25rem;">Google Fonts</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Web typography resources</p>
+                <a href="https://fonts.google.com/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://fonts.google.com/</a>
+              </div>
+            </div>
+            
+            <div style="margin-bottom: 2rem;">
+              <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Security & Best Practices</h2>
+              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
+                <p style="font-weight: 600; margin-bottom: 0.25rem;">OWASP Security Guidelines</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Web application security best practices</p>
+                <a href="https://owasp.org/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://owasp.org/</a>
+              </div>
+              
+              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
+                <p style="font-weight: 600; margin-bottom: 0.25rem;">bcrypt.js Documentation</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Password hashing implementation reference</p>
+                <a href="https://www.npmjs.com/package/bcryptjs" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://www.npmjs.com/package/bcryptjs</a>
+              </div>
+            </div>
+            
+            <div style="margin-bottom: 2rem;">
+              <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Learning Resources</h2>
+              <div style="margin-bottom: 1rem; padding-left: 1rem; border-left: 3px solid var(--border-light);">
+                <p style="font-weight: 600; margin-bottom: 0.25rem;">Database Design Principles</p>
+                <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.25rem;">Normalization and schema design concepts</p>
+                <a href="https://www.w3schools.com/sql/" target="_blank" style="color: var(--blue-primary); font-size: 0.875rem;">https://www.w3schools.com/sql/</a>
+              </div>
+            </div>
+            
+            <div style="background: var(--bg-light); border-radius: var(--radius-xl); padding: 1.5rem; margin-top: 2rem;">
+              <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; margin: 0;"><strong>Note:</strong> All external resources were used solely for reference and learning purposes. No code was directly copied from these sources. This project complies with all BPA competition guidelines regarding originality and permitted use of development tools and libraries.</p>
+            </div>
             
             <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light); text-align: center; color: var(--text-secondary); font-size: 0.875rem;">
               <p style="margin-bottom: 0.5rem;"><strong>SkillSwap - Student Talent Exchange Platform</strong></p>
@@ -5571,8 +5110,6 @@ function renderWorksCitedPage() {
       e.preventDefault();
       Router.navigate('register');
     });
-
-    loadWorksCitedMarkdown();
     return;
   }
 
@@ -5586,39 +5123,6 @@ function renderWorksCitedPage() {
     </div>
   `;
   initializeSidebar();
-
-  loadWorksCitedMarkdown();
-}
-
-async function loadWorksCitedMarkdown() {
-  const pre = document.getElementById('works-cited-md');
-  if (!pre) return;
-
-  const copyBtn = document.getElementById('works-cited-copy-btn');
-
-  try {
-    const response = await fetch('/works-cited.md', { cache: 'no-store' });
-    if (!response.ok) {
-      throw new Error('Works Cited file not found');
-    }
-    const text = await response.text();
-    pre.textContent = text;
-
-    if (copyBtn) {
-      copyBtn.addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(text);
-          showToast('Works Cited copied to clipboard', 'success');
-        } catch (err) {
-          console.error('Clipboard error:', err);
-          showToast('Copy failed (browser blocked clipboard)', 'error');
-        }
-      });
-    }
-  } catch (error) {
-    console.error('Load works cited error:', error);
-    pre.textContent = `Failed to load Works Cited: ${error.message}\n\nOpen the Markdown directly: /works-cited.md`;
-  }
 }
 
 function renderAITutorPage() {
@@ -5748,7 +5252,7 @@ async function handleLogin(event) {
       AppState.currentUser = data.user;
       sessionStorage.setItem('isLoggedIn', 'true');
       sessionStorage.setItem('user', JSON.stringify(data.user));
-      Router.navigate(data.user?.role === 'admin' ? 'admin' : 'dashboard');
+      Router.navigate('dashboard');
     } else {
       setAuthError('login-error', formatValidationErrors(data) || 'Login failed');
     }
@@ -5792,7 +5296,7 @@ async function handleRegister(event) {
       AppState.currentUser = result.user;
       sessionStorage.setItem('isLoggedIn', 'true');
       sessionStorage.setItem('user', JSON.stringify(result.user));
-      Router.navigate(result.user?.role === 'admin' ? 'admin' : 'dashboard');
+      Router.navigate('dashboard');
     } else {
       setAuthError('register-error', formatValidationErrors(result) || 'Registration failed');
     }
@@ -6288,27 +5792,6 @@ function closeModal(modalId) {
   }
 }
 
-// Make available for inline onclick="closeModal(...)" handlers
-window.closeModal = closeModal;
-
-// CSP-safe close handling for modals created via Components.modal()
-document.addEventListener('click', (e) => {
-  const closeBtn = e.target?.closest?.('[data-modal-close]');
-  if (closeBtn) {
-    e.preventDefault();
-    const id = closeBtn.getAttribute('data-modal-close');
-    if (id) closeModal(id);
-    return;
-  }
-
-  // Clicking the overlay outside the modal content closes it
-  const target = e.target;
-  if (target && target.classList && target.classList.contains('modal-overlay')) {
-    const id = target.id;
-    if (id) closeModal(id);
-  }
-});
-
 function selectRating(rating) {
   // Backwards-compatible helper (used by older markup)
   window.StarRating?.setValue('rating-control', rating);
@@ -6350,7 +5833,7 @@ function showNotifications() {
         `).join('')}
       </div>
       <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-        <button class="btn btn-primary" data-modal-close="notifications-modal">Close</button>
+        <button class="btn btn-primary" onclick="closeModal('notifications-modal')">Close</button>
       </div>
     </div>
   `;
@@ -6362,80 +5845,6 @@ function showNotifications() {
     document.getElementById('notifications-modal').classList.add('show');
   }, 10);
 }
-
-function showAchievementDetailsModal(achievementId) {
-  const id = Number(achievementId);
-  if (!id) return;
-
-  const achievement = (Array.isArray(AppState.achievements) ? AppState.achievements : []).find(a => Number(a.id) === id)
-    || (Array.isArray(MockData.achievements) ? MockData.achievements : []).find(a => Number(a.id) === id);
-  if (!achievement) return;
-
-  const notYetTracked = new Set([2, 27, 29, 31, 34, 35, 36, 37, 38, 39, 40]);
-
-  const statusPill = achievement.unlocked
-    ? '<span style="display:inline-block; padding: 0.25rem 0.75rem; border-radius: 999px; background: rgba(34, 197, 94, 0.12); color: var(--green-primary); font-weight: 700; font-size: 0.875rem;">Unlocked</span>'
-    : '<span style="display:inline-block; padding: 0.25rem 0.75rem; border-radius: 999px; background: rgba(239, 68, 68, 0.10); color: var(--red-primary); font-weight: 700; font-size: 0.875rem;">Locked</span>';
-
-  const modalContent = `
-    <div style="padding: 2rem;">
-      <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem;">
-        <div style="display:flex; align-items:center; gap: 0.75rem;">
-          <div style="width: 52px; height: 52px; border-radius: 999px; border: 3px solid var(--navy-dark); display:flex; align-items:center; justify-content:center; background: white;">
-            <span style="font-size: 1.75rem;">${achievement.icon}</span>
-          </div>
-          <div>
-            <div style="font-size: 1.5rem; font-weight: 800;">${Utils.escapeHtml(achievement.name)}</div>
-            <div style="margin-top: 0.25rem;">${statusPill}</div>
-          </div>
-        </div>
-        <button class="btn btn-secondary" data-modal-close="achievement-details-modal">Close</button>
-      </div>
-
-      <div style="background: var(--bg-light); border-radius: var(--radius-xl); padding: 1.25rem;">
-        <div style="font-weight: 700; margin-bottom: 0.5rem;">How to earn it</div>
-        <div style="color: var(--text-secondary); line-height: 1.6;">${Utils.escapeHtml(achievement.description)}</div>
-        ${notYetTracked.has(id)
-          ? '<div style="margin-top: 0.75rem; color: var(--text-secondary); font-style: italic;"> </div>'
-          : ''
-        }
-      </div>
-    </div>
-  `;
-
-  // Ensure only one instance exists
-  const existing = document.getElementById('achievement-details-modal');
-  if (existing) existing.remove();
-
-  const modal = document.createElement('div');
-  modal.innerHTML = Components.modal(modalContent, 'achievement-details-modal');
-  document.body.appendChild(modal);
-  setTimeout(() => {
-    const el = document.getElementById('achievement-details-modal');
-    if (el) el.classList.add('show');
-  }, 10);
-}
-
-// Delegated handlers for achievement cards (rendered dynamically)
-document.addEventListener('click', (e) => {
-  const card = e.target?.closest?.('.achievement-card');
-  if (!card) return;
-  if (!card.closest('#achievement-grid')) return;
-  const achievementId = Number(card.getAttribute('data-achievement-id'));
-  if (!achievementId) return;
-  showAchievementDetailsModal(achievementId);
-});
-
-document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter' && e.key !== ' ') return;
-  const card = e.target?.closest?.('.achievement-card');
-  if (!card) return;
-  if (!card.closest('#achievement-grid')) return;
-  const achievementId = Number(card.getAttribute('data-achievement-id'));
-  if (!achievementId) return;
-  e.preventDefault();
-  showAchievementDetailsModal(achievementId);
-});
 
 async function createSession(event) {
   event.preventDefault();
@@ -6912,8 +6321,6 @@ async function showUserProfileModal(userId) {
 
     const user = data.user;
     const displayName = user.fullName || user.username || 'User';
-    const me = getCurrentUser();
-    const isMe = me?.id && Number(me.id) === Number(user.id);
     const avatarHtml = user.profileImage
       ? `<img src="${Utils.escapeHtml(user.profileImage)}" alt="${Utils.escapeHtml(displayName)}" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover;">`
       : `<div class="profile-avatar-large">${Utils.getInitials(displayName)}</div>`;
@@ -7001,11 +6408,6 @@ async function showUserProfileModal(userId) {
             </div>
             
             <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end;">
-              ${isMe ? '' : `
-                <button id="profile-modal-request-btn" class="btn btn-primary" style="min-width: 160px;">
-                  <i class="fas fa-calendar-plus"></i> Request Session
-                </button>
-              `}
               <button id="profile-modal-message-btn" class="btn btn-primary" style="min-width: 120px;">
                 <i class="fas fa-envelope"></i> Message
               </button>
@@ -7022,11 +6424,6 @@ async function showUserProfileModal(userId) {
     modal.querySelector('#profile-modal-message-btn')?.addEventListener('click', () => {
       modal.remove();
       startDmWithUser(userId, user.username || '', user.fullName || '', user.profileImage || '');
-    });
-
-    modal.querySelector('#profile-modal-request-btn')?.addEventListener('click', () => {
-      modal.remove();
-      requestTutorSession(Number(user.id), String(user.username || ''), String(user.fullName || ''));
     });
 
     // Handle Book Session buttons
@@ -7585,7 +6982,6 @@ document.addEventListener('DOMContentLoaded', () => {
       '/login': 'login',
       '/register': 'register',
       '/dashboard': 'dashboard',
-      '/admin': 'admin',
       '/profile': 'profile',
       '/messages': 'messages',
       '/sessions': 'sessions',
@@ -7604,14 +7000,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       const target = routeMap[path];
-      const safeTarget = target && target !== 'login' && target !== 'register' ? target : 'dashboard';
-
-      // Admins land on Admin Panel unless they explicitly deep-link elsewhere
-      if (user.role === 'admin' && (safeTarget === 'dashboard' || safeTarget === 'search')) {
-        Router.navigate('admin');
-      } else {
-        Router.navigate(safeTarget);
-      }
+      Router.navigate(target && target !== 'login' && target !== 'register' ? target : 'dashboard');
 
       // Keep Messages unread badge updated in the sidebar
       startUnreadMessagesPolling();

@@ -1,14 +1,9 @@
--- SkillSwap Database Schema
--- BPA Web Application Team Competition
--- SQLite Database Initialization Script
 
 -- Enable foreign key constraints
 PRAGMA foreign_keys = ON;
 
--- ============================================
 -- TABLE: roles
 -- Purpose: Define user roles for RBAC
--- ============================================
 CREATE TABLE IF NOT EXISTS roles (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
@@ -16,10 +11,8 @@ CREATE TABLE IF NOT EXISTS roles (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================
 -- TABLE: users
 -- Purpose: Core authentication and user data
--- ============================================
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
@@ -35,10 +28,8 @@ CREATE TABLE IF NOT EXISTS users (
   CHECK (email LIKE '%@%.%')
 );
 
--- ============================================
 -- TABLE: user_profiles
 -- Purpose: Extended user profile information
--- ============================================
 CREATE TABLE IF NOT EXISTS user_profiles (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL UNIQUE,
@@ -54,16 +45,14 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   CHECK (privacy_level IN ('public', 'friends', 'private'))
 );
 
--- ============================================
 -- TABLE: skills
 -- Purpose: Skills offered or sought by users
--- ============================================
 CREATE TABLE IF NOT EXISTS skills (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
   skill_name TEXT NOT NULL,
   skill_type TEXT NOT NULL, -- offered or sought
-  proficiency TEXT, -- beginner, intermediate, expert
+  proficiency TEXT, 
   description TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -71,10 +60,8 @@ CREATE TABLE IF NOT EXISTS skills (
   CHECK (proficiency IN ('beginner', 'intermediate', 'expert', NULL))
 );
 
--- ============================================
 -- TABLE: skill_requests
 -- Purpose: Requests for skill exchange
--- ============================================
 CREATE TABLE IF NOT EXISTS skill_requests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   requester_id INTEGER NOT NULL,
@@ -91,10 +78,8 @@ CREATE TABLE IF NOT EXISTS skill_requests (
   CHECK (requester_id != provider_id)
 );
 
--- ============================================
 -- TABLE: sessions
 -- Purpose: Scheduled skill exchange sessions
--- ============================================
 CREATE TABLE IF NOT EXISTS sessions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   request_id INTEGER,
@@ -123,10 +108,8 @@ CREATE TABLE IF NOT EXISTS sessions (
   CHECK (duration > 0 OR duration IS NULL)
 );
 
--- ============================================
 -- TABLE: session_offers
 -- Purpose: Public session offers with multiple date/time options
--- ============================================
 CREATE TABLE IF NOT EXISTS session_offers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   tutor_id INTEGER NOT NULL,
@@ -147,10 +130,8 @@ CREATE TABLE IF NOT EXISTS session_offers (
   CHECK (max_participants >= 1)
 );
 
--- ============================================
 -- TABLE: session_offer_slots
 -- Purpose: Up to 5 date/time slots per offer
--- ============================================
 CREATE TABLE IF NOT EXISTS session_offer_slots (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   offer_id INTEGER NOT NULL,
@@ -161,10 +142,8 @@ CREATE TABLE IF NOT EXISTS session_offer_slots (
   CHECK (duration > 0 OR duration IS NULL)
 );
 
--- ============================================
 -- TABLE: session_requests
 -- Purpose: Students request a specific offer + chosen slot
--- ============================================
 CREATE TABLE IF NOT EXISTS session_requests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   offer_id INTEGER NOT NULL,
@@ -182,10 +161,8 @@ CREATE TABLE IF NOT EXISTS session_requests (
   CHECK (tutor_id != student_id)
 );
 
--- ============================================
 -- TABLE: ratings
 -- Purpose: Post-session ratings and feedback
--- ============================================
 CREATE TABLE IF NOT EXISTS ratings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   session_id INTEGER NOT NULL UNIQUE, -- One rating per session
@@ -201,10 +178,8 @@ CREATE TABLE IF NOT EXISTS ratings (
   CHECK (rater_id != rated_id)
 );
 
--- ============================================
 -- TABLE: messages
 -- Purpose: Internal messaging system
--- ============================================
 CREATE TABLE IF NOT EXISTS messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   sender_id INTEGER NOT NULL,
@@ -220,10 +195,7 @@ CREATE TABLE IF NOT EXISTS messages (
   CHECK (sender_id != receiver_id)
 );
 
--- ============================================
 -- TABLE: achievements
--- Purpose: Gamification badges
--- ============================================
 CREATE TABLE IF NOT EXISTS achievements (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
@@ -234,10 +206,8 @@ CREATE TABLE IF NOT EXISTS achievements (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- ============================================
 -- TABLE: audit_logs
 -- Purpose: Admin action audit trail
--- ============================================
 CREATE TABLE IF NOT EXISTS audit_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER,
@@ -252,9 +222,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- ============================================
--- INDEXES for Performance
--- ============================================
+
 
 -- User lookups
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -288,9 +256,7 @@ CREATE INDEX IF NOT EXISTS idx_requests_requester ON skill_requests(requester_id
 CREATE INDEX IF NOT EXISTS idx_audit_user_action ON audit_logs(user_id, action, created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_logs(entity_type, entity_id);
 
--- ============================================
--- TRIGGERS for Auto-update timestamps
--- ============================================
+
 
 -- Update users.updated_at on UPDATE
 CREATE TRIGGER IF NOT EXISTS update_users_timestamp 
@@ -327,9 +293,7 @@ BEGIN
   UPDATE session_requests SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
--- ============================================
 -- VIEWS for Common Queries
--- ============================================
 
 -- View: User details with role information
 CREATE VIEW IF NOT EXISTS v_user_details AS
@@ -376,6 +340,4 @@ FROM users u
 LEFT JOIN ratings r ON u.id = r.rated_id
 GROUP BY u.id, u.username;
 
--- ============================================
--- END OF SCHEMA
--- ============================================
+
