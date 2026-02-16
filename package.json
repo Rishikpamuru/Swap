@@ -7,7 +7,9 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "init-db": "node scripts/initDatabase.js",
-    "seed-db": "node scripts/seedData.js"
+    "seed-db": "node scripts/seedData.js",
+    "seed-demo": "node scripts/seedDemoData.js",
+    "add-admin": "node scripts/addAdmin.js"
   },
   "keywords": [
     "bpa",
