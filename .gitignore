@@ -9,5 +9,4 @@ uploads/
 temp/
 
 # Local SQLite database
-skillswap.db
-*.db
+

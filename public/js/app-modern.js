@@ -1012,7 +1012,7 @@ const Components = {
 
   achievementCard(achievement) {
     return `
-      <div class="achievement-card">
+      <div class="achievement-card" style="cursor: pointer;" data-achievement-id="${achievement.id}">
         <div class="achievement-icon-container">
           <span class="achievement-icon ${achievement.unlocked ? '' : 'locked'}">${achievement.icon}</span>
           ${achievement.unlocked ? '<span class="achievement-sparkles"><i class="fas fa-star"></i></span>' : ''}
@@ -1712,10 +1712,10 @@ async function renderLearnOffersPage() {
       return `
             <div class="user-card" style="display:flex; flex-direction: column; gap: 0.75rem;">
               <div style="display:flex; align-items:center; gap: 1rem;">
-                ${avatar}
+                <div style="cursor: pointer;" class="tutor-profile-link" data-tutor-id="${o.tutorId}">${avatar}</div>
                 <div style="flex: 1; min-width:0;">
-                  <div style="font-weight: 800; font-size: 1.125rem;">${Utils.escapeHtml(name)}</div>
-                  <div style="color: var(--text-secondary);">@${Utils.escapeHtml(o.tutorUsername || '')}</div>
+                  <div style="font-weight: 800; font-size: 1.125rem; cursor: pointer;" class="tutor-profile-link" data-tutor-id="${o.tutorId}">${Utils.escapeHtml(name)}</div>
+                  <div style="color: var(--text-secondary); cursor: pointer;" class="tutor-profile-link" data-tutor-id="${o.tutorId}">@${Utils.escapeHtml(o.tutorUsername || '')}</div>
                 </div>
               </div>
               ${groupBadge}
@@ -1727,8 +1727,9 @@ async function renderLearnOffersPage() {
                 <div style="font-weight: 800; font-size: 0.95rem;">Available times</div>
                 ${slotOptions}
               </div>
-              <div style="margin-top: 0.5rem;">
+              <div style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
                 <button class="btn btn-secondary offer-request-btn" data-offer-id="${o.id}" style="width: 100%;">Request Selected Slot</button>
+                <button class="btn btn-outline offer-custom-time-btn" data-tutor-id="${o.tutorId}" data-tutor-username="${Utils.escapeHtml(o.tutorUsername || '')}" data-tutor-name="${Utils.escapeHtml(name)}" data-skill-name="${Utils.escapeHtml(o.skillName || '')}" style="width: 100%; font-size: 0.85rem;"><i class="fas fa-clock"></i> Propose Custom Time</button>
               </div>
             </div>
           `;
@@ -1751,10 +1752,124 @@ async function renderLearnOffersPage() {
         btn.disabled = false;
       });
     });
+
+    // Add click handlers for tutor profile links
+    document.querySelectorAll('.tutor-profile-link').forEach(link => {
+      link.addEventListener('click', () => {
+        const tutorId = Number(link.getAttribute('data-tutor-id'));
+        if (tutorId) {
+          openUserProfileModal(tutorId);
+        }
+      });
+    });
+
+    // Add click handlers for custom time buttons
+    document.querySelectorAll('.offer-custom-time-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tutorId = Number(btn.getAttribute('data-tutor-id'));
+        const tutorUsername = btn.getAttribute('data-tutor-username') || '';
+        const tutorName = btn.getAttribute('data-tutor-name') || '';
+        const skillName = btn.getAttribute('data-skill-name') || '';
+        if (tutorId) {
+          openCustomTimeModal(tutorId, tutorUsername, tutorName, skillName);
+        }
+      });
+    });
   } catch (error) {
     console.error('Learn offers error:', error);
     container.innerHTML = `<p style="color: var(--red-primary);">Failed to load offers.</p>`;
   }
+}
+
+// Custom time proposal modal
+function openCustomTimeModal(tutorId, tutorUsername, tutorName, skillName) {
+  // Remove any existing modal
+  document.getElementById('custom-time-modal')?.remove();
+
+  const modalHtml = `
+    <div id="custom-time-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 1rem;">
+      <div style="background: white; border-radius: 16px; max-width: 480px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Propose Custom Time</h2>
+            <div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">to ${Utils.escapeHtml(tutorName || tutorUsername)} for ${Utils.escapeHtml(skillName)}</div>
+          </div>
+          <button id="custom-time-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+        </div>
+        <div style="padding: 2rem;">
+          <div class="form-group">
+            <label class="form-label">Date & Time</label>
+            <input type="datetime-local" id="custom-modal-datetime" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duration</label>
+            <select id="custom-modal-duration" class="form-select">
+              <option value="30">30 minutes</option>
+              <option value="45">45 minutes</option>
+              <option value="60" selected>60 minutes</option>
+              <option value="90">90 minutes</option>
+              <option value="120">2 hours</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Message (optional)</label>
+            <textarea id="custom-modal-notes" class="form-textarea" placeholder="Any details about your request..." maxlength="500" style="min-height: 80px;"></textarea>
+          </div>
+          <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem;">
+            <button type="button" class="btn btn-outline" id="custom-time-cancel">Cancel</button>
+            <button type="button" class="btn btn-primary" id="custom-time-send"><i class="fas fa-paper-plane"></i> Send Proposal</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const closeModal = () => document.getElementById('custom-time-modal')?.remove();
+
+  document.getElementById('custom-time-close')?.addEventListener('click', closeModal);
+  document.getElementById('custom-time-cancel')?.addEventListener('click', closeModal);
+  document.getElementById('custom-time-modal')?.addEventListener('click', (e) => {
+    if (e.target?.id === 'custom-time-modal') closeModal();
+  });
+
+  document.getElementById('custom-time-send')?.addEventListener('click', async () => {
+    const datetime = document.getElementById('custom-modal-datetime')?.value;
+    const duration = document.getElementById('custom-modal-duration')?.value || '60';
+    const notes = document.getElementById('custom-modal-notes')?.value?.trim() || '';
+
+    if (!datetime) {
+      showToast('Please select a date and time', 'error');
+      return;
+    }
+
+    const formattedDate = Utils.formatDateTime(new Date(datetime).toISOString());
+    const message = "Hi! I'd like to propose a custom session time for " + skillName + ".\n\n" +
+      "Proposed Time: " + formattedDate + "\n" +
+      "Duration: " + duration + " minutes" +
+      (notes ? "\nNotes: " + notes : '') +
+      "\n\nPlease let me know if this works for you!";
+
+    const sendBtn = document.getElementById('custom-time-send');
+    if (sendBtn) sendBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/messages/with/' + tutorId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ content: message })
+      });
+      if (!res.ok) throw new Error('Failed to send message');
+      closeModal();
+      showToast('Custom time proposal sent!', 'success');
+    } catch (err) {
+      console.error('Custom time proposal error:', err);
+      showToast(err.message || 'Failed to send proposal', 'error');
+      if (sendBtn) sendBtn.disabled = false;
+    }
+  });
 }
 
 async function renderPastSessionsPage() {
@@ -2845,6 +2960,30 @@ async function renderRequestSessionPage() {
                     <option value="">Select a skill first…</option>
                   </select>
                   <div id="req-slot-meta" class="form-helper" style="display:none;"></div>
+                  <div style="margin-top: 0.75rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-secondary); font-size: 0.95rem;">
+                      <input type="checkbox" id="req-custom-time" style="cursor: pointer;">
+                      <span>None of these times work? Propose a custom time</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div id="custom-time-fields" style="display:none;">
+                  <div class="form-group">
+                    <label class="form-label">Proposed Date & Time</label>
+                    <input type="datetime-local" id="req-custom-datetime" class="form-input">
+                    <div class="form-helper">Suggest a time that works better for you</div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Duration (minutes)</label>
+                    <select id="req-custom-duration" class="form-select">
+                      <option value="30">30 minutes</option>
+                      <option value="45">45 minutes</option>
+                      <option value="60" selected>60 minutes</option>
+                      <option value="90">90 minutes</option>
+                      <option value="120">2 hours</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div class="form-group">
@@ -2884,6 +3023,28 @@ async function renderRequestSessionPage() {
   const slotMeta = document.getElementById('req-slot-meta');
   const notesEl = document.getElementById('req-notes');
   const submitBtn = document.getElementById('req-submit');
+  const customTimeCheckbox = document.getElementById('req-custom-time');
+  const customTimeFields = document.getElementById('custom-time-fields');
+  const customDatetimeInput = document.getElementById('req-custom-datetime');
+  const customDurationSelect = document.getElementById('req-custom-duration');
+
+  // Handle custom time checkbox
+  customTimeCheckbox?.addEventListener('change', () => {
+    const isCustom = customTimeCheckbox.checked;
+    if (customTimeFields) customTimeFields.style.display = isCustom ? 'block' : 'none';
+    if (slotSelect) slotSelect.required = !isCustom;
+    if (skillSelect) skillSelect.required = !isCustom;
+    if (customDatetimeInput) customDatetimeInput.required = isCustom;
+    
+    // Enable submit button and update text if custom time is selected
+    if (isCustom && submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Proposal';
+    } else if (!isCustom && submitBtn) {
+      submitBtn.disabled = !slotSelect.value;
+      submitBtn.textContent = 'Request';
+    }
+  });
 
   btnBack?.addEventListener('click', () => Router.navigate('search'));
   btnCancel?.addEventListener('click', () => Router.navigate('search'));
@@ -2912,12 +3073,16 @@ async function renderRequestSessionPage() {
   }
 
   if (!offers.length) {
-    showReqError('This tutor has no open session offers yet. Ask them to publish an offer, or send them a message.');
+    showReqError('This tutor has no open session offers yet. You can propose a custom time below, or send them a message.');
     if (skillSelect) {
       skillSelect.innerHTML = '<option value="">No open offers</option>';
       skillSelect.disabled = true;
     }
-    return;
+    if (slotSelect) {
+      slotSelect.innerHTML = '<option value="">No slots available</option>';
+      slotSelect.disabled = true;
+    }
+    // Don't return — let the user still propose custom times
   }
 
   // Fill tutor display name from offer payload if missing
@@ -2949,21 +3114,24 @@ async function renderRequestSessionPage() {
   }
 
   const sortedSkillEntries = Array.from(skills.entries()).sort((a, b) => String(a[1].name).localeCompare(String(b[1].name)));
-  skillSelect.innerHTML = '<option value="">Select a skill…</option>' + sortedSkillEntries
-    .map(([sid, info]) => `<option value="${sid}">${Utils.escapeHtml(info.name || 'Skill')}</option>`)
-    .join('');
+  if (sortedSkillEntries.length > 0) {
+    skillSelect.innerHTML = '<option value="">Select a skill…</option>' + sortedSkillEntries
+      .map(([sid, info]) => `<option value="${sid}">${Utils.escapeHtml(info.name || 'Skill')}</option>`)
+      .join('');
+  }
 
   const refreshSlots = () => {
     showReqError('');
     if (!slotSelect || !submitBtn || !slotMeta) return;
 
+    const isCustom = customTimeCheckbox?.checked;
     const sid = Number(skillSelect.value || 0);
     const info = skills.get(sid);
     if (!sid || !info || !info.items.length) {
       slotSelect.disabled = true;
       slotSelect.innerHTML = '<option value="">No slots available for this skill</option>';
       slotMeta.style.display = 'none';
-      submitBtn.disabled = true;
+      submitBtn.disabled = !isCustom;
       return;
     }
 
@@ -2974,13 +3142,16 @@ async function renderRequestSessionPage() {
       return `<option value="${it.offerId}:${it.slotId}">${Utils.escapeHtml(label)}</option>`;
     }).join('');
     slotMeta.style.display = 'none';
-    submitBtn.disabled = true;
+    submitBtn.disabled = !isCustom;
   };
 
   skillSelect.addEventListener('change', refreshSlots);
   slotSelect.addEventListener('change', () => {
     const value = String(slotSelect.value || '');
-    submitBtn.disabled = !value;
+    if (!customTimeCheckbox?.checked) {
+      submitBtn.disabled = !value;
+      submitBtn.textContent = 'Request';
+    }
     slotMeta.style.display = 'none';
     if (!value) return;
     const [offerIdStr, slotIdStr] = value.split(':');
@@ -2998,50 +3169,91 @@ async function renderRequestSessionPage() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     showReqError('');
-    const value = String(slotSelect.value || '');
-    if (!value) {
-      showReqError('Please choose a time slot');
-      return;
-    }
-    const [offerIdStr, slotIdStr] = value.split(':');
-    const offerId = Number(offerIdStr);
-    const slotId = Number(slotIdStr);
-    if (!offerId || !slotId) {
-      showReqError('Invalid selection');
-      return;
-    }
-
-    submitBtn.disabled = true;
-    try {
-      const res = await fetch(`/api/offers/${offerId}/request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ slotId })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to request slot');
-
+    
+    const isCustomTime = customTimeCheckbox?.checked;
+    
+    if (isCustomTime) {
+      // Handle custom time proposal
+      const customDatetime = customDatetimeInput?.value;
+      const customDuration = customDurationSelect?.value;
       const note = String(notesEl?.value || '').trim();
-      if (note) {
-        try {
-          await fetch(`/api/messages/with/${tutorId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify({ content: `Session request note: ${note}` })
-          });
-        } catch (err) {
-          console.warn('Failed to send note DM:', err);
-        }
+      const skillName = skillSelect?.selectedOptions?.[0]?.textContent || 'a session';
+      
+      if (!customDatetime) {
+        showReqError('Please select a date and time');
+        return;
+      }
+      
+      const proposedDate = new Date(customDatetime);
+      const formattedDate = Utils.formatDateTime(proposedDate.toISOString());
+      
+      const message = `Hi! I'd like to request a custom session time for ${skillName}.\n\nProposed Time: ${formattedDate}\nDuration: ${customDuration} minutes${note ? '\n\nAdditional Notes: ' + note : ''}\n\nPlease let me know if this works for you!`;
+      
+      submitBtn.disabled = true;
+      try {
+        const res = await fetch(`/api/messages/with/${tutorId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ content: message })
+        });
+        
+        if (!res.ok) throw new Error('Failed to send message');
+        
+        showToast('Custom time proposal sent!', 'success');
+        setTimeout(() => Router.navigate('messages'), 300);
+      } catch (err) {
+        console.error('Custom time request error:', err);
+        showReqError(err.message || 'Failed to send proposal');
+        submitBtn.disabled = false;
+      }
+    } else {
+      // Handle regular slot request
+      const value = String(slotSelect.value || '');
+      if (!value) {
+        showReqError('Please choose a time slot');
+        return;
+      }
+      const [offerIdStr, slotIdStr] = value.split(':');
+      const offerId = Number(offerIdStr);
+      const slotId = Number(slotIdStr);
+      if (!offerId || !slotId) {
+        showReqError('Invalid selection');
+        return;
       }
 
-      showToast('Request sent!', 'success');
-      setTimeout(() => Router.navigate('dashboard'), 300);
-    } catch (err) {
-      console.error('Request session submit error:', err);
-      showReqError(err.message || 'Failed to request session');
-      submitBtn.disabled = false;
+      submitBtn.disabled = true;
+      try {
+        const res = await fetch(`/api/offers/${offerId}/request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ slotId })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Failed to request slot');
+
+        const note = String(notesEl?.value || '').trim();
+        if (note) {
+          try {
+            await fetch(`/api/messages/with/${tutorId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({ content: `Session request note: ${note}` })
+            });
+          } catch (err) {
+            console.warn('Failed to send note DM:', err);
+          }
+        }
+
+        showToast('Request sent!', 'success');
+        setTimeout(() => Router.navigate('dashboard'), 300);
+      } catch (err) {
+        console.error('Request session submit error:', err);
+        showReqError(err.message || 'Failed to request session');
+        submitBtn.disabled = false;
+      }
     }
   });
 
@@ -3499,6 +3711,57 @@ function computeAchievements(defs, stats) {
   });
 }
 
+// Show achievement details modal
+function showAchievementModal(achievementId) {
+  const achievement = AppState.achievements?.find(a => a.id === achievementId);
+  if (!achievement) return;
+
+  const modalHtml = `
+    <div id="achievement-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 1rem;">
+      <div style="background: white; border-radius: 16px; max-width: 500px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div style="padding: 2rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="font-size: 3rem;">${achievement.icon}</span>
+            <div>
+              <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700;">${Utils.escapeHtml(achievement.name)}</h2>
+              ${achievement.unlocked
+                ? `<div style="color: var(--green-primary); font-weight: 600; font-size: 0.875rem; margin-top: 0.25rem;"><i class="fas fa-check-circle"></i> Unlocked</div>`
+                : `<div style="color: var(--text-secondary); font-weight: 600; font-size: 0.875rem; margin-top: 0.25rem;"><i class="fas fa-lock"></i> Locked</div>`
+              }
+            </div>
+          </div>
+          <button class="achievement-modal-close" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">&times;</button>
+        </div>
+        <div style="padding: 2rem;">
+          <div style="background: var(--gray-light); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
+            <div style="font-size: 0.875rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">How to Unlock</div>
+            <div style="font-size: 1rem; color: var(--text-primary); line-height: 1.6;">${Utils.escapeHtml(achievement.description)}</div>
+          </div>
+          ${achievement.unlocked && achievement.date
+            ? `<div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, var(--blue-light), var(--purple-light)); border-radius: 12px;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Unlocked on</div>
+                <div style="font-size: 1rem; font-weight: 700; color: var(--blue-primary);">${Utils.escapeHtml(Utils.formatDate(achievement.date))}</div>
+              </div>`
+            : ''
+          }
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  const closeModal = () => {
+    document.getElementById('achievement-modal')?.remove();
+  };
+
+  document.querySelector('.achievement-modal-close')?.addEventListener('click', closeModal);
+  document.getElementById('achievement-modal')?.addEventListener('click', (e) => {
+    if (e.target?.id === 'achievement-modal') closeModal();
+  });
+}
+window.showAchievementModal = showAchievementModal;
+
 async function renderAchievementsPage() {
   document.body.innerHTML = `
     <div class="app-container">
@@ -3535,6 +3798,14 @@ async function renderAchievementsPage() {
   const computed = computeAchievements(MockData.achievements, stats);
   AppState.achievements = computed;
   grid.innerHTML = computed.map(achievement => Components.achievementCard(achievement)).join('');
+
+  // Add click handlers for achievement cards
+  grid.querySelectorAll('.achievement-card[data-achievement-id]').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = Number(card.getAttribute('data-achievement-id'));
+      if (id) showAchievementModal(id);
+    });
+  });
 }
 
 function renderProfilePage() {
