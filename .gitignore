@@ -10,3 +10,11 @@ temp/
 
 # Local SQLite database
 
+docs/MasterDoc.md
+docs/MasterDoc.pdf
+docs/PRESENTATION_PRACTICE_PLAN.md
+docs/MasterDoc.md
+docs/PRESENTATION_QUICK_REFERENCE.md
+docs/PRESENTATION_SLIDES_GUIDE.md
+scripts/seedDemoData.js
+docs/PRESENTATION_SCRIPT.md

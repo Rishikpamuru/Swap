@@ -17,8 +17,7 @@ Date: January 15th, 2026
 
 Project Files: [https://drive.google.com/drive/folders/1x3xbBp9qk3woFguSVp85BaHjaNe52N67?usp=sharing](https://drive.google.com/drive/folders/1x3xbBp9qk3woFguSVp85BaHjaNe52N67?usp=sharing)
 
-Github (Optional): [https://github.com/Rishikpamuru/Swap
-](https://github.com/Rishikpamuru/SkillSwap_Website)
+Github (Optional): [https://github.com/Rishikpamuru/SkillSwap_Website](https://github.com/Rishikpamuru/Swap) 
 
 Live Website: [https://SkillSwapBPA.com](https://swap-production-bb01.up.railway.app/)
 
@@ -618,31 +617,11 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     subgraph Security["Security Layers"]
-        direction TB
-        
-        subgraph Network["Network Security"]
-            Helmet["Helmet.js<br/>CSP, X-Frame-Options"]
-            RateLimit["Rate Limiting<br/>1000 req/15min"]
-        end
-        
-        subgraph Auth["Authentication"]
-            Bcrypt["Password Hashing<br/>bcrypt (12 rounds)"]
-            Session["Secure Sessions<br/>httpOnly, sameSite"]
-            RBAC["Role-Based Access<br/>admin/student"]
-        end
-        
-        subgraph Data["Data Protection"]
-            Validation["Input Validation<br/>Server + Client"]
-            Sanitize["XSS Sanitization"]
-            Params["Parameterized Queries<br/>SQL Injection Prevention"]
-        end
-        
-        subgraph Audit["Compliance"]
-            Logs["Audit Trail<br/>All Actions Logged"]
-            Privacy["Privacy Controls<br/>public/friends/private"]
-        end
+        Network["Network Security<br/>Helmet.js (CSP, XFO)<br/>Rate Limit: 1000/15m"]
+        Auth["Authentication<br/>bcrypt (12 rounds)<br/>httpOnly + sameSite<br/>RBAC: admin/student"]
+        Data["Data Protection<br/>Input Validation (S+C)<br/>XSS Sanitization<br/>Parameterized Queries"]
+        Audit["Compliance<br/>Audit Logs (All Actions)<br/>Privacy: public/private"]
     end
-    
     Network --> Auth --> Data --> Audit
 ```
 
