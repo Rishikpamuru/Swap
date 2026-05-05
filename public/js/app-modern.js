@@ -516,11 +516,11 @@ const Utils = {
       const modalId = 'confirm-modal-' + Date.now();
       const modalHtml = `
         <div id="${modalId}" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">
-          <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 440px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+          <div style="background: rgba(15,20,35,0.75); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; max-width: 440px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
             <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 700;">${Utils.escapeHtml(title)}</h3>
             <p style="margin: 0 0 1.25rem 0; color: var(--text-secondary); line-height: 1.5;">${Utils.escapeHtml(message)}</p>
             <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-              <button class="modal-cancel-btn" style="padding: 0.75rem 1.5rem; border: 1px solid var(--border-light); background: white; border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--text-secondary);">Cancel</button>
+              <button class="modal-cancel-btn" style="padding: 0.75rem 1.5rem; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; font-weight: 600; color: rgba(255,255,255,0.8);">Cancel</button>
               <button class="modal-confirm-btn" style="padding: 0.75rem 1.5rem; border: none; background: var(--blue-primary); color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">Confirm</button>
             </div>
           </div>
@@ -555,12 +555,12 @@ const Utils = {
       const modalId = 'prompt-modal-' + Date.now();
       const modalHtml = `
         <div id="${modalId}" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">
-          <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 440px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+          <div style="background: rgba(15,20,35,0.75); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; max-width: 440px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
             <h3 style="margin: 0 0 1rem 0; font-size: 1.25rem; font-weight: 700;">${Utils.escapeHtml(title)}</h3>
             <p style="margin: 0 0 1rem 0; color: var(--text-secondary); line-height: 1.5;">${Utils.escapeHtml(message)}</p>
             <textarea class="modal-input" placeholder="${Utils.escapeHtml(placeholder)}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: 8px; font-family: inherit; font-size: 1rem; min-height: 90px; resize: vertical;" autofocus></textarea>
             <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
-              <button class="modal-cancel-btn" style="padding: 0.75rem 1.5rem; border: 1px solid var(--border-light); background: white; border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--text-secondary);">Cancel</button>
+              <button class="modal-cancel-btn" style="padding: 0.75rem 1.5rem; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; font-weight: 600; color: rgba(255,255,255,0.8);">Cancel</button>
               <button class="modal-confirm-btn" style="padding: 0.75rem 1.5rem; border: none; background: var(--blue-primary); color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">OK</button>
             </div>
           </div>
@@ -1272,32 +1272,32 @@ function renderDashboardPage() {
           </div>
           
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
-            <div style="background: white; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md);">
+            <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
               <div style="font-size: 2rem; margin-bottom: 0.5rem;">📚</div>
-              <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Total Sessions</h3>
+              <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; color: #ffffff;">Total Sessions</h3>
               <p style="font-size: 2.5rem; font-weight: 700; color: var(--blue-primary);">${user.totalSessions || 0}</p>
             </div>
             
-            <div style="background: white; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md);">
+            <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
               <div style="font-size: 2rem; margin-bottom: 0.5rem;">⭐</div>
-              <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Average Rating</h3>
+              <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; color: #ffffff;">Average Rating</h3>
               <p style="font-size: 2.5rem; font-weight: 700; color: var(--blue-primary);">${(user.averageRating || 0).toFixed(1)}</p>
             </div>
             
-            <div style="background: white; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md);">
+            <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
               <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
-              <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Skills Offered</h3>
+              <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; color: #ffffff;">Skills Offered</h3>
               <p style="font-size: 2.5rem; font-weight: 700; color: var(--blue-primary);">${(user.skillsOffer || []).length}</p>
             </div>
           </div>
 
-          <div style="margin-top: 2rem; background: white; border-radius: var(--radius-xl); padding: 1.5rem; box-shadow: var(--shadow-md);">
+          <div style="margin-top: 2rem; background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
             <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem;">
               <div>
-                <div style="font-weight: 800; font-size: 1.125rem;">Quick Actions</div>
-                <div style="color: var(--text-secondary); font-size: 0.95rem;">Common things you’ll do</div>
+                <div style="font-weight: 800; font-size: 1.125rem; color: #ffffff;">Quick Actions</div>
+                <div style="color: rgba(255,255,255,0.65); font-size: 0.95rem;">Common things you’ll do</div>
               </div>
-              <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--bg-light); color: var(--text-secondary); display:flex; align-items:center; justify-content:center;"><i class="fas fa-bolt"></i></div>
+              <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); display:flex; align-items:center; justify-content:center;"><i class="fas fa-bolt"></i></div>
             </div>
             <div style="display:flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
               <button class="btn btn-primary" id="dash-offer-teach"><i class="fas fa-plus-circle"></i> Offer to Teach</button>
@@ -1307,11 +1307,11 @@ function renderDashboardPage() {
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
-            <div style="background: white; border-radius: var(--radius-xl); padding: 1.5rem; box-shadow: var(--shadow-md);">
+            <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
               <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem;">
                 <div>
-                  <div style="font-weight: 800; font-size: 1.125rem;">Session Requests</div>
-                  <div style="color: var(--text-secondary); font-size: 0.95rem;">Requests from students</div>
+                  <div style="font-weight: 800; font-size: 1.125rem; color: #ffffff;">Session Requests</div>
+                  <div style="color: rgba(255,255,255,0.65); font-size: 0.95rem;">Requests from students</div>
                 </div>
                 <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--blue-light); color: white; display:flex; align-items:center; justify-content:center;"><i class="fas fa-inbox"></i></div>
               </div>
@@ -1320,11 +1320,11 @@ function renderDashboardPage() {
               </div>
             </div>
 
-            <div style="background: white; border-radius: var(--radius-xl); padding: 1.5rem; box-shadow: var(--shadow-md);">
+            <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
               <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem;">
                 <div>
-                  <div style="font-weight: 800; font-size: 1.125rem;">My Requests</div>
-                  <div style="color: var(--text-secondary); font-size: 0.95rem;">Requests you sent</div>
+                  <div style="font-weight: 800; font-size: 1.125rem; color: #ffffff;">My Requests</div>
+                  <div style="color: rgba(255,255,255,0.65); font-size: 0.95rem;">Requests you sent</div>
                 </div>
                 <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--green-primary); color: white; display:flex; align-items:center; justify-content:center;"><i class="fas fa-paper-plane"></i></div>
               </div>
@@ -1334,11 +1334,11 @@ function renderDashboardPage() {
             </div>
           </div>
 
-          <div style="margin-top: 1.5rem; background: white; border-radius: var(--radius-xl); padding: 1.5rem; box-shadow: var(--shadow-md);">
+          <div style="margin-top: 1.5rem; background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
             <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem;">
               <div>
-                <div style="font-weight: 800; font-size: 1.125rem;">My Open Offers</div>
-                <div style="color: var(--text-secondary); font-size: 0.95rem;">Offers you published (waiting for requests)</div>
+                <div style="font-weight: 800; font-size: 1.125rem; color: #ffffff;">My Open Offers</div>
+                <div style="color: rgba(255,255,255,0.65); font-size: 0.95rem;">Offers you published (waiting for requests)</div>
               </div>
               <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--blue-light); color: white; display:flex; align-items:center; justify-content:center;"><i class="fas fa-bullhorn"></i></div>
             </div>
@@ -1348,11 +1348,11 @@ function renderDashboardPage() {
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
-            <div style="background: white; border-radius: var(--radius-xl); padding: 1.5rem; box-shadow: var(--shadow-md);">
+            <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
               <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem;">
                 <div>
-                  <div style="font-weight: 800; font-size: 1.125rem;">Upcoming Teaching</div>
-                  <div style="color: var(--text-secondary); font-size: 0.95rem;">Sessions where you are the tutor</div>
+                  <div style="font-weight: 800; font-size: 1.125rem; color: #ffffff;">Upcoming Teaching</div>
+                  <div style="color: rgba(255,255,255,0.65); font-size: 0.95rem;">Sessions where you are the tutor</div>
                 </div>
                 <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--blue-primary); color: white; display:flex; align-items:center; justify-content:center;"><i class="fas fa-chalkboard-teacher"></i></div>
               </div>
@@ -1361,11 +1361,11 @@ function renderDashboardPage() {
               </div>
             </div>
 
-            <div style="background: white; border-radius: var(--radius-xl); padding: 1.5rem; box-shadow: var(--shadow-md);">
+            <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
               <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem;">
                 <div>
-                  <div style="font-weight: 800; font-size: 1.125rem;">Upcoming Learning</div>
-                  <div style="color: var(--text-secondary); font-size: 0.95rem;">Sessions where you are the student</div>
+                  <div style="font-weight: 800; font-size: 1.125rem; color: #ffffff;">Upcoming Learning</div>
+                  <div style="color: rgba(255,255,255,0.65); font-size: 0.95rem;">Sessions where you are the student</div>
                 </div>
                 <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--green-primary); color: white; display:flex; align-items:center; justify-content:center;"><i class="fas fa-book-open"></i></div>
               </div>
@@ -1604,19 +1604,19 @@ function renderCreateSessionHomePage() {
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
-            <div style="background: white; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md); display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 0.75rem;">
               <div style="width: 56px; height: 56px; border-radius: 14px; background: var(--blue-light); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;"><i class="fas fa-chalkboard-teacher"></i></div>
-              <div style="font-size: 1.25rem; font-weight: 800;">Teach</div>
-              <div style="color: var(--text-secondary);">Offer a skill with up to 5 date/time options.</div>
+              <div style="font-size: 1.25rem; font-weight: 800; color: #ffffff;">Teach</div>
+              <div style="color: rgba(255,255,255,0.65);">Offer a skill with up to 5 date/time options.</div>
               <div style="margin-top: 0.75rem;">
                 <button id="go-teach" class="btn btn-primary" style="width: 100%;">Offer to Teach</button>
               </div>
             </div>
 
-            <div style="background: white; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md); display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 0.75rem;">
               <div style="width: 56px; height: 56px; border-radius: 14px; background: var(--green-primary); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;"><i class="fas fa-book-open"></i></div>
-              <div style="font-size: 1.25rem; font-weight: 800;">Learn</div>
-              <div style="color: var(--text-secondary);">Browse open offers and request a specific time slot.</div>
+              <div style="font-size: 1.25rem; font-weight: 800; color: #ffffff;">Learn</div>
+              <div style="color: rgba(255,255,255,0.65);">Browse open offers and request a specific time slot.</div>
               <div style="margin-top: 0.75rem;">
                 <button id="go-learn" class="btn btn-secondary" style="width: 100%;">Find a Session</button>
               </div>
@@ -1788,7 +1788,7 @@ function openCustomTimeModal(tutorId, tutorUsername, tutorName, skillName) {
 
   const modalHtml = `
     <div id="custom-time-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 1rem;">
-      <div style="background: white; border-radius: 16px; max-width: 480px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+      <div style="background: rgba(15,20,35,0.75); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; max-width: 480px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
         <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
           <div>
             <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Propose Custom Time</h2>
@@ -1972,11 +1972,11 @@ async function renderSearchPage() {
             </div>
           </div>
 
-          <div id="open-sessions-panel" style="margin-top: 1.25rem; background: white; border-radius: var(--radius-xl); padding: 1.5rem; box-shadow: var(--shadow-md);">
+          <div id="open-sessions-panel" style="margin-top: 1.25rem; background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
             <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem;">
               <div>
-                <div style="font-weight: 800; font-size: 1.125rem;">Open Sessions</div>
-                <div style="color: var(--text-secondary); font-size: 0.95rem;">All currently available session offers</div>
+                <div style="font-weight: 800; font-size: 1.125rem; color: #ffffff;">Open Sessions</div>
+                <div style="color: rgba(255,255,255,0.65); font-size: 0.95rem;">All currently available session offers</div>
               </div>
               <button class="btn btn-outline" id="refresh-open-sessions" type="button"><i class="fas fa-rotate"></i> Refresh</button>
             </div>
@@ -2345,7 +2345,7 @@ async function openUserProfileModal(userId) {
 
     const modalHtml = `
       <div id="user-profile-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 1rem;">
-        <div style="background: white; border-radius: 12px; max-width: 1200px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div style="background: rgba(15,20,35,0.8); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; max-width: 1200px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
           <div style="padding: 2rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
             <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700;">${Utils.escapeHtml(displayName || 'Profile')}</h2>
             <button class="user-profile-close-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
@@ -2934,7 +2934,7 @@ async function renderRequestSessionPage() {
               <div style="font-weight: 700; color: var(--text-secondary);">Request a Session</div>
             </div>
 
-            <div style="background: white; border-radius: var(--radius-2xl); padding: 2rem; box-shadow: var(--shadow-md);">
+            <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
               <div style="display:flex; align-items:center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem;">
                 <div>
                   <div style="font-weight: 800; font-size: 1.25rem;">${Utils.escapeHtml(tutorFullName || tutorUsername || 'Tutor')}</div>
@@ -3718,7 +3718,7 @@ function showAchievementModal(achievementId) {
 
   const modalHtml = `
     <div id="achievement-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 1rem;">
-      <div style="background: white; border-radius: 16px; max-width: 500px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+      <div style="background: rgba(15,20,35,0.75); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; max-width: 500px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
         <div style="padding: 2rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
           <div style="display: flex; align-items: center; gap: 1rem;">
             <span style="font-size: 3rem;">${achievement.icon}</span>
@@ -3833,7 +3833,7 @@ function renderProfilePage() {
           <div style="max-width: 900px; margin: 0 auto;">
             <h1 class="page-title" style="text-align: left; margin-bottom: 2rem;">My Profile</h1>
             
-            <div style="background: white; border-radius: var(--radius-2xl); padding: 2rem; box-shadow: var(--shadow-md); margin-bottom: 2rem;">
+            <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25); margin-bottom: 2rem;">
               <div style="display: flex; gap: 2rem; align-items: start;">
                 <div class="profile-avatar-large">
                   ${Utils.getInitials(displayName || 'User')}
@@ -3862,14 +3862,14 @@ function renderProfilePage() {
             </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-              <div style="background: white; border-radius: var(--radius-2xl); padding: 2rem; box-shadow: var(--shadow-md);">
+              <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
                 <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">Skills I Offer</h3>
                 <div style="display: flex; flex-wrap: gap; gap: 0.5rem;">
                   ${skillsOffer.map(skill => `<span class="skill-badge">${skill}</span>`).join('')}
                 </div>
               </div>
               
-              <div style="background: white; border-radius: var(--radius-2xl); padding: 2rem; box-shadow: var(--shadow-md);">
+              <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
                 <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">Skills I Seek</h3>
                 <div style="display: flex; flex-wrap: gap; gap: 0.5rem;">
                   ${skillsSeek.map(skill => `<span class="skill-badge skill-badge-outline">${skill}</span>`).join('')}
@@ -3910,7 +3910,7 @@ function renderSettingsPage() {
           <div style="max-width: 900px; margin: 0 auto;">
             <h1 class="page-title" style="text-align: left; margin-bottom: 2rem;">Account Settings</h1>
             
-            <div style="background: white; border-radius: var(--radius-2xl); padding: 2rem; box-shadow: var(--shadow-md);">
+            <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
               <div style="display: flex; gap: 2rem; margin-bottom: 2rem;">
                 <div style="flex-shrink: 0;">
                   <div class="profile-avatar-large" style="position: relative;">
@@ -4596,7 +4596,7 @@ async function loadAdminSessions(type, searchTerm = '') {
     }
 
     contentDiv.innerHTML = `
-      <div style="background: white; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md);">
+      <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0;">${type === 'public' ? 'Public' : 'Private'} Sessions (${sessions.length})</h2>
           <div style="position: relative;">
@@ -4690,7 +4690,7 @@ async function loadAdminUsers(searchTerm = '') {
     }
 
     contentDiv.innerHTML = `
-      <div style="background: white; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md);">
+      <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0;">All Users (${users.length})</h2>
           <div style="position: relative;">
@@ -4772,7 +4772,7 @@ async function loadAdminSkills(searchTerm = '') {
     }
 
     contentDiv.innerHTML = `
-      <div style="background: white; border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md);">
+      <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
           <h2 style="font-size: 1.25rem; font-weight: 700; margin: 0;">All Skills (${skills.length})</h2>
           <div style="position: relative;">
@@ -4990,7 +4990,7 @@ async function loadAdminReports() {
         <!-- Detailed Stats Row -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
           <!-- User Breakdown -->
-          <div style="background: white; padding: 1.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-md);">
+          <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
             <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;"><i class="fas fa-users" style="color: var(--blue-primary);"></i> User Breakdown</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div style="text-align: center; padding: 1rem; background: var(--bg-light); border-radius: var(--radius-md);">
@@ -5013,7 +5013,7 @@ async function loadAdminReports() {
           </div>
           
           <!-- Session Breakdown -->
-          <div style="background: white; padding: 1.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-md);">
+          <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
             <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;"><i class="fas fa-calendar-check" style="color: var(--green-primary);"></i> Session Breakdown</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div style="text-align: center; padding: 1rem; background: var(--bg-light); border-radius: var(--radius-md);">
@@ -5039,19 +5039,19 @@ async function loadAdminReports() {
         <!-- Skills and Ratings Row -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
           <!-- Top Offered Skills -->
-          <div style="background: white; padding: 1.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-md);">
+          <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
             <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;"><i class="fas fa-hand-holding-heart" style="color: var(--green-primary);"></i> Top Offered Skills</h3>
             ${offeredList}
           </div>
           
           <!-- Top Sought Skills -->
-          <div style="background: white; padding: 1.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-md);">
+          <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
             <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;"><i class="fas fa-search" style="color: var(--blue-primary);"></i> Top Sought Skills</h3>
             ${soughtList}
           </div>
           
           <!-- Rating Distribution -->
-          <div style="background: white; padding: 1.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-md);">
+          <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
             <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;"><i class="fas fa-star" style="color: var(--red-primary);"></i> Rating Distribution</h3>
             ${ratingBars}
           </div>
@@ -5060,13 +5060,13 @@ async function loadAdminReports() {
         <!-- Top Tutors and Engagement -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
           <!-- Top Tutors -->
-          <div style="background: white; padding: 1.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-md);">
+          <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
             <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;"><i class="fas fa-trophy" style="color: var(--red-primary);"></i> Top Rated Tutors</h3>
             ${tutorsList}
           </div>
           
           <!-- Engagement Metrics -->
-          <div style="background: white; padding: 1.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-md);">
+          <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
             <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;"><i class="fas fa-chart-pie" style="color: var(--blue-primary);"></i> Engagement Metrics</h3>
             <div style="display: flex; flex-direction: column; gap: 1rem;">
               <div>
@@ -5257,7 +5257,7 @@ function renderWorksCitedPage() {
         <p class="page-subtitle">Resources and References</p>
       </div>
 
-      <div style="background: white; border-radius: var(--radius-2xl); padding: 2rem; box-shadow: var(--shadow-md); max-width: 1000px; margin: 0 auto;">
+      <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25); max-width: 1000px; margin: 0 auto;">
             <div style="margin-bottom: 2rem;">
               <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--blue-primary); padding-bottom: 0.5rem;">Original Work Declaration</h2>
               <p style="line-height: 1.6; color: var(--text-secondary);">This project represents 100% original code written by our team. All functionality, features, and implementations were developed specifically for this BPA competition without the use of prohibited frameworks or third-party code libraries beyond those explicitly allowed in the competition guidelines.</p>
@@ -5408,7 +5408,7 @@ function renderAITutorPage() {
             <p class="page-subtitle">Get instant help from our AI-powered tutoring assistant</p>
           </div>
           
-          <div style="background: white; border-radius: var(--radius-2xl); padding: 2rem; box-shadow: var(--shadow-md); max-width: 800px; margin: 0 auto;">
+          <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25); max-width: 800px; margin: 0 auto;">
             <div id="ai-chat-messages" style="min-height: 400px; max-height: 500px; overflow-y: auto; padding: 2rem; background: var(--bg-light); border-radius: var(--radius-xl); margin-bottom: 1.5rem;">
               <div style="text-align: center; color: var(--text-secondary); padding: 4rem 0;">
                 👋 Hi! I'm SkillBot, your AI tutoring assistant. Ask me anything about finding tutors or learning new skills!
@@ -5446,7 +5446,7 @@ async function sendAIMessage() {
   // Add loading indicator
   const loadingDiv = document.createElement('div');
   loadingDiv.style.cssText = 'margin-bottom: 1rem;';
-  loadingDiv.innerHTML = `<div style="display: inline-block; background: white; padding: 0.75rem 1rem; border-radius: 1rem; max-width: 70%;"><i class="fas fa-spinner fa-spin"></i> Thinking...</div>`;
+  loadingDiv.innerHTML = `<div style="display: inline-block; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); padding: 0.75rem 1rem; border-radius: 1rem; max-width: 70%;"><i class="fas fa-spinner fa-spin"></i> Thinking...</div>`;
   messagesDiv.appendChild(loadingDiv);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
@@ -5469,7 +5469,7 @@ async function sendAIMessage() {
     // Add AI response
     const aiMsgDiv = document.createElement('div');
     aiMsgDiv.style.cssText = 'margin-bottom: 1rem;';
-    aiMsgDiv.innerHTML = `<div style="display: inline-block; background: white; padding: 0.75rem 1rem; border-radius: 1rem; max-width: 70%; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">${Utils.escapeHtml(data.response || 'Sorry, I could not process that.')}</div>`;
+    aiMsgDiv.innerHTML = `<div style="display: inline-block; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15); color: #ffffff; padding: 0.75rem 1rem; border-radius: 1rem; max-width: 70%; box-shadow: 0 4px 16px rgba(0,0,0,0.2);">${Utils.escapeHtml(data.response || 'Sorry, I could not process that.')}</div>`;
     messagesDiv.appendChild(aiMsgDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
@@ -5618,7 +5618,7 @@ function openProfileModal() {
 
   const modalHtml = `
     <div id="profile-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 1rem;">
-      <div style="background: white; border-radius: 12px; max-width: 1200px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+      <div style="background: rgba(15,20,35,0.8); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; max-width: 1200px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
         <div style="padding: 2rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
           <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700;">My Profile</h2>
           <button class="modal-close-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
@@ -6798,7 +6798,7 @@ function openProfileEditor() {
               <label class="form-label">Skills I Offer</label>
               <div id="skills-offer-container" class="skills-tag-container" style="border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.5rem; min-height: 44px; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; position: relative;">
                 <input type="text" id="skills-offer-input" class="skills-tag-input" placeholder="Type a skill..." style="border: none; outline: none; flex: 1; min-width: 120px; padding: 0.25rem;">
-                <div id="skills-offer-dropdown" class="skills-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: var(--shadow-md);"></div>
+                <div id="skills-offer-dropdown" class="skills-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: rgba(15,20,35,0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-md); max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.4);"></div>
               </div>
               <input type="hidden" name="skillsOffer" id="skills-offer-hidden" value="${skillsOfferText}">
               <div class="form-helper">Type to search or add new skills</div>
@@ -6808,7 +6808,7 @@ function openProfileEditor() {
               <label class="form-label">Skills I Want to Learn</label>
               <div id="skills-seek-container" class="skills-tag-container" style="border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.5rem; min-height: 44px; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; position: relative;">
                 <input type="text" id="skills-seek-input" class="skills-tag-input" placeholder="Type a skill..." style="border: none; outline: none; flex: 1; min-width: 120px; padding: 0.25rem;">
-                <div id="skills-seek-dropdown" class="skills-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: var(--shadow-md);"></div>
+                <div id="skills-seek-dropdown" class="skills-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: rgba(15,20,35,0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-md); max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.4);"></div>
               </div>
               <input type="hidden" name="skillsSeek" id="skills-seek-hidden" value="${skillsSeekText}">
               <div class="form-helper">Type to search or add new skills</div>
