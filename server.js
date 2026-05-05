@@ -58,7 +58,8 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://mcp.figma.com"],
+      connectSrc: ["'self'", "https://mcp.figma.com"],
       imgSrc: ["'self'", "data:", "https:"],
       fontSrc: ["'self'", "https://cdnjs.cloudflare.com"]
     }

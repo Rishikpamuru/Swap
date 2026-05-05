@@ -1082,7 +1082,7 @@ function formatValidationErrors(result) {
 
 // Page Renderers
 function renderLoginPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="auth-container">
       <div class="auth-left">
         <div class="auth-logo-container">
@@ -1155,7 +1155,7 @@ function renderLoginPage() {
 }
 
 function renderRegisterPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="auth-container">
       <div class="auth-left">
         <div class="auth-logo-container">
@@ -1260,7 +1260,7 @@ function renderRegisterPage() {
 
 function renderDashboardPage() {
   const user = getCurrentUser();
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -1592,7 +1592,7 @@ function renderDashboardPage() {
 }
 
 function renderCreateSessionHomePage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -1637,7 +1637,7 @@ async function renderTeachOfferPage() {
 }
 
 async function renderLearnOffersPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -1873,7 +1873,7 @@ function openCustomTimeModal(tutorId, tutorUsername, tutorName, skillName) {
 }
 
 async function renderPastSessionsPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -1943,7 +1943,7 @@ async function renderPastSessionsPage() {
 }
 
 async function renderSearchPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -2476,7 +2476,7 @@ function startDmWithUser(otherId, otherUsername, otherFullName, otherAvatar) {
 
 async function renderCurrentTutorsPage() {
   // Show loading state
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -2505,7 +2505,7 @@ async function renderCurrentTutorsPage() {
 
     const sessions = data.sessions || [];
 
-    document.body.innerHTML = `
+    document.getElementById('app-root').innerHTML = `
       <div class="app-container">
         ${Components.sidebar()}
         <main class="main-content">
@@ -2538,7 +2538,7 @@ async function renderCurrentTutorsPage() {
 }
 
 function renderUpcomingTutorsPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -2569,7 +2569,7 @@ function renderUpcomingTutorsPage() {
 }
 
 async function renderPastTutorsPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -2597,7 +2597,7 @@ async function renderPastTutorsPage() {
 
     const sessions = data.sessions || [];
 
-    document.body.innerHTML = `
+    document.getElementById('app-root').innerHTML = `
       <div class="app-container">
         ${Components.sidebar()}
         <main class="main-content">
@@ -2631,7 +2631,7 @@ async function renderPastTutorsPage() {
 
 async function renderYourSessionsPage() {
   // Show loading state
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -2660,7 +2660,7 @@ async function renderYourSessionsPage() {
 
     const sessions = data.sessions || [];
 
-    document.body.innerHTML = `
+    document.getElementById('app-root').innerHTML = `
       <div class="app-container">
         ${Components.sidebar()}
         <main class="main-content">
@@ -2692,7 +2692,7 @@ async function renderYourSessionsPage() {
     }
   } catch (error) {
     console.error('Load sessions error:', error);
-    document.body.innerHTML = `
+    document.getElementById('app-root').innerHTML = `
       <div class="app-container">
         ${Components.sidebar()}
         <main class="main-content">
@@ -2784,7 +2784,7 @@ function renderSessionCard(session) {
 }
 
 async function renderUpcomingStudentsPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -2812,7 +2812,7 @@ async function renderUpcomingStudentsPage() {
 
     const sessions = data.sessions || [];
 
-    document.body.innerHTML = `
+    document.getElementById('app-root').innerHTML = `
       <div class="app-container">
         ${Components.sidebar()}
         <main class="main-content">
@@ -2837,7 +2837,7 @@ async function renderUpcomingStudentsPage() {
 }
 
 async function renderPastStudentsPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -2865,7 +2865,7 @@ async function renderPastStudentsPage() {
 
     const sessions = data.sessions || [];
 
-    document.body.innerHTML = `
+    document.getElementById('app-root').innerHTML = `
       <div class="app-container">
         ${Components.sidebar()}
         <main class="main-content">
@@ -2890,7 +2890,7 @@ async function renderPastStudentsPage() {
 }
 
 function renderSessionsPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -2922,7 +2922,7 @@ async function renderRequestSessionPage() {
     return;
   }
 
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -3274,7 +3274,7 @@ async function renderCreateSessionPage() {
     console.error('Failed to load skills:', error);
   }
 
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -3763,7 +3763,7 @@ function showAchievementModal(achievementId) {
 window.showAchievementModal = showAchievementModal;
 
 async function renderAchievementsPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -3824,7 +3824,7 @@ function renderProfilePage() {
     : [];
   const totalSessions = Number.isFinite(Number(user.totalSessions)) ? Number(user.totalSessions) : 0;
   const averageRating = Number.isFinite(Number(user.averageRating)) ? Number(user.averageRating) : 0;
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -3901,7 +3901,7 @@ function renderSettingsPage() {
   const lastName = parts.length > 1 ? parts.slice(1).join(' ') : '';
   const skillsOfferText = (user.skillsOffer || []).join(', ');
   const skillsSeekText = (user.skillsSeek || []).join(', ');
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -3999,7 +3999,7 @@ function renderMessagesPage() {
     pollingThread: null
   };
 
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -4379,7 +4379,7 @@ function renderMessagesPage() {
 }
 
 function renderReportsPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -4404,7 +4404,7 @@ async function renderAdminPage() {
     return;
   }
 
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -5345,7 +5345,7 @@ function renderWorksCitedPage() {
 
   const user = getCurrentUser();
   if (!user) {
-    document.body.innerHTML = `
+    document.getElementById('app-root').innerHTML = `
       <div class="auth-container">
         <div class="auth-left">
           <div class="auth-logo-container">
@@ -5384,7 +5384,7 @@ function renderWorksCitedPage() {
     return;
   }
 
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -5397,7 +5397,7 @@ function renderWorksCitedPage() {
 }
 
 function renderAITutorPage() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div class="app-container">
       ${Components.sidebar()}
       <main class="main-content">
@@ -5486,7 +5486,7 @@ async function sendAIMessage() {
 window.sendAIMessage = sendAIMessage;
 
 function render404Page() {
-  document.body.innerHTML = `
+  document.getElementById('app-root').innerHTML = `
     <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg-light); text-align: center; padding: 2rem;">
       <div>
         <h1 style="font-size: 6rem; font-weight: 700; color: var(--red-primary); margin-bottom: 1rem;">404</h1>
