@@ -2394,7 +2394,7 @@ async function openUserProfileModal(userId) {
                     <i class="fas fa-user" style="font-size: 1.25rem;"></i> About Me
                   </div>
                 </div>
-                <p style="margin: 0; color: #1f2937; line-height: 1.8; font-size: 1rem; padding: 0 1rem;">${Utils.escapeHtml(u.bio || 'No bio yet')}</p>
+                <p style="margin: 0; color: white; line-height: 1.8; font-size: 1rem; padding: 0 1rem;">${Utils.escapeHtml(u.bio || 'No bio yet')}</p>
               </div>
 
               <div style="margin-bottom: 2rem;">
@@ -2405,8 +2405,8 @@ async function openUserProfileModal(userId) {
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 0 1rem;">
                   ${(Array.isArray(u.skillsOffer) && u.skillsOffer.length > 0)
-        ? u.skillsOffer.map(skill => `<span style="padding: 0.5rem 1rem; background: transparent; color: #1f2937; border: 2px solid var(--blue-primary); border-radius: 20px; font-size: 1rem; font-weight: 600;">${Utils.escapeHtml(skill)}</span>`).join('')
-        : '<span style="color: #1f2937; font-size: 1rem;">No skills added yet</span>'}
+        ? u.skillsOffer.map(skill => `<span style="padding: 0.5rem 1rem; background: transparent; color: white; border: 2px solid var(--blue-primary); border-radius: 20px; font-size: 1rem; font-weight: 600;">${Utils.escapeHtml(skill)}</span>`).join('')
+        : '<span style="color: white; font-size: 1rem;">No skills added yet</span>'}
                 </div>
               </div>
 
@@ -2418,8 +2418,8 @@ async function openUserProfileModal(userId) {
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 0 1rem;">
                   ${(Array.isArray(u.skillsSeek) && u.skillsSeek.length > 0)
-        ? u.skillsSeek.map(skill => `<span style="padding: 0.5rem 1rem; background: transparent; color: #1f2937; border: 2px solid var(--green-primary); border-radius: 20px; font-size: 1rem; font-weight: 600;">${Utils.escapeHtml(skill)}</span>`).join('')
-        : '<span style="color: #1f2937; font-size: 1rem;">No skills added yet</span>'}
+        ? u.skillsSeek.map(skill => `<span style="padding: 0.5rem 1rem; background: transparent; color: white; border: 2px solid var(--green-primary); border-radius: 20px; font-size: 1rem; font-weight: 600;">${Utils.escapeHtml(skill)}</span>`).join('')
+        : '<span style="color: white; font-size: 1rem;">No skills added yet</span>'}
                 </div>
               </div>
 
@@ -5671,7 +5671,7 @@ function openProfileModal() {
                   <i class="fas fa-user" style="font-size: 1.25rem;"></i> About Me
                 </div>
               </div>
-              <p style="margin: 0; color: #1f2937; line-height: 1.8; font-size: 1rem; padding: 0 1rem;">${user.bio || 'No bio yet'}</p>
+              <p style="margin: 0; color: white; line-height: 1.8; font-size: 1rem; padding: 0 1rem;">${user.bio || 'No bio yet'}</p>
             </div>
             
             <div style="margin-bottom: 2rem;">
@@ -5682,8 +5682,8 @@ function openProfileModal() {
               </div>
               <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 0 1rem;">
                 ${(user.skillsOffer || []).length > 0
-      ? user.skillsOffer.map(skill => `<span style="padding: 0.5rem 1rem; background: transparent; color: #1f2937; border: 2px solid var(--blue-primary); border-radius: 20px; font-size: 1rem; font-weight: 600;">${skill}</span>`).join('')
-      : '<span style="color: #1f2937; font-size: 1rem;">No skills added yet</span>'}
+      ? user.skillsOffer.map(skill => `<span style="padding: 0.5rem 1rem; background: transparent; color: white; border: 2px solid var(--blue-primary); border-radius: 20px; font-size: 1rem; font-weight: 600;">${skill}</span>`).join('')
+      : '<span style="color: white; font-size: 1rem;">No skills added yet</span>'}
               </div>
             </div>
             
@@ -5695,8 +5695,8 @@ function openProfileModal() {
               </div>
               <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 0 1rem;">
                 ${(user.skillsSeek || []).length > 0
-      ? user.skillsSeek.map(skill => `<span style="padding: 0.5rem 1rem; background: transparent; color: #1f2937; border: 2px solid var(--green-primary); border-radius: 20px; font-size: 1rem; font-weight: 600;">${skill}</span>`).join('')
-      : '<span style="color: #1f2937; font-size: 1rem;">No skills added yet</span>'}
+      ? user.skillsSeek.map(skill => `<span style="padding: 0.5rem 1rem; background: transparent; color: white; border: 2px solid var(--green-primary); border-radius: 20px; font-size: 1rem; font-weight: 600;">${skill}</span>`).join('')
+      : '<span style="color: white; font-size: 1rem;">No skills added yet</span>'}
               </div>
             </div>
             
