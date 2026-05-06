@@ -23,10 +23,10 @@
   --green-dark: #16a34a;
   --green-light: #86efac;
 
-  --gray-light: #f1f5f9;
+  --gray-light: rgba(255, 255, 255, 0.08);
 
   /* Background */
-  --bg-light: #f8f9fa;
+  --bg-light: rgba(255, 255, 255, 0.06);
   --bg-white: #ffffff;
   --bg-gray: #e5e7eb;
 
@@ -844,7 +844,10 @@ body {
 }
 
 .modal {
-  background: var(--bg-white);
+  background: rgba(15, 20, 35, 0.85);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-2xl);
   padding: var(--space-8);
   max-width: 600px;
