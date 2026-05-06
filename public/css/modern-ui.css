@@ -107,12 +107,12 @@ body {
 }
 
 .sidebar {
-  width: 250px;
-  background: rgba(15, 20, 35, 0.45);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  width: 68px;
+  background: rgba(15, 20, 35, 0.55);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 2px 0 24px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   color: var(--text-white);
   position: fixed;
   height: 100vh;
@@ -120,9 +120,13 @@ body {
   top: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   z-index: 1000;
-  transition: transform var(--transition-base);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar:hover {
+  width: 250px;
 }
 
 .sidebar.collapsed {
@@ -130,20 +134,24 @@ body {
 }
 
 .sidebar-header {
-  padding: var(--space-6) var(--space-4);
+  padding: var(--space-5) 0;
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 76px;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .sidebar-logo {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-left: 12px;
 }
 
 .sidebar-logo-bg {
@@ -168,6 +176,15 @@ body {
   flex-direction: column;
   gap: 0;
   line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease 0.05s;
+  pointer-events: none;
+}
+
+.sidebar:hover .sidebar-brand {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .sidebar-brand-text {
@@ -179,7 +196,18 @@ body {
 
 .sidebar-search {
   padding: var(--space-4);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-height 0.3s ease;
+  pointer-events: none;
+}
+
+.sidebar:hover .sidebar-search {
+  opacity: 1;
+  max-height: 80px;
+  pointer-events: auto;
 }
 
 .sidebar-search-input {
@@ -212,34 +240,46 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  color: rgba(255, 255, 255, 0.8);
+  padding: var(--space-3) 0;
+  color: rgba(255, 255, 255, 0.75);
   text-decoration: none;
   transition: all var(--transition-fast);
   font-size: 0.9375rem;
   font-weight: var(--font-weight-medium);
   cursor: pointer;
   border-left: 3px solid transparent;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-nav-item > span:not(.sidebar-nav-item-icon):not(.notification-badge) {
+  opacity: 0;
+  transition: opacity 0.2s ease 0.05s;
+}
+
+.sidebar:hover .sidebar-nav-item > span:not(.sidebar-nav-item-icon):not(.notification-badge) {
+  opacity: 1;
 }
 
 .sidebar-nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.07);
   color: var(--text-white);
 }
 
 .sidebar-nav-item.active {
-  background: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(to right, rgba(185,28,80,0.2), transparent);
   color: var(--text-white);
-  border-left-color: var(--red-primary);
+  border-left-color: #b91c50;
 }
 
 .sidebar-nav-item-icon {
-  width: 24px;
+  min-width: 68px;
   height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
+  flex-shrink: 0;
 }
 
 .sidebar-nav-group {
@@ -296,14 +336,34 @@ body {
 }
 
 .sidebar-footer {
-  padding: var(--space-4);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--space-2) 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+/* Sidebar team/credits section — hide when narrow */
+.sidebar-team,
+.sidebar-credits,
+.sidebar-team-info {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-height 0.3s ease;
+  pointer-events: none;
+}
+
+.sidebar:hover .sidebar-team,
+.sidebar:hover .sidebar-credits,
+.sidebar:hover .sidebar-team-info {
+  opacity: 1;
+  max-height: 140px;
+  pointer-events: auto;
 }
 
 /* ========== Main Content ========== */
 .main-content {
   flex: 1;
-  margin-left: 250px;
+  margin-left: 68px;
   min-height: 100vh;
   background: transparent;
   transition: margin-left var(--transition-base);
@@ -1714,10 +1774,27 @@ body {
 @media (max-width: 1024px) {
   .sidebar {
     transform: translateX(-100%);
+    width: 250px;
   }
 
   .sidebar.open {
     transform: translateX(0);
+    width: 250px;
+  }
+
+  /* Show all labels when sidebar is open on mobile */
+  .sidebar.open .sidebar-brand,
+  .sidebar.open .sidebar-search,
+  .sidebar.open .sidebar-team-info,
+  .sidebar.open .sidebar-team,
+  .sidebar.open .sidebar-credits {
+    opacity: 1;
+    max-height: 140px;
+    pointer-events: auto;
+  }
+
+  .sidebar.open .sidebar-nav-item > span:not(.sidebar-nav-item-icon):not(.notification-badge) {
+    opacity: 1;
   }
 
   .main-content {
