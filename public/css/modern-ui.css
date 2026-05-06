@@ -249,10 +249,8 @@ body {
   font-size: 0.9375rem;
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  border-left: 3px solid transparent;
   white-space: nowrap;
   overflow: hidden;
-  justify-content: flex-start;
 }
 
 .sidebar-nav-item > span:not(.sidebar-nav-item-icon):not(.notification-badge) {
@@ -272,7 +270,7 @@ body {
 .sidebar-nav-item.active {
   background: linear-gradient(to right, rgba(185,28,80,0.2), transparent);
   color: var(--text-white);
-  border-left-color: #b91c50;
+  box-shadow: inset 3px 0 0 #b91c50;
 }
 
 .sidebar-nav-item-icon {
