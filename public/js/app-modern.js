@@ -5866,21 +5866,21 @@ function initializeSidebar() {
       <button id="ai-chat-fab" style="position: fixed; bottom: 24px; right: 24px; width: 60px; height: 60px; border-radius: 50%; background: rgba(99, 102, 241, 0.3); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(168, 85, 247, 0.5); color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 24px rgba(99, 102, 241, 0.35); z-index: 9999; transition: transform 0.2s, box-shadow 0.2s;" title="Ask SkillBot">
         <i class="fas fa-robot"></i>
       </button>
-      <div id="ai-chat-panel" style="display: none; position: fixed; bottom: 100px; right: 24px; width: 380px; max-width: calc(100vw - 48px); height: 500px; max-height: calc(100vh - 150px); background: #ffffff; border-radius: var(--radius-xl); box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9998; flex-direction: column; overflow: hidden;">
-        <div style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+      <div id="ai-chat-panel" style="display: none; position: fixed; bottom: 100px; right: 24px; width: 380px; max-width: calc(100vw - 48px); height: 500px; max-height: calc(100vh - 150px); background: rgba(10, 14, 28, 0.88); backdrop-filter: blur(32px) saturate(180%); -webkit-backdrop-filter: blur(32px) saturate(180%); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-xl); box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 9998; flex-direction: column; overflow: hidden;">
+        <div style="background: rgba(99,102,241,0.25); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid rgba(168,85,247,0.3); color: white; padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 0.75rem;">
             <i class="fas fa-robot" style="font-size: 1.25rem;"></i>
             <div>
               <div style="font-weight: 700;">SkillBot</div>
-              <div style="font-size: 0.8rem; opacity: 0.9;">AI Tutoring Assistant</div>
+              <div style="font-size: 0.8rem; opacity: 0.75;">AI Tutoring Assistant</div>
             </div>
           </div>
-          <button id="ai-chat-close" style="background: none; border: none; color: white; font-size: 1.25rem; cursor: pointer; opacity: 0.8;">×</button>
+          <button id="ai-chat-close" style="background: none; border: none; color: white; font-size: 1.25rem; cursor: pointer; opacity: 0.7;">×</button>
         </div>
         <div id="ai-chat-messages" style="flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
-          <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1)); padding: 0.75rem 1rem; border-radius: 12px; max-width: 90%;">
+          <div style="background: rgba(99,102,241,0.18); border: 1px solid rgba(168,85,247,0.25); padding: 0.75rem 1rem; border-radius: 12px; max-width: 90%; color: white;">
             <div style="font-size: 0.95rem;">Hi! I'm <strong>SkillBot</strong> 🤖 I can help you:</div>
-            <ul style="margin: 0.5rem 0 0 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+            <ul style="margin: 0.5rem 0 0 1rem; font-size: 0.9rem; color: rgba(255,255,255,0.75);">
               <li>Find the right tutor for your needs</li>
               <li>Explain concepts and topics</li>
               <li>Give learning advice</li>
@@ -5888,9 +5888,9 @@ function initializeSidebar() {
             <div style="margin-top: 0.5rem; font-size: 0.95rem;">What would you like to learn today?</div>
           </div>
         </div>
-        <div style="padding: 0.75rem; border-top: 1px solid var(--border-light); display: flex; gap: 0.5rem;">
-          <input type="text" id="ai-chat-input" placeholder="Ask me anything..." style="flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border-light); border-radius: 999px; font-size: 0.95rem;">
-          <button id="ai-chat-send" style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+        <div style="padding: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 0.5rem;">
+          <input type="text" id="ai-chat-input" placeholder="Ask me anything..." style="flex: 1; padding: 0.75rem 1rem; border: 1px solid rgba(255,255,255,0.15); border-radius: 999px; font-size: 0.95rem; background: rgba(20,26,48,0.85); color: white; color-scheme: dark;">
+          <button id="ai-chat-send" style="width: 44px; height: 44px; border-radius: 50%; background: rgba(99,102,241,0.5); border: 1px solid rgba(168,85,247,0.4); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;">
             <i class="fas fa-paper-plane"></i>
           </button>
         </div>
