@@ -759,13 +759,26 @@ body {
   border-radius: var(--radius-lg);
   font-size: 1rem;
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(20, 26, 48, 0.85);
+  color-scheme: dark;
   transition: all var(--transition-fast);
 }
 
 .auth-card .form-input {
   padding: var(--space-3) var(--space-4) var(--space-3) var(--space-10);
   border-radius: var(--radius-full);
+  background: rgba(20, 26, 48, 0.85);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  color-scheme: dark;
+}
+
+.auth-card .form-input:-webkit-autofill,
+.auth-card .form-input:-webkit-autofill:hover,
+.auth-card .form-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px rgba(20, 26, 48, 0.95) inset;
+  -webkit-text-fill-color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .form-input:focus,
@@ -779,6 +792,14 @@ body {
 .form-input::placeholder,
 .form-textarea::placeholder {
   color: rgba(255, 255, 255, 0.4);
+}
+
+.form-input:-webkit-autofill,
+.form-input:-webkit-autofill:hover,
+.form-input:-webkit-autofill:focus,
+.form-textarea:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px rgba(20, 26, 48, 0.9) inset;
+  -webkit-text-fill-color: #ffffff;
 }
 
 .form-select option {
@@ -2350,17 +2371,18 @@ body {
 }
 
 .auth-card .form-label {
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .auth-card .form-input {
-  background: var(--bg-white);
-  border-color: var(--border-light);
-  color: var(--text-primary);
+  background: rgba(20, 26, 48, 0.85);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  color-scheme: dark;
 }
 
 .auth-card .form-input::placeholder {
-  color: var(--text-light);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .auth-card .form-input:focus {
