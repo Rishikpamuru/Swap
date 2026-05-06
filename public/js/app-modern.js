@@ -3771,10 +3771,8 @@ async function renderAchievementsPage() {
         <div class="page-container">
           <div class="page-header">
             <h1 class="page-title">Achievements</h1>
-            <div style="background: var(--red-primary); color: white; padding: 0.75rem 2rem; border-radius: var(--radius-xl); display: inline-block; margin-top: 1rem; font-weight: 700; position: relative;">
-              <div style="position: absolute; left: -30px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-top: 20px solid transparent; border-bottom: 20px solid transparent; border-right: 30px solid var(--red-primary);"></div>
+            <div style="background: rgba(185,28,80,0.25); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(185,28,80,0.5); color: white; padding: 0.6rem 2.5rem; border-radius: 999px; display: inline-block; margin-top: 1rem; font-weight: 700;">
               My Awards
-              <div style="position: absolute; right: -30px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-top: 20px solid transparent; border-bottom: 20px solid transparent; border-left: 30px solid var(--red-primary);"></div>
             </div>
           </div>
           
@@ -5865,7 +5863,7 @@ function initializeSidebar() {
   // Add floating AI Tutor button if not already present
   if (!document.getElementById('ai-chat-fab')) {
     const aiButtonHtml = `
-      <button id="ai-chat-fab" style="position: fixed; bottom: 24px; right: 24px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); border: none; color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); z-index: 9999; transition: transform 0.2s, box-shadow 0.2s;" title="Ask SkillBot">
+      <button id="ai-chat-fab" style="position: fixed; bottom: 24px; right: 24px; width: 60px; height: 60px; border-radius: 50%; background: rgba(99, 102, 241, 0.3); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(168, 85, 247, 0.5); color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 24px rgba(99, 102, 241, 0.35); z-index: 9999; transition: transform 0.2s, box-shadow 0.2s;" title="Ask SkillBot">
         <i class="fas fa-robot"></i>
       </button>
       <div id="ai-chat-panel" style="display: none; position: fixed; bottom: 100px; right: 24px; width: 380px; max-width: calc(100vw - 48px); height: 500px; max-height: calc(100vh - 150px); background: #ffffff; border-radius: var(--radius-xl); box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 9998; flex-direction: column; overflow: hidden;">
