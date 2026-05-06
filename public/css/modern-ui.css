@@ -116,8 +116,8 @@ body {
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
   color: var(--text-white);
   position: fixed;
-  top: 14px;
-  bottom: 14px;
+  top: 60px;
+  bottom: 60px;
   left: 12px;
   height: auto;
   display: flex;
@@ -147,19 +147,19 @@ body {
 }
 
 .sidebar-logo {
-  width: 44px;
-  height: 44px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-left: 12px;
+  margin-left: 14px;
 }
 
 .sidebar-logo-bg {
   background: var(--bg-white);
-  padding: var(--space-2);
-  border-radius: var(--radius-md);
+  padding: 4px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -252,6 +252,7 @@ body {
   border-left: 3px solid transparent;
   white-space: nowrap;
   overflow: hidden;
+  justify-content: flex-start;
 }
 
 .sidebar-nav-item > span:not(.sidebar-nav-item-icon):not(.notification-badge) {
@@ -275,12 +276,12 @@ body {
 }
 
 .sidebar-nav-item-icon {
-  min-width: 68px;
+  min-width: 62px;
   height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   flex-shrink: 0;
 }
 
@@ -343,10 +344,11 @@ body {
   flex-shrink: 0;
 }
 
-/* Sidebar team/credits section — hide when narrow */
+/* Sidebar team/credits section — always hidden */
 .sidebar-team,
 .sidebar-credits,
 .sidebar-team-info {
+  display: none;
   opacity: 0;
   max-height: 0;
   overflow: hidden;
@@ -357,9 +359,10 @@ body {
 .sidebar:hover .sidebar-team,
 .sidebar:hover .sidebar-credits,
 .sidebar:hover .sidebar-team-info {
-  opacity: 1;
-  max-height: 140px;
-  pointer-events: auto;
+  display: none;
+  opacity: 0;
+  max-height: 0;
+  pointer-events: none;
 }
 
 /* ========== Main Content ========== */
@@ -1784,14 +1787,11 @@ body {
     width: 240px;
   }
 
-  /* Show all labels when sidebar is open on mobile */
+  /* Show labels when sidebar is open on mobile */
   .sidebar.open .sidebar-brand,
-  .sidebar.open .sidebar-search,
-  .sidebar.open .sidebar-team-info,
-  .sidebar.open .sidebar-team,
-  .sidebar.open .sidebar-credits {
+  .sidebar.open .sidebar-search {
     opacity: 1;
-    max-height: 140px;
+    max-height: 80px;
     pointer-events: auto;
   }
 
