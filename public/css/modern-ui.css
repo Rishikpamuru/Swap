@@ -1668,7 +1668,8 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  background: var(--bg-white);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   padding: var(--space-4) var(--space-6);
   border-radius: var(--radius-xl);
 }
@@ -1694,11 +1695,14 @@ body {
 }
 
 .auth-card {
-  background: var(--bg-white);
+  background: rgba(10, 14, 28, 0.88);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-2xl);
   padding: var(--space-10);
   width: 100%;
-  box-shadow: var(--shadow-xl);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
 }
 
 .auth-icon {
@@ -2337,12 +2341,12 @@ body {
   }
 }
 
-/* ─── Auth Card — override glass form styles back to solid for readability ─── */
+/* ─── Auth Card — dark glass for readability on fractal background ─── */
 .auth-card {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(10, 14, 28, 0.88);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .auth-card .form-label {
