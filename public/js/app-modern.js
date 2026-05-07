@@ -7199,9 +7199,9 @@ async function showUserProfileModal(userId) {
   `;
 
   modal.innerHTML = `
-    <div style="background: #ffffff; border-radius: var(--radius-xl); padding: 2rem; max-width: 500px; width: 90%; box-shadow: var(--shadow-lg); text-align: center;">
-      <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--text-secondary);"></i>
-      <p style="color: var(--text-secondary); margin-top: 1rem;">Loading profile...</p>
+    <div style="background: rgba(15,20,35,0.95); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.6); text-align: center;">
+      <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: rgba(255,255,255,0.5);"></i>
+      <p style="color: rgba(255,255,255,0.5); margin-top: 1rem;">Loading profile...</p>
     </div>
   `;
 
@@ -7227,14 +7227,14 @@ async function showUserProfileModal(userId) {
 
     // Generate star rating display
     const starsHtml = [1, 2, 3, 4, 5].map(i =>
-      `<span style="color: ${i <= Math.round(avgRating) ? 'var(--yellow-500, #eab308)' : 'var(--border-light)'};">★</span>`
+      `<span style="color: ${i <= Math.round(avgRating) ? '#fbbf24' : 'rgba(255,255,255,0.2)'};">★</span>`
     ).join('');
 
     // Generate session offers HTML
     const sessionOffersHtml = sessionOffers.length > 0 ? sessionOffers.map(offer => `
-      <div style="padding: 0.75rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); margin-bottom: 0.5rem;">
-        <div style="font-weight: 600; color: var(--text-primary);">${Utils.escapeHtml(offer.title)}</div>
-        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem;">
+      <div style="padding: 0.75rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; margin-bottom: 0.5rem;">
+        <div style="font-weight: 600; color: #fff;">${Utils.escapeHtml(offer.title)}</div>
+        <div style="font-size: 0.875rem; color: rgba(255,255,255,0.5); margin-top: 0.25rem;">
           <i class="fas fa-graduation-cap"></i> ${Utils.escapeHtml(offer.skillName)}
           <span style="margin-left: 0.75rem;"><i class="fas fa-${offer.locationType === 'online' ? 'video' : 'map-marker-alt'}"></i> ${Utils.escapeHtml(offer.locationType)}</span>
         </div>
@@ -7243,64 +7243,64 @@ async function showUserProfileModal(userId) {
           <i class="fas fa-calendar-plus"></i> Book Session
         </button>
       </div>
-    `).join('') : '<em style="color: var(--text-secondary);">No open session offers</em>';
+    `).join('') : '<em style="color: rgba(255,255,255,0.35);">No open session offers</em>';
 
     modal.innerHTML = `
-      <div style="background: #ffffff; border-radius: var(--radius-xl); max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg);">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-light);">
-          <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Profile</h2>
-          <button id="close-profile-modal-x" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); line-height: 1;">×</button>
+      <div style="background: rgba(15,20,35,0.95); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.6);">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #fff;">Profile</h2>
+          <button id="close-profile-modal-x" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: rgba(255,255,255,0.5); line-height: 1;">×</button>
         </div>
-        
+
         <div style="display: flex; gap: 2rem; padding: 2rem; flex-wrap: wrap;">
           <!-- Left column: Avatar + Stats -->
           <div style="flex: 0 0 220px; text-align: center;">
             <div style="position: relative; display: inline-block;">
               ${avatarHtml}
             </div>
-            <h3 style="margin: 1rem 0 0.25rem; font-size: 1.25rem; font-weight: 700;">${Utils.escapeHtml(displayName)}</h3>
-            <p style="color: var(--text-secondary); margin: 0;">@${Utils.escapeHtml(user.username)}</p>
-            
-            <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-light, #f8f9fa); border-radius: var(--radius-lg);">
-              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Total Sessions</div>
-              <div style="font-size: 1.5rem; font-weight: 700; color: var(--yellow-500, #eab308); margin-top: 0.25rem;">${totalSessions}</div>
+            <h3 style="margin: 1rem 0 0.25rem; font-size: 1.25rem; font-weight: 700; color: #fff;">${Utils.escapeHtml(displayName)}</h3>
+            <p style="color: rgba(255,255,255,0.5); margin: 0;">@${Utils.escapeHtml(user.username)}</p>
+
+            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: rgba(255,255,255,0.5); font-weight: 600; letter-spacing: 0.5px;">Total Sessions</div>
+              <div style="font-size: 1.5rem; font-weight: 700; color: #fbbf24; margin-top: 0.25rem;">${totalSessions}</div>
             </div>
-            
-            <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-light, #f8f9fa); border-radius: var(--radius-lg);">
-              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">Average Rating</div>
+
+            <div style="margin-top: 1rem; padding: 1rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: rgba(255,255,255,0.5); font-weight: 600; letter-spacing: 0.5px;">Average Rating</div>
               <div style="margin-top: 0.5rem;">${starsHtml}</div>
-              <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.25rem;">${avgRating.toFixed(1)} / 5.0</div>
+              <div style="font-size: 0.9rem; color: rgba(255,255,255,0.5); margin-top: 0.25rem;">${avgRating.toFixed(1)} / 5.0</div>
             </div>
           </div>
-          
+
           <!-- Right column: Bio + Skills -->
           <div style="flex: 1; min-width: 280px;">
-            <div style="background: linear-gradient(135deg, var(--red-primary), var(--red-secondary, #be185d)); color: white; padding: 0.75rem 1rem; border-radius: var(--radius-lg); display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
-              <i class="fas fa-user"></i> About Me
+            <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: rgba(255,255,255,0.9);">
+              <i class="fas fa-user" style="color: var(--red-primary);"></i> About Me
             </div>
-            <p style="padding: 1rem; color: var(--text-primary); margin: 0;">${user.bio ? Utils.escapeHtml(user.bio) : '<em style="color: var(--text-secondary);">No bio provided</em>'}</p>
-            
-            <div style="background: linear-gradient(135deg, var(--blue-primary), #2563eb); color: white; padding: 0.75rem 1rem; border-radius: var(--radius-lg); display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-top: 1rem;">
-              <i class="fas fa-bolt"></i> Skills I Offer
+            <p style="padding: 0.75rem 1rem; color: rgba(255,255,255,0.75); margin: 0; line-height: 1.7;">${user.bio ? Utils.escapeHtml(user.bio) : '<em style="color: rgba(255,255,255,0.35);">No bio provided</em>'}</p>
+
+            <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: rgba(255,255,255,0.9); margin-top: 1rem;">
+              <i class="fas fa-bolt" style="color: var(--blue-primary);"></i> Skills I Offer
             </div>
-            <div style="padding: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
-              ${skillsOffer.length ? skillsOffer.map(s => `<span style="padding: 0.35rem 0.75rem; border: 1.5px solid var(--blue-primary); border-radius: 999px; font-size: 0.875rem; color: var(--text-primary);">${Utils.escapeHtml(s)}</span>`).join('') : '<em style="color: var(--text-secondary);">None listed</em>'}
+            <div style="padding: 0.75rem 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+              ${skillsOffer.length ? skillsOffer.map(s => `<span style="padding: 0.35rem 0.75rem; background: rgba(96,165,250,0.1); border: 1.5px solid var(--blue-primary); border-radius: 999px; font-size: 0.875rem; color: #fff;">${Utils.escapeHtml(s)}</span>`).join('') : '<em style="color: rgba(255,255,255,0.35);">None listed</em>'}
             </div>
-            
-            <div style="background: linear-gradient(135deg, var(--green-primary), #059669); color: white; padding: 0.75rem 1rem; border-radius: var(--radius-lg); display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-top: 1rem;">
-              <i class="fas fa-bullseye"></i> Skills I Seek
+
+            <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: rgba(255,255,255,0.9); margin-top: 1rem;">
+              <i class="fas fa-bullseye" style="color: var(--green-primary);"></i> Skills I Seek
             </div>
-            <div style="padding: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
-              ${skillsSeek.length ? skillsSeek.map(s => `<span style="padding: 0.35rem 0.75rem; border: 1.5px solid var(--green-primary); border-radius: 999px; font-size: 0.875rem; color: var(--text-primary);">${Utils.escapeHtml(s)}</span>`).join('') : '<em style="color: var(--text-secondary);">None listed</em>'}
+            <div style="padding: 0.75rem 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+              ${skillsSeek.length ? skillsSeek.map(s => `<span style="padding: 0.35rem 0.75rem; background: rgba(74,222,128,0.1); border: 1.5px solid var(--green-primary); border-radius: 999px; font-size: 0.875rem; color: #fff;">${Utils.escapeHtml(s)}</span>`).join('') : '<em style="color: rgba(255,255,255,0.35);">None listed</em>'}
             </div>
-            
-            <div style="background: linear-gradient(135deg, var(--yellow-500, #eab308), #f59e0b); color: white; padding: 0.75rem 1rem; border-radius: var(--radius-lg); display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-top: 1rem;">
-              <i class="fas fa-calendar-alt"></i> Open Session Offers
+
+            <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: rgba(255,255,255,0.9); margin-top: 1rem;">
+              <i class="fas fa-calendar-alt" style="color: #fbbf24;"></i> Open Session Offers
             </div>
-            <div style="padding: 1rem; max-height: 200px; overflow-y: auto;">
+            <div style="padding: 0.75rem 1rem; max-height: 200px; overflow-y: auto;">
               ${sessionOffersHtml}
             </div>
-            
+
             <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end;">
               <button id="profile-modal-message-btn" class="btn btn-primary" style="min-width: 120px;">
                 <i class="fas fa-envelope"></i> Message
@@ -7339,9 +7339,9 @@ async function showUserProfileModal(userId) {
   } catch (error) {
     console.error('Load profile error:', error);
     modal.innerHTML = `
-      <div style="background: #ffffff; border-radius: var(--radius-xl); padding: 2rem; max-width: 400px; width: 90%; box-shadow: var(--shadow-lg); text-align: center;">
+      <div style="background: rgba(15,20,35,0.95); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.6); text-align: center;">
         <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: var(--red-primary);"></i>
-        <p style="margin-top: 1rem;">Failed to load profile</p>
+        <p style="margin-top: 1rem; color: rgba(255,255,255,0.75);">Failed to load profile</p>
         <button class="btn btn-secondary" style="margin-top: 1rem;" id="profile-error-close">Close</button>
       </div>
     `;
