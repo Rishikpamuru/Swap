@@ -1,117 +1,79 @@
 /**
  * Database Configuration and Connection
  * BPA Web Application - SkillSwap
- * 
- * SQLite database with proper error handling and security features
+ *
+ * SQLite database using better-sqlite3 (synchronous, no native glibc issues)
  */
 
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-// Simple database path - uses local file
 const DB_PATH = path.join(__dirname, '..', 'skillswap.db');
 
 console.log('📁 Database path:', DB_PATH);
 
-/**
- * Get the database file path
- */
 function getDatabasePath() {
   return DB_PATH;
 }
 
 /**
- * Initialize database connection with proper configuration
+ * Initialize database connection.
+ * Returns a better-sqlite3 Database instance wrapped in a resolved Promise
+ * so all callers that do `await initializeDatabase()` continue to work.
  */
 async function initializeDatabase() {
-  return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(DB_PATH, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
-      if (err) {
-        console.error('❌ Error connecting to database:', err.message);
-        reject(err);
-      } else {
-        console.log('✅ SQLite connected');
-        console.log('📁 Database file:', DB_PATH);
-        
-        // Enable foreign key constraints
-        db.run('PRAGMA foreign_keys = ON', (err) => {
-          if (err) {
-            console.error('❌ Error enabling foreign keys:', err.message);
-            reject(err);
-          } else {
-            console.log('🔑 Foreign key constraints enabled');
-            resolve(db);
-          }
-        });
-      }
-    });
-  });
+  const db = new Database(DB_PATH);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+  console.log('✅ SQLite connected (better-sqlite3)');
+  console.log('📁 Database file:', DB_PATH);
+  console.log('🔑 Foreign key constraints enabled');
+  return db;
 }
 
 /**
  * Ensure the core schema exists (users/roles/etc).
- * If the database file was deleted or created empty, the app should self-heal.
  */
 async function ensureBaseSchema(db) {
-  const exists = await tablesExist(db);
+  const exists = tablesExistSync(db);
   if (exists) return;
 
   const schemaPath = path.join(__dirname, 'schema.sql');
   console.log('🧱 Core tables missing; initializing schema from:', schemaPath);
-  await executeSQLFile(db, schemaPath);
+  executeSQLFileSync(db, schemaPath);
 
   const adminPermissions = JSON.stringify([
     'user.create', 'user.read', 'user.update', 'user.delete',
     'session.manage', 'message.moderate', 'report.view',
     'audit.view', 'admin.access'
   ]);
-
   const studentPermissions = JSON.stringify([
     'profile.manage', 'skill.manage', 'session.create',
     'message.send', 'rating.create'
   ]);
 
-  await runQuery(
-    db,
-    'INSERT OR IGNORE INTO roles (id, name, permissions) VALUES (?, ?, ?)',
-    [1, 'admin', adminPermissions]
-  );
-
-  await runQuery(
-    db,
-    'INSERT OR IGNORE INTO roles (id, name, permissions) VALUES (?, ?, ?)',
-    [2, 'student', studentPermissions]
-  );
+  db.prepare('INSERT OR IGNORE INTO roles (id, name, permissions) VALUES (?, ?, ?)').run(1, 'admin', adminPermissions);
+  db.prepare('INSERT OR IGNORE INTO roles (id, name, permissions) VALUES (?, ?, ?)').run(2, 'student', studentPermissions);
 }
 
 /**
- * Execute SQL file for database setup
+ * Execute a SQL file (synchronous helper).
  */
-function executeSQLFile(db, filePath) {
-  return new Promise((resolve, reject) => {
-    fs.readFile(filePath, 'utf8', (err, sql) => {
-      if (err) {
-        reject(err);
-        return;
-      }
+function executeSQLFileSync(db, filePath) {
+  const sql = fs.readFileSync(filePath, 'utf8');
+  db.exec(sql);
+}
 
-      db.exec(sql, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
-  });
+// Keep async variant for any callers that await it
+async function executeSQLFile(db, filePath) {
+  executeSQLFileSync(db, filePath);
 }
 
 /**
  * Ensure optional/extended tables exist (lightweight migrations).
- * Safe to run on every startup.
  */
-function ensureExtendedSchema(db) {
+async function ensureExtendedSchema(db) {
   const sql = `
     PRAGMA foreign_keys = ON;
 
@@ -180,196 +142,76 @@ function ensureExtendedSchema(db) {
     END;
   `;
 
-  return new Promise((resolve, reject) => {
-    db.exec(sql, (err) => {
-      if (err) return reject(err);
-      
-      // Add meeting_link column to sessions table if it doesn't exist
-      db.all("PRAGMA table_info(sessions)", [], (err, columns) => {
-        if (err) return reject(err);
-        
-        const hasMeetingLink = columns.some(col => col.name === 'meeting_link');
-        const addMeetingLink = () => {
-          if (hasMeetingLink) return Promise.resolve();
-          return new Promise((res) => {
-            db.run("ALTER TABLE sessions ADD COLUMN meeting_link TEXT", [], (err) => {
-              if (err && !String(err.message || '').includes('duplicate column')) {
-                console.error('Failed to add meeting_link column:', err);
-              }
-              res();
-            });
-          });
-        };
+  db.exec(sql);
 
-        const ensureSessionsColumns = () => {
-          return new Promise((res, rej) => {
-            db.all('PRAGMA table_info(sessions)', [], (err, cols) => {
-              if (err) return rej(err);
-              const names = new Set((cols || []).map(c => c.name));
-
-              const pending = [];
-              if (!names.has('offer_id')) pending.push('ALTER TABLE sessions ADD COLUMN offer_id INTEGER');
-              if (!names.has('slot_id')) pending.push('ALTER TABLE sessions ADD COLUMN slot_id INTEGER');
-              if (!names.has('is_group')) pending.push('ALTER TABLE sessions ADD COLUMN is_group INTEGER NOT NULL DEFAULT 0');
-
-              if (pending.length === 0) return res();
-
-              const runNext = () => {
-                const stmt = pending.shift();
-                if (!stmt) return res();
-                db.run(stmt, [], (err) => {
-                  if (err && !String(err.message || '').includes('duplicate column')) {
-                    console.error('Failed sessions migration:', err);
-                  }
-                  runNext();
-                });
-              };
-              runNext();
-            });
-          });
-        };
-
-        const ensureSessionOfferColumns = () => {
-          return new Promise((res, rej) => {
-            db.all('PRAGMA table_info(session_offers)', [], (err, cols) => {
-              if (err) return rej(err);
-              const names = new Set((cols || []).map(c => c.name));
-
-              const pending = [];
-              if (!names.has('is_group')) pending.push('ALTER TABLE session_offers ADD COLUMN is_group INTEGER NOT NULL DEFAULT 0');
-              if (!names.has('max_participants')) pending.push('ALTER TABLE session_offers ADD COLUMN max_participants INTEGER DEFAULT 1');
-
-              if (pending.length === 0) return res();
-
-              const runNext = () => {
-                const stmt = pending.shift();
-                if (!stmt) return res();
-                db.run(stmt, [], (err) => {
-                  if (err && !String(err.message || '').includes('duplicate column')) {
-                    console.error('Failed session_offers migration:', err);
-                  }
-                  runNext();
-                });
-              };
-              runNext();
-            });
-          });
-        };
-
-        const ensureUserProfileColumns = () => {
-          return new Promise((res, rej) => {
-            db.all('PRAGMA table_info(user_profiles)', [], (err, cols) => {
-              if (err) return rej(err);
-              const names = new Set((cols || []).map(c => c.name));
-
-              const pending = [];
-              if (!names.has('school')) pending.push("ALTER TABLE user_profiles ADD COLUMN school TEXT");
-              if (!names.has('grade_level')) pending.push("ALTER TABLE user_profiles ADD COLUMN grade_level TEXT");
-
-              if (pending.length === 0) return res();
-
-              // Run sequentially
-              const runNext = () => {
-                const stmt = pending.shift();
-                if (!stmt) return res();
-                db.run(stmt, [], (err) => {
-                  if (err && !String(err.message || '').includes('duplicate column')) {
-                    console.error('Failed user_profiles migration:', err);
-                  }
-                  runNext();
-                });
-              };
-              runNext();
-            });
-          });
-        };
-
-        Promise.resolve()
-          .then(addMeetingLink)
-          .then(ensureSessionOfferColumns)
-          .then(ensureSessionsColumns)
-          .then(ensureUserProfileColumns)
-          .then(() => resolve())
-          .catch(reject);
-      });
-    });
-  });
-}
-
-/**
- * Run a single SQL query with parameters
- */
-function runQuery(db, sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
-      if (err) {
-        reject(err);
-      } else {
-        resolve({ id: this.lastID, changes: this.changes });
+  // Lightweight column migrations
+  const addColIfMissing = (table, col, def) => {
+    try {
+      const cols = db.pragma(`table_info(${table})`);
+      if (!cols.some(c => c.name === col)) {
+        db.prepare(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`).run();
       }
-    });
-  });
+    } catch (e) {
+      if (!String(e.message).includes('duplicate column')) console.error(`Migration ${table}.${col}:`, e.message);
+    }
+  };
+
+  addColIfMissing('sessions', 'meeting_link', 'TEXT');
+  addColIfMissing('sessions', 'offer_id', 'INTEGER');
+  addColIfMissing('sessions', 'slot_id', 'INTEGER');
+  addColIfMissing('sessions', 'is_group', 'INTEGER NOT NULL DEFAULT 0');
+  addColIfMissing('session_offers', 'is_group', 'INTEGER NOT NULL DEFAULT 0');
+  addColIfMissing('session_offers', 'max_participants', 'INTEGER DEFAULT 1');
+  addColIfMissing('user_profiles', 'school', 'TEXT');
+  addColIfMissing('user_profiles', 'grade_level', 'TEXT');
 }
 
 /**
- * Get a single row from database
+ * Run a single SQL query with parameters.
+ * Returns { id, changes } to match the old sqlite3 behaviour.
  */
-function getOne(db, sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(row);
-      }
-    });
-  });
+async function runQuery(db, sql, params = []) {
+  const stmt = db.prepare(sql);
+  const result = stmt.run(...params);
+  return { id: result.lastInsertRowid, changes: result.changes };
 }
 
 /**
- * Get multiple rows from database
+ * Get a single row from database.
  */
-function getAll(db, sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(rows);
-      }
-    });
-  });
+async function getOne(db, sql, params = []) {
+  return db.prepare(sql).get(...params) ?? null;
 }
 
 /**
- * Close database connection
+ * Get multiple rows from database.
  */
-function closeDatabase(db) {
-  return new Promise((resolve, reject) => {
-    db.close((err) => {
-      if (err) {
-        reject(err);
-      } else {
-        console.log('📪 Database connection closed');
-        resolve();
-      }
-    });
-  });
+async function getAll(db, sql, params = []) {
+  return db.prepare(sql).all(...params);
 }
 
 /**
- * Check if database tables exist
+ * Close database connection.
  */
-async function tablesExist(db) {
+async function closeDatabase(db) {
+  db.close();
+  console.log('📪 Database connection closed');
+}
+
+/**
+ * Check if database tables exist (synchronous helper used internally).
+ */
+function tablesExistSync(db) {
   try {
-    const result = await getOne(
-      db,
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"
-    );
-    return !!result;
-  } catch (error) {
+    const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get();
+    return !!row;
+  } catch {
     return false;
   }
+}
+
+async function tablesExist(db) {
+  return tablesExistSync(db);
 }
 
 module.exports = {
