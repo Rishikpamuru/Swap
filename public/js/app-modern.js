@@ -626,7 +626,8 @@ const Router = {
     'reports': renderReportsPage,
     'admin': renderAdminPage,
     'works-cited': renderWorksCitedPage,
-    'ai-tutor': renderAITutorPage
+    'ai-tutor': renderAITutorPage,
+    'network': renderNetworkPage
   },
 
   navigate(page) {
@@ -933,6 +934,11 @@ const Components = {
             <span class="sidebar-nav-item-icon"><i class="fas fa-envelope"></i></span>
             <span>Messages</span>
             <span id="messages-unread-badge" class="notification-badge" style="position: static; margin-left: auto; width: 22px; height: 22px; font-size: 0.75rem; display: none;"></span>
+          </a>
+
+          <a href="#" class="sidebar-nav-item" data-page="network">
+            <span class="sidebar-nav-item-icon"><i class="fas fa-globe"></i></span>
+            <span>Skill Network</span>
           </a>
           `}
         </nav>
@@ -7250,6 +7256,346 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // ============================================================
+  // SKILL NETWORK GLOBE
+  // ============================================================
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (window.__loadedScripts && window.__loadedScripts[src]) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => { (window.__loadedScripts = window.__loadedScripts || {})[src] = true; resolve(); };
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function renderNetworkPage() {
+    const root = document.getElementById('app-root');
+    root.innerHTML = `
+      <div class="app-container">
+        ${Components.sidebar('network')}
+        <main class="main-content" style="padding:0;position:relative;overflow:hidden;background:#050510;">
+          <canvas id="network-canvas" style="width:100%;height:100%;display:block;"></canvas>
+          <div style="position:absolute;top:0;left:0;right:0;pointer-events:none;padding:2rem 2rem 0;">
+            <h1 style="font-size:1.75rem;font-weight:800;color:white;margin:0 0 0.25rem;text-shadow:0 0 24px rgba(100,180,255,0.6);">Skill Network</h1>
+            <p id="network-stats" style="color:rgba(255,255,255,0.45);font-size:0.875rem;margin:0;">Loading network data...</p>
+          </div>
+          <div style="position:absolute;bottom:2rem;left:2rem;pointer-events:none;background:rgba(5,5,16,0.75);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:1rem 1.25rem;font-size:0.78rem;color:rgba(255,255,255,0.6);">
+            <div style="font-weight:700;color:white;margin-bottom:0.6rem;font-size:0.85rem;">Legend</div>
+            <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;"><span style="width:10px;height:10px;border-radius:50%;background:#b8cde0;display:inline-block;box-shadow:0 0 8px rgba(68,136,170,0.8);"></span>Student</div>
+            <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;"><span style="width:10px;height:10px;background:#4facfe;transform:rotate(45deg);display:inline-block;box-shadow:0 0 8px rgba(79,172,254,0.8);"></span>Skill Hub</div>
+            <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;"><span style="width:20px;height:2px;background:rgba(79,172,254,0.5);display:inline-block;"></span>Teaches</div>
+            <div style="display:flex;align-items:center;gap:0.6rem;"><span style="width:20px;height:2px;background:rgba(255,154,60,0.6);display:inline-block;"></span>Session</div>
+          </div>
+          <div style="position:absolute;bottom:2.25rem;right:2rem;pointer-events:none;color:rgba(255,255,255,0.25);font-size:0.72rem;text-align:right;line-height:1.6;">
+            Drag to rotate<br>Scroll to zoom<br>Click a node
+          </div>
+          <div id="network-tooltip" style="position:fixed;pointer-events:none;background:rgba(8,12,28,0.93);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;font-size:0.85rem;color:white;display:none;z-index:1000;max-width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.5);"></div>
+          <div id="network-loading" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:white;">
+            <div style="font-size:3rem;margin-bottom:1rem;">🌐</div>
+            <div style="font-size:1.1rem;font-weight:700;margin-bottom:0.4rem;">Building Network...</div>
+            <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;">Mapping skill connections</div>
+          </div>
+        </main>
+      </div>`;
+
+    initializeSidebar();
+
+    try {
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js');
+    } catch (e) {
+      const el = document.getElementById('network-loading');
+      if (el) el.innerHTML = `<div style="color:#ff6b6b;font-size:1rem;">Failed to load 3D engine.<br><small style="opacity:.6">Check your internet connection.</small></div>`;
+      return;
+    }
+
+    let netData;
+    try {
+      const res = await fetch('/api/network', { credentials: 'include' });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message);
+      netData = json.data;
+    } catch (e) {
+      const el = document.getElementById('network-loading');
+      if (el) el.innerHTML = `<div style="color:#ff6b6b;font-size:1rem;">Failed to load network data.<br><small style="opacity:.6">${e.message}</small></div>`;
+      return;
+    }
+
+    const loadingEl = document.getElementById('network-loading');
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    AppState.cleanup = buildNetworkScene(netData);
+  }
+
+  function buildNetworkScene(data) {
+    const THREE = window.THREE;
+    const canvas = document.getElementById('network-canvas');
+    if (!canvas || !THREE) return () => {};
+
+    const parent = canvas.parentElement;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x050510, 1);
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x050510, 0.0007);
+
+    const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 3000);
+    camera.position.set(0, 60, 420);
+
+    function resize() {
+      const w = parent.clientWidth, h = parent.clientHeight;
+      if (!w || !h) return;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    scene.add(new THREE.AmbientLight(0x223355, 3));
+    const sunLight = new THREE.PointLight(0x5577cc, 4, 1000);
+    sunLight.position.set(100, 200, 150);
+    scene.add(sunLight);
+
+    // Stars
+    const starCount = 3000;
+    const starPos = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount * 3; i++) starPos[i] = (Math.random() - 0.5) * 2400;
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, transparent: true, opacity: 0.5 })));
+
+    const CAT_COLORS = {
+      math: 0x4facfe, science: 0x43e97b, art: 0xf093fb, music: 0xfa709a,
+      language: 0xffd32a, english: 0xffd32a, technology: 0x00d2ff,
+      computer: 0x00d2ff, programming: 0x00d2ff, sports: 0xf7971e,
+      writing: 0xa29bfe, history: 0xff9a3c, physics: 0x43e97b,
+      chemistry: 0x43e97b, biology: 0x43e97b,
+    };
+    function catColor(cat) {
+      if (!cat) return 0x9b59b6;
+      const k = cat.toLowerCase();
+      for (const [key, val] of Object.entries(CAT_COLORS)) {
+        if (k.includes(key)) return val;
+      }
+      return 0x9b59b6;
+    }
+
+    function fibSphere(n, r) {
+      const pts = [], golden = Math.PI * (3 - Math.sqrt(5));
+      for (let i = 0; i < n; i++) {
+        const y = 1 - (i / Math.max(n - 1, 1)) * 2;
+        const rad = Math.sqrt(Math.max(0, 1 - y * y));
+        const theta = golden * i;
+        pts.push(new THREE.Vector3(Math.cos(theta) * rad * r, y * r, Math.sin(theta) * rad * r));
+      }
+      return pts;
+    }
+
+    // Skill hubs on inner sphere
+    const skillPos = {};
+    const skillMeshes = [];
+    const skills = data.skills;
+    const skillSphPts = fibSphere(Math.max(skills.length, 1), 140);
+
+    skills.forEach((skill, i) => {
+      const r = 9 + Math.min(skill.user_count || 0, 10) * 1.8;
+      const col = catColor(skill.category);
+      const geo = new THREE.IcosahedronGeometry(r, 1);
+      const mat = new THREE.MeshStandardMaterial({
+        color: col, emissive: col, emissiveIntensity: 0.5,
+        metalness: 0.2, roughness: 0.5,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.copy(skillSphPts[i]);
+      mesh.userData = { type: 'skill', id: skill.id, skill };
+      scene.add(mesh);
+      skillPos[skill.id] = skillSphPts[i].clone();
+      skillMeshes.push(mesh);
+
+      const pl = new THREE.PointLight(col, 1.5, 100);
+      pl.position.copy(skillSphPts[i]);
+      scene.add(pl);
+    });
+
+    // User nodes on outer sphere, gravitated toward their skills
+    const userMeshes = [];
+    const userPosMap = {};
+    const userOffered = {};
+    data.userSkills.forEach(us => {
+      if (us.skill_type === 'offer') {
+        (userOffered[us.user_id] = userOffered[us.user_id] || []).push(us.skill_id);
+      }
+    });
+
+    const userSphPts = fibSphere(Math.max(data.users.length, 1), 210);
+    data.users.forEach((user, i) => {
+      const geo = new THREE.SphereGeometry(7, 14, 10);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0xb8cde0, emissive: 0x336688, emissiveIntensity: 0.35,
+        metalness: 0.5, roughness: 0.4,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+
+      const skIds = userOffered[user.id];
+      if (skIds?.length && skillPos[skIds[0]]) {
+        const base = skillPos[skIds[0]].clone().normalize().multiplyScalar(185 + Math.random() * 38);
+        base.x += (Math.random() - 0.5) * 48;
+        base.y += (Math.random() - 0.5) * 48;
+        base.z += (Math.random() - 0.5) * 48;
+        mesh.position.copy(base);
+      } else {
+        mesh.position.copy(userSphPts[i]);
+      }
+
+      mesh.userData = { type: 'user', id: user.id, user };
+      scene.add(mesh);
+      userMeshes.push(mesh);
+      userPosMap[user.id] = mesh.position.clone();
+    });
+
+    // Edges
+    function addEdge(from, to, color, opacity) {
+      const geo = new THREE.BufferGeometry().setFromPoints([from.clone(), to.clone()]);
+      const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+      scene.add(new THREE.Line(geo, mat));
+    }
+
+    data.userSkills.forEach(us => {
+      const uPos = userPosMap[us.user_id], sPos = skillPos[us.skill_id];
+      if (!uPos || !sPos) return;
+      addEdge(uPos, sPos, us.skill_type === 'offer' ? 0x4facfe : 0xffd32a, us.skill_type === 'offer' ? 0.22 : 0.1);
+    });
+
+    const seen = new Set();
+    data.sessions.forEach(s => {
+      const key = [Math.min(s.tutor_id, s.student_id), Math.max(s.tutor_id, s.student_id)].join('-');
+      if (seen.has(key)) return;
+      seen.add(key);
+      const a = userPosMap[s.tutor_id], b = userPosMap[s.student_id];
+      if (a && b) addEdge(a, b, 0xff9a3c, 0.4);
+    });
+
+    const statEl = document.getElementById('network-stats');
+    if (statEl) statEl.textContent = `${data.users.length} students · ${skills.length} skills · ${data.userSkills.length + seen.size} connections`;
+
+    // Orbit controls
+    let theta = 0.3, phi = 1.1, radius = 420;
+    let dragging = false, lastX = 0, lastY = 0;
+    let autoRotate = true;
+    let autoTimer = null;
+
+    function resumeAuto() {
+      clearTimeout(autoTimer);
+      autoTimer = setTimeout(() => { autoRotate = true; }, 4000);
+    }
+    function updateCam() {
+      camera.position.set(
+        radius * Math.sin(phi) * Math.sin(theta),
+        radius * Math.cos(phi),
+        radius * Math.sin(phi) * Math.cos(theta)
+      );
+      camera.lookAt(0, 0, 0);
+    }
+    updateCam();
+
+    const onMouseDown = e => { dragging = true; lastX = e.clientX; lastY = e.clientY; autoRotate = false; canvas.style.cursor = 'grabbing'; };
+    const onMouseUp = () => { dragging = false; canvas.style.cursor = hovered ? 'pointer' : 'grab'; resumeAuto(); };
+    const onWheel = e => { radius = Math.max(150, Math.min(900, radius + e.deltaY * 0.5)); e.preventDefault(); };
+
+    canvas.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+
+    // Raycaster + tooltip
+    const raycaster = new THREE.Raycaster();
+    const mouse2 = new THREE.Vector2();
+    const allMeshes = [...skillMeshes, ...userMeshes];
+    const tooltip = document.getElementById('network-tooltip');
+    let hovered = null;
+
+    canvas.addEventListener('mousemove', e => {
+      if (dragging) {
+        theta -= (e.clientX - lastX) * 0.006;
+        phi = Math.max(0.25, Math.min(Math.PI - 0.25, phi - (e.clientY - lastY) * 0.006));
+        lastX = e.clientX; lastY = e.clientY;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      mouse2.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse2.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouse2, camera);
+      const hits = raycaster.intersectObjects(allMeshes);
+
+      if (hits.length) {
+        const obj = hits[0].object;
+        if (obj !== hovered) {
+          hovered = obj;
+          const d = obj.userData;
+          if (d.type === 'user') {
+            tooltip.innerHTML = `<strong style="font-size:0.9rem;">${Utils.escapeHtml(d.user.name || '?')}</strong><br><span style="color:rgba(255,255,255,0.5);font-size:0.75rem;">Click to view profile</span>`;
+          } else {
+            const hex = '#' + catColor(d.skill.category).toString(16).padStart(6, '0');
+            tooltip.innerHTML = `<strong style="color:${hex};font-size:0.9rem;">${Utils.escapeHtml(d.skill.name)}</strong><br><span style="color:rgba(255,255,255,0.5);font-size:0.75rem;">${d.skill.user_count || 0} tutor${d.skill.user_count !== 1 ? 's' : ''} · ${d.skill.category || 'General'}</span>`;
+          }
+          tooltip.style.display = 'block';
+        }
+        if (!dragging) canvas.style.cursor = 'pointer';
+        tooltip.style.left = (e.clientX + 16) + 'px';
+        tooltip.style.top = (e.clientY - 12) + 'px';
+      } else {
+        hovered = null;
+        tooltip.style.display = 'none';
+        if (!dragging) canvas.style.cursor = 'grab';
+      }
+    });
+
+    canvas.addEventListener('click', e => {
+      if (Math.abs(e.clientX - lastX) > 5) return;
+      const rect = canvas.getBoundingClientRect();
+      mouse2.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse2.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouse2, camera);
+      const hits = raycaster.intersectObjects(allMeshes);
+      if (hits.length && hits[0].object.userData.type === 'user') {
+        openUserProfileModal(hits[0].object.userData.id);
+      }
+    });
+
+    canvas.style.cursor = 'grab';
+
+    // Animation loop
+    let running = true, t = 0;
+    function animate() {
+      if (!running || !document.getElementById('network-canvas')) { running = false; return; }
+      requestAnimationFrame(animate);
+      t += 0.012;
+      if (autoRotate) theta += 0.0025;
+      updateCam();
+      skillMeshes.forEach((m, i) => {
+        m.scale.setScalar(1 + 0.06 * Math.sin(t * 1.4 + i * 0.9));
+        m.rotation.y += 0.008;
+      });
+      userMeshes.forEach((m, i) => {
+        m.scale.setScalar(1 + 0.04 * Math.sin(t * 2.1 + i * 1.3));
+      });
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    return function cleanup() {
+      running = false;
+      clearTimeout(autoTimer);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('mouseup', onMouseUp);
+      renderer.dispose();
+    };
+  }
+
   (async () => {
     // Honor direct navigation (e.g., refresh on /messages)
     const path = (window.location.pathname || '/').replace(/\/+$/, '') || '/';
@@ -7262,7 +7608,8 @@ document.addEventListener('DOMContentLoaded', () => {
       '/messages': 'messages',
       '/sessions': 'sessions',
       '/search': 'search',
-      '/request-session': 'request-session'
+      '/request-session': 'request-session',
+      '/network': 'network'
     };
 
     // Check if user is logged in
