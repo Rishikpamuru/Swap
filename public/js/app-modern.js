@@ -617,9 +617,16 @@ async function renderNetworkPage() {
       ${Components.sidebar('network')}
       <main class="main-content" style="padding:0;position:relative;overflow:hidden;background:#050510;">
         <canvas id="network-canvas" style="width:100%;height:100%;display:block;"></canvas>
-        <div style="position:absolute;top:0;left:0;right:0;pointer-events:none;padding:2rem 2rem 0;">
-          <h1 style="font-size:1.75rem;font-weight:800;color:white;margin:0 0 0.25rem;text-shadow:0 0 24px rgba(100,180,255,0.6);">Skill Network</h1>
-          <p id="network-stats" style="color:rgba(255,255,255,0.45);font-size:0.875rem;margin:0;">Loading network data...</p>
+        <div style="position:absolute;top:0;left:0;right:0;pointer-events:none;padding:1.5rem 2rem 0;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;">
+          <div>
+            <h1 style="font-size:1.75rem;font-weight:800;color:white;margin:0 0 0.25rem;text-shadow:0 0 24px rgba(100,180,255,0.6);">Skill Network</h1>
+            <p id="network-stats" style="color:rgba(255,255,255,0.45);font-size:0.875rem;margin:0;">Loading network data...</p>
+          </div>
+          <div style="pointer-events:auto;position:relative;margin-top:0.25rem;">
+            <span style="position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.4);font-size:0.85rem;pointer-events:none;">⌕</span>
+            <input id="network-search" type="text" placeholder="Search skills or people…" autocomplete="off"
+              style="background:rgba(0,0,8,0.7);border:1px solid rgba(255,255,255,0.18);border-radius:999px;padding:0.45rem 1rem 0.45rem 2.2rem;color:white;font-size:0.85rem;width:230px;outline:none;backdrop-filter:blur(12px);" />
+          </div>
         </div>
         <div style="position:absolute;bottom:2rem;left:2rem;pointer-events:none;background:rgba(5,5,16,0.75);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:1rem 1.25rem;font-size:0.78rem;color:rgba(255,255,255,0.6);">
           <div style="font-weight:700;color:white;margin-bottom:0.6rem;font-size:0.85rem;">Legend</div>
@@ -665,7 +672,20 @@ async function renderNetworkPage() {
   const loadingEl = document.getElementById('network-loading');
   if (loadingEl) loadingEl.style.display = 'none';
 
-  AppState.cleanup = buildNetworkScene(netData, AppState.currentUser);
+  const { cleanup, setFilter } = buildNetworkScene(netData, AppState.currentUser);
+  AppState.cleanup = cleanup;
+
+  // Wire up the search bar
+  const netSearchEl = document.getElementById('network-search');
+  if (netSearchEl) {
+    // Pre-fill if navigated here from the Search page
+    if (AppState.pendingNetworkFilter) {
+      netSearchEl.value = AppState.pendingNetworkFilter;
+      setFilter(AppState.pendingNetworkFilter);
+      AppState.pendingNetworkFilter = null;
+    }
+    netSearchEl.addEventListener('input', e => setFilter(e.target.value));
+  }
 }
 
 function buildNetworkScene(data, currentUser) {
@@ -1082,13 +1102,30 @@ function buildNetworkScene(data, currentUser) {
   }
   animate();
 
-  return function cleanup() {
+  function setFilter(query) {
+    const q = (query || '').trim().toLowerCase();
+    if (!q) {
+      [...skillGroups, ...userGroups].forEach(g => { g.visible = true; });
+      return;
+    }
+    skillGroups.forEach(g => {
+      g.visible = g.userData.skill.name.toLowerCase().includes(q);
+    });
+    userGroups.forEach(g => {
+      const name = (g.userData.user.name || '').toLowerCase();
+      g.visible = name.includes(q);
+    });
+  }
+
+  function cleanup() {
     running = false;
     clearTimeout(autoTimer);
     window.removeEventListener('resize', resize);
     window.removeEventListener('mouseup', onMouseUp);
     renderer.dispose();
-  };
+  }
+
+  return { cleanup, setFilter };
 }
 
 
@@ -2633,7 +2670,10 @@ async function renderSearchPage() {
                       ${user.offeredSkills.length > 3 ? `<span style="padding: 0.25rem 0.75rem; color: var(--text-secondary); font-size: 0.875rem;">+${user.offeredSkills.length - 3} more</span>` : ''}
                     </div>
                   </div>
-                  <button type="button" class="btn btn-primary search-request-session" data-user-id="${user.id}" data-username="${Utils.escapeHtml(user.username)}" data-full-name="${Utils.escapeHtml(user.fullName || '')}">Request Session</button>
+                  <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+                    <button type="button" class="btn btn-primary search-request-session" style="flex:1;" data-user-id="${user.id}" data-username="${Utils.escapeHtml(user.username)}" data-full-name="${Utils.escapeHtml(user.fullName || '')}">Request Session</button>
+                    <button type="button" class="btn btn-outline search-view-network" title="View in Skill Network" data-network-term="${Utils.escapeHtml(user.fullName || user.username)}">🌐</button>
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -2657,6 +2697,11 @@ async function renderSearchPage() {
         }
 
         resultsDiv.innerHTML = `
+          ${searchType === 'skills' ? `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:1rem;">
+            <span style="color:var(--text-secondary);font-size:0.9rem;">${users.length} tutor${users.length !== 1 ? 's' : ''} offering <strong style="color:var(--text-primary);">${Utils.escapeHtml(query)}</strong></span>
+            <button type="button" class="btn btn-outline search-view-network-skill" style="font-size:0.82rem;padding:0.35rem 0.9rem;" data-network-term="${Utils.escapeHtml(query)}">🌐 View in Network</button>
+          </div>` : ''}
           <div class="user-grid">
             ${users.map(user => `
               <div class="user-card search-user-card" role="button" tabindex="0" data-user-id="${user.id}" aria-label="View profile">
@@ -2671,7 +2716,10 @@ async function renderSearchPage() {
                     ${user.offeredSkills.length > 3 ? `<span style="padding: 0.25rem 0.75rem; color: var(--text-secondary); font-size: 0.875rem;">+${user.offeredSkills.length - 3} more</span>` : ''}
                   </div>
                 </div>
-                <button type="button" class="btn btn-primary search-request-session" data-user-id="${user.id}" data-username="${Utils.escapeHtml(user.username)}" data-full-name="${Utils.escapeHtml(user.fullName || '')}">Request Session</button>
+                <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+                  <button type="button" class="btn btn-primary search-request-session" style="flex:1;" data-user-id="${user.id}" data-username="${Utils.escapeHtml(user.username)}" data-full-name="${Utils.escapeHtml(user.fullName || '')}">Request Session</button>
+                  <button type="button" class="btn btn-outline search-view-network" title="View in Skill Network" data-network-term="${Utils.escapeHtml(user.fullName || user.username)}">🌐</button>
+                </div>
               </div>
             `).join('')}
           </div>
@@ -2685,6 +2733,16 @@ async function renderSearchPage() {
 
   // CSP-safe delegated click/keyboard handlers for search results
   resultsDiv?.addEventListener('click', (e) => {
+    const networkBtn = e.target?.closest?.('.search-view-network, .search-view-network-skill');
+    if (networkBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const term = String(networkBtn.getAttribute('data-network-term') || searchInput.value.trim());
+      AppState.pendingNetworkFilter = term;
+      Router.navigate('network');
+      return;
+    }
+
     const requestBtn = e.target?.closest?.('.search-request-session');
     if (requestBtn) {
       e.preventDefault();
