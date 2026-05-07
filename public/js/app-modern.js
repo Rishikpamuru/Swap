@@ -1275,19 +1275,19 @@ function renderDashboardPage() {
             <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
               <div style="font-size: 2rem; margin-bottom: 0.5rem;">📚</div>
               <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; color: #ffffff;">Total Sessions</h3>
-              <p style="font-size: 2.5rem; font-weight: 700; color: var(--blue-primary);">${user.totalSessions || 0}</p>
+              <p style="font-size: 2.5rem; font-weight: 700; color: white;">${user.totalSessions || 0}</p>
             </div>
-            
+
             <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
               <div style="font-size: 2rem; margin-bottom: 0.5rem;">⭐</div>
               <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; color: #ffffff;">Average Rating</h3>
-              <p style="font-size: 2.5rem; font-weight: 700; color: var(--blue-primary);">${(user.averageRating || 0).toFixed(1)}</p>
+              <p style="font-size: 2.5rem; font-weight: 700; color: white;">${(user.averageRating || 0).toFixed(1)}</p>
             </div>
-            
+
             <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
               <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
               <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; color: #ffffff;">Skills Offered</h3>
-              <p style="font-size: 2.5rem; font-weight: 700; color: var(--blue-primary);">${(user.skillsOffer || []).length}</p>
+              <p style="font-size: 2.5rem; font-weight: 700; color: white;">${(user.skillsOffer || []).length}</p>
             </div>
           </div>
 
@@ -2256,7 +2256,7 @@ async function renderSearchPage() {
 
         return `
               <div class="user-card" style="display:flex; flex-direction: column; gap: 0.75rem;">
-                <div style="display:flex; align-items:center; gap: 1rem;">
+                <div class="open-session-tutor-link" data-tutor-id="${o.tutorId || ''}" style="display:flex; align-items:center; gap: 1rem; cursor: pointer;">
                   ${avatar}
                   <div style="flex: 1; min-width:0;">
                     <div style="font-weight: 800; font-size: 1.125rem;">${Utils.escapeHtml(name)}</div>
@@ -2292,6 +2292,13 @@ async function renderSearchPage() {
           btn.disabled = true;
           await requestOfferSlot(offerId, slotId);
           btn.disabled = false;
+        });
+      });
+
+      document.querySelectorAll('.open-session-tutor-link').forEach(link => {
+        link.addEventListener('click', () => {
+          const tutorId = Number(link.getAttribute('data-tutor-id'));
+          if (tutorId) openUserProfileModal(tutorId);
         });
       });
     } catch (error) {
