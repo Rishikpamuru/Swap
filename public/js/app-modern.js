@@ -991,8 +991,28 @@ function buildNetworkScene(data, currentUser) {
   const statEl = document.getElementById('network-stats');
   if (statEl) statEl.textContent = `${data.users.length} students · ${skills.length} skills · ${data.userSkills.length + seen.size} connections`;
 
+  // Connection maps for filter neighbour expansion
+  const skillToUsers = new Map();   // skillName → Set<userId>
+  const userToSkills = new Map();   // userId   → Set<skillName>
+  const sessionPeers = new Map();   // userId   → Set<userId>
+  data.userSkills.forEach(us => {
+    if (!skillToUsers.has(us.skill_name)) skillToUsers.set(us.skill_name, new Set());
+    skillToUsers.get(us.skill_name).add(us.user_id);
+    if (!userToSkills.has(us.user_id)) userToSkills.set(us.user_id, new Set());
+    userToSkills.get(us.user_id).add(us.skill_name);
+  });
+  data.sessions.forEach(s => {
+    [s.tutor_id, s.student_id].forEach(a => {
+      const b = a === s.tutor_id ? s.student_id : s.tutor_id;
+      if (!sessionPeers.has(a)) sessionPeers.set(a, new Set());
+      sessionPeers.get(a).add(b);
+    });
+  });
+
   // Orbit controls
   let theta = 0.3, phi = 1.1, radius = 420;
+  let flyTheta = theta, flyPhi = phi, flyRadius = radius;
+  let flying = false;
   let dragging = false, lastX = 0, lastY = 0;
   let autoRotate = true, autoTimer = null;
 
@@ -1083,7 +1103,14 @@ function buildNetworkScene(data, currentUser) {
     if (!running || !document.getElementById('network-canvas')) { running = false; return; }
     requestAnimationFrame(animate);
     t += 0.012;
-    if (autoRotate) theta += 0.0022;
+    if (flying) {
+      theta += (flyTheta - theta) * 0.07;
+      phi   += (flyPhi   - phi)   * 0.07;
+      radius += (flyRadius - radius) * 0.07;
+      if (Math.abs(flyTheta - theta) < 0.002 && Math.abs(flyPhi - phi) < 0.002 && Math.abs(flyRadius - radius) < 0.5) flying = false;
+    } else if (autoRotate) {
+      theta += 0.0022;
+    }
     updateCam();
     // Skill hubs: gentle pulse + slow spin
     skillGroups.forEach((g, i) => {
@@ -1104,17 +1131,47 @@ function buildNetworkScene(data, currentUser) {
 
   function setFilter(query) {
     const q = (query || '').trim().toLowerCase();
+
     if (!q) {
       [...skillGroups, ...userGroups].forEach(g => { g.visible = true; });
+      autoRotate = true;
+      flying = false;
       return;
     }
-    skillGroups.forEach(g => {
-      g.visible = g.userData.skill.name.toLowerCase().includes(q);
+
+    // Direct matches
+    const matchSkills = new Set();
+    const matchUsers  = new Set();
+    skillGroups.forEach(g => { if (g.userData.skill.name.toLowerCase().includes(q)) matchSkills.add(g.userData.skill.name); });
+    userGroups.forEach(g  => { if ((g.userData.user.name || '').toLowerCase().includes(q)) matchUsers.add(g.userData.id); });
+
+    // Expand one hop: connected nodes stay visible too
+    const showSkills = new Set(matchSkills);
+    const showUsers  = new Set(matchUsers);
+    matchSkills.forEach(sn => (skillToUsers.get(sn) || []).forEach(uid => showUsers.add(uid)));
+    matchUsers.forEach(uid => {
+      (userToSkills.get(uid) || []).forEach(sn => showSkills.add(sn));
+      (sessionPeers.get(uid) || []).forEach(pid => showUsers.add(pid));
     });
-    userGroups.forEach(g => {
-      const name = (g.userData.user.name || '').toLowerCase();
-      g.visible = name.includes(q);
-    });
+
+    skillGroups.forEach(g => { g.visible = showSkills.has(g.userData.skill.name); });
+    userGroups.forEach(g  => { g.visible = showUsers.has(g.userData.id); });
+
+    // Compute centroid of DIRECT matches and fly camera there
+    const pts = [];
+    skillGroups.forEach(g => { if (matchSkills.has(g.userData.skill.name)) pts.push(g.position); });
+    userGroups.forEach(g  => { if (matchUsers.has(g.userData.id))          pts.push(g.position); });
+    if (!pts.length) return;
+
+    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+    const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+    const cz = pts.reduce((s, p) => s + p.z, 0) / pts.length;
+    const dist = Math.sqrt(cx * cx + cy * cy + cz * cz) || 1;
+    flyTheta  = Math.atan2(cx, cz);
+    flyPhi    = Math.acos(Math.max(-1, Math.min(1, cy / dist)));
+    flyRadius = Math.max(120, dist * 2.2 + (pts.length > 1 ? 80 : 0));
+    autoRotate = false;
+    flying = true;
   }
 
   function cleanup() {
