@@ -910,8 +910,8 @@ const Components = {
           </a>
 
           <a href="#" class="sidebar-nav-item" data-page="create-session">
-            <span class="sidebar-nav-item-icon"><i class="fas fa-plus-circle"></i></span>
-            <span>Create Session</span>
+            <span class="sidebar-nav-item-icon"><i class="fas fa-calendar-alt"></i></span>
+            <span>Sessions</span>
           </a>
           
           <a href="#" class="sidebar-nav-item" data-page="search">
@@ -1599,8 +1599,8 @@ function renderCreateSessionHomePage() {
         ${Components.topbar()}
         <div class="page-container">
           <div class="page-header">
-            <h1 class="page-title">Create Session</h1>
-            <p class="page-subtitle">Choose whether you want to teach or learn</p>
+            <h1 class="page-title">Sessions</h1>
+            <p class="page-subtitle">Offer your skills to others or find a session to join</p>
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
