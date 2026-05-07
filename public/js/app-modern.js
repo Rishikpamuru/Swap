@@ -910,8 +910,8 @@ const Components = {
           </a>
 
           <a href="#" class="sidebar-nav-item" data-page="create-session">
-            <span class="sidebar-nav-item-icon"><i class="fas fa-plus-circle"></i></span>
-            <span>Create Session</span>
+            <span class="sidebar-nav-item-icon"><i class="fas fa-calendar-alt"></i></span>
+            <span>Sessions</span>
           </a>
           
           <a href="#" class="sidebar-nav-item" data-page="search">
