@@ -595,6 +595,597 @@ const Utils = {
   }
 };
 
+
+// ============================================================
+// SKILL NETWORK GLOBE
+// ============================================================
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (window.__loadedScripts && window.__loadedScripts[src]) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => { (window.__loadedScripts = window.__loadedScripts || {})[src] = true; resolve(); };
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function renderNetworkPage() {
+  document.body.innerHTML = `
+    <div class="app-container">
+      ${Components.sidebar('network')}
+      <main class="main-content" style="padding:0;position:relative;overflow:hidden;background:#050510;">
+        <canvas id="network-canvas" style="width:100%;height:100%;display:block;"></canvas>
+        <div style="position:absolute;top:0;left:0;right:0;pointer-events:none;padding:1.5rem 2rem 0;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;">
+          <div>
+            <h1 style="font-size:1.75rem;font-weight:800;color:white;margin:0 0 0.25rem;text-shadow:0 0 24px rgba(100,180,255,0.6);">Skill Network</h1>
+            <p id="network-stats" style="color:rgba(255,255,255,0.45);font-size:0.875rem;margin:0;">Loading network data...</p>
+          </div>
+          <div style="pointer-events:auto;position:relative;margin-top:0.25rem;">
+            <span style="position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.4);font-size:0.85rem;pointer-events:none;">⌕</span>
+            <input id="network-search" type="text" placeholder="Search skills or people…" autocomplete="off"
+              style="background:rgba(0,0,8,0.7);border:1px solid rgba(255,255,255,0.18);border-radius:999px;padding:0.45rem 1rem 0.45rem 2.2rem;color:white;font-size:0.85rem;width:230px;outline:none;backdrop-filter:blur(12px);" />
+          </div>
+        </div>
+        <div style="position:absolute;bottom:2rem;left:2rem;pointer-events:none;background:rgba(5,5,16,0.75);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:1rem 1.25rem;font-size:0.78rem;color:rgba(255,255,255,0.6);">
+          <div style="font-weight:700;color:white;margin-bottom:0.6rem;font-size:0.85rem;">Legend</div>
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;"><span style="width:10px;height:10px;border-radius:50%;background:#b8cde0;display:inline-block;box-shadow:0 0 8px rgba(68,136,170,0.8);"></span>Student</div>
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;"><span style="width:10px;height:10px;background:#4facfe;transform:rotate(45deg);display:inline-block;box-shadow:0 0 8px rgba(79,172,254,0.8);"></span>Skill Hub</div>
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;"><span style="width:20px;height:2px;background:rgba(79,172,254,0.5);display:inline-block;"></span>Teaches</div>
+          <div style="display:flex;align-items:center;gap:0.6rem;"><span style="width:20px;height:2px;background:rgba(255,154,60,0.6);display:inline-block;"></span>Session</div>
+        </div>
+        <div style="position:absolute;bottom:2.25rem;right:2rem;pointer-events:none;color:rgba(255,255,255,0.25);font-size:0.72rem;text-align:right;line-height:1.6;">
+          Drag to rotate<br>Scroll to zoom<br>Click a node
+        </div>
+        <div id="network-tooltip" style="position:fixed;pointer-events:none;background:rgba(8,12,28,0.93);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;font-size:0.85rem;color:white;display:none;z-index:1000;max-width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.5);"></div>
+        <div id="network-loading" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:white;">
+          <div style="font-size:3rem;margin-bottom:1rem;">🌐</div>
+          <div style="font-size:1.1rem;font-weight:700;margin-bottom:0.4rem;">Building Network...</div>
+          <div style="color:rgba(255,255,255,0.4);font-size:0.8rem;">Mapping skill connections</div>
+        </div>
+      </main>
+    </div>`;
+
+  initializeSidebar();
+
+  try {
+    await loadScript('/js/three.min.js');
+  } catch (e) {
+    const el = document.getElementById('network-loading');
+    if (el) el.innerHTML = `<div style="color:#ff6b6b;font-size:1rem;">Failed to load 3D engine.<br><small style="opacity:.6">Check your internet connection.</small></div>`;
+    return;
+  }
+
+  let netData;
+  try {
+    const res = await fetch('/api/network', { credentials: 'include' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message);
+    netData = json.data;
+  } catch (e) {
+    const el = document.getElementById('network-loading');
+    if (el) el.innerHTML = `<div style="color:#ff6b6b;font-size:1rem;">Failed to load network data.<br><small style="opacity:.6">${e.message}</small></div>`;
+    return;
+  }
+
+  const loadingEl = document.getElementById('network-loading');
+  if (loadingEl) loadingEl.style.display = 'none';
+
+  const { cleanup, setFilter } = buildNetworkScene(netData, AppState.currentUser);
+  AppState.cleanup = cleanup;
+
+  // Wire up the search bar
+  const netSearchEl = document.getElementById('network-search');
+  if (netSearchEl) {
+    // Pre-fill if navigated here from the Search page
+    if (AppState.pendingNetworkFilter) {
+      netSearchEl.value = AppState.pendingNetworkFilter;
+      setFilter(AppState.pendingNetworkFilter);
+      AppState.pendingNetworkFilter = null;
+    }
+    netSearchEl.addEventListener('input', e => setFilter(e.target.value));
+  }
+}
+
+function buildNetworkScene(data, currentUser) {
+  const THREE = window.THREE;
+  const canvas = document.getElementById('network-canvas');
+  if (!canvas || !THREE) return () => {};
+
+  const parent = canvas.parentElement;
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000008, 1);
+
+  const scene = new THREE.Scene();
+
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 4000);
+  camera.position.set(0, 60, 420);
+
+  function resize() {
+    const w = parent.clientWidth, h = parent.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Stars — two-tier: bright + dim
+  function addStars(count, spread, sz, op) {
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count * 3; i++) pos[i] = (Math.random() - 0.5) * spread;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    scene.add(new THREE.Points(geo, new THREE.PointsMaterial({
+      color: 0xffffff, size: sz, transparent: true, opacity: op,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    })));
+  }
+  addStars(2000, 3000, 1.8, 0.9);
+  addStars(4000, 3000, 0.8, 0.4);
+
+  // Neon palette — 10 vivid hues, assigned by djb2 hash of skill name
+  const PALETTE = [0x00d4ff, 0xff006e, 0x39ff14, 0xff6600, 0xffe600,
+                   0xcc44ff, 0x00ffcc, 0xff1493, 0x00ff88, 0xffaa00];
+  function skillColor(name) {
+    let h = 5381;
+    for (let i = 0; i < name.length; i++) h = ((h << 5) + h) + name.charCodeAt(i);
+    return PALETTE[Math.abs(h) % PALETTE.length];
+  }
+
+  // Multi-layer glow sphere group
+  function makeGlowNode(color, coreR, userData) {
+    const group = new THREE.Group();
+    group.userData = userData;
+    const addLayer = (r, col, op) => {
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(r, 16, 12),
+        new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op,
+          blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      m.userData = userData;
+      group.add(m);
+    };
+    // bright white hot core
+    const core = new THREE.Mesh(
+      new THREE.SphereGeometry(coreR * 0.3, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    core.userData = userData;
+    group.add(core);
+    addLayer(coreR * 0.7,  0xffffff, 0.9);  // white inner ring
+    addLayer(coreR,        color,    0.85);  // main color shell
+    addLayer(coreR * 1.5,  color,    0.35);  // mid halo (tighter than before)
+    addLayer(coreR * 2.2,  color,    0.12);  // subtle outer glow
+    return group;
+  }
+
+  function fibSphere(n, r) {
+    const pts = [], golden = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < n; i++) {
+      const y = 1 - (i / Math.max(n - 1, 1)) * 2;
+      const rad = Math.sqrt(Math.max(0, 1 - y * y));
+      const th = golden * i;
+      pts.push(new THREE.Vector3(Math.cos(th) * rad * r, y * r, Math.sin(th) * rad * r));
+    }
+    return pts;
+  }
+
+  // Skill hubs
+  const skillPos = {};
+  const skillGroups = [];
+  const meshToGroup = new Map(); // child mesh → group for raycasting
+  const skills = data.skills;
+  const skillSphPts = fibSphere(Math.max(skills.length, 1), 140);
+
+  skills.forEach((skill, i) => {
+    const col = skillColor(skill.name);
+    const baseR = 10 + Math.min(skill.user_count || 0, 10) * 2;
+    const ud = { type: 'skill', skill, color: col };
+    const grp = makeGlowNode(col, baseR, ud);
+    grp.position.copy(skillSphPts[i]);
+    scene.add(grp);
+    skillPos[skill.name] = skillSphPts[i].clone();
+    skillGroups.push(grp);
+    grp.children.forEach(c => meshToGroup.set(c, grp));
+
+    // Subtle point light per skill hub
+    const pl = new THREE.PointLight(col, 2, 160);
+    pl.position.copy(skillSphPts[i]);
+    scene.add(pl);
+  });
+
+  // Build a circular profile-picture sprite for a user
+  function makeProfileSprite(user, col, spriteSize, isSelf) {
+    const res = 256;
+    const pfpCanvas = document.createElement('canvas');
+    pfpCanvas.width = res; pfpCanvas.height = res;
+    const ctx = pfpCanvas.getContext('2d');
+    const cx = res / 2, cy = res / 2, r = res * 0.40;
+    const ringW = isSelf ? 12 : 7;
+    const ringColor = '#' + col.toString(16).padStart(6, '0');
+
+    function paint(img) {
+      ctx.clearRect(0, 0, res, res);
+      // glow ring shadow
+      ctx.save();
+      ctx.shadowColor = ringColor;
+      ctx.shadowBlur = 28;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + ringW / 2, 0, Math.PI * 2);
+      ctx.strokeStyle = ringColor;
+      ctx.lineWidth = ringW;
+      ctx.stroke();
+      ctx.restore();
+      // clip to circle then draw image or initials
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.clip();
+      if (img) {
+        ctx.drawImage(img, cx - r, cy - r, r * 2, r * 2);
+      } else {
+        const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        bg.addColorStop(0, ringColor + 'aa');
+        bg.addColorStop(1, ringColor + '22');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, res, res);
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.font = `bold ${Math.round(r * 0.72)}px Inter, Arial, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const initials = (user.name || '?').split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
+        ctx.fillText(initials, cx, cy);
+      }
+      ctx.restore();
+    }
+
+    paint(null);
+    const tex = new THREE.CanvasTexture(pfpCanvas);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(spriteSize, spriteSize, 1);
+    sprite.renderOrder = 2;
+
+    if (user.profile_image) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => { paint(img); tex.needsUpdate = true; };
+      img.onerror = () => {}; // keep initials on load fail
+      img.src = user.profile_image;
+    }
+    return sprite;
+  }
+
+  // Radial glow backdrop sprite (additive) — placed behind pfp
+  function makeGlowSprite(col, size, ud) {
+    const gc = document.createElement('canvas');
+    gc.width = 128; gc.height = 128;
+    const gctx = gc.getContext('2d');
+    const r = (col >> 16) & 255, g = (col >> 8) & 255, b = col & 255;
+    const grad = gctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, `rgba(${r},${g},${b},0.85)`);
+    grad.addColorStop(0.4, `rgba(${r},${g},${b},0.35)`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    gctx.fillStyle = grad;
+    gctx.fillRect(0, 0, 128, 128);
+    const tex = new THREE.CanvasTexture(gc);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+    }));
+    sp.scale.set(size, size, 1);
+    sp.renderOrder = 1;
+    sp.userData = ud;
+    return sp;
+  }
+
+  // Name label sprite shown below the current user node
+  function makeNameLabel(name, size) {
+    const lc = document.createElement('canvas');
+    lc.width = 512; lc.height = 80;
+    const lctx = lc.getContext('2d');
+    lctx.font = 'bold 36px Inter, Arial, sans-serif';
+    lctx.textAlign = 'center';
+    lctx.textBaseline = 'middle';
+    lctx.fillStyle = 'rgba(255,255,255,0.95)';
+    lctx.shadowColor = 'rgba(0,180,255,0.8)';
+    lctx.shadowBlur = 18;
+    lctx.fillText(name, 256, 40);
+    const tex = new THREE.CanvasTexture(lc);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+    sp.scale.set(size * 2.2, size * 0.35, 1);
+    sp.renderOrder = 3;
+    return sp;
+  }
+
+  // User nodes
+  const userOffered = {};
+  data.userSkills.forEach(us => {
+    (userOffered[us.user_id] = userOffered[us.user_id] || []).push(us.skill_name);
+  });
+
+  const currentUserId = currentUser ? (currentUser.id || currentUser.userId) : null;
+  const userGroups = [];
+  const userPosMap = {};
+  const nonSelfUsers = data.users.filter(u => u.id !== currentUserId);
+  const userSphPts = fibSphere(Math.max(nonSelfUsers.length, 1), 210);
+
+  // Helper: build and place a user group
+  function addUserGroup(user, pos, isSelf) {
+    const skIds = userOffered[user.id];
+    const col = skIds?.length ? skillColor(skIds[0]) : 0x88ccff;
+    const ud = { type: 'user', id: user.id, user, color: col };
+    const spriteSize = isSelf ? 52 : 32;
+    const glowSize = isSelf ? spriteSize * 3.2 : spriteSize * 2.4;
+    const grp = new THREE.Group();
+    grp.userData = ud;
+    grp.position.copy(pos);
+
+    const glow = makeGlowSprite(col, glowSize, ud);
+    grp.add(glow);
+
+    const pfp = makeProfileSprite(user, col, spriteSize, isSelf);
+    pfp.userData = ud;
+    grp.add(pfp);
+
+    if (isSelf) {
+      const label = makeNameLabel(user.name || 'You', spriteSize);
+      label.position.set(0, -(spriteSize * 0.68), 0);
+      label.userData = ud;
+      grp.add(label);
+    }
+
+    scene.add(grp);
+    userGroups.push(grp);
+    userPosMap[user.id] = pos.clone();
+    grp.children.forEach(c => meshToGroup.set(c, grp));
+  }
+
+  // Current user at center (0,0,0)
+  const selfUser = currentUserId ? data.users.find(u => u.id === currentUserId) : null;
+  if (selfUser) addUserGroup(selfUser, new THREE.Vector3(0, 0, 0), true);
+
+  // Other users on outer sphere, gravitated toward their skills
+  nonSelfUsers.forEach((user, i) => {
+    const skIds = userOffered[user.id];
+    let pos;
+    if (skIds?.length && skillPos[skIds[0]]) {
+      pos = skillPos[skIds[0]].clone().normalize().multiplyScalar(188 + Math.random() * 38);
+      pos.x += (Math.random() - 0.5) * 44;
+      pos.y += (Math.random() - 0.5) * 44;
+      pos.z += (Math.random() - 0.5) * 44;
+    } else {
+      pos = userSphPts[i].clone();
+    }
+    addUserGroup(user, pos, false);
+  });
+
+  // Glowing edges
+  function addEdge(from, to, color, opacity) {
+    const geo = new THREE.BufferGeometry().setFromPoints([from.clone(), to.clone()]);
+    scene.add(new THREE.Line(geo, new THREE.LineBasicMaterial({
+      color, transparent: true, opacity,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    })));
+  }
+
+  data.userSkills.forEach(us => {
+    const uPos = userPosMap[us.user_id], sPos = skillPos[us.skill_name];
+    if (!uPos || !sPos) return;
+    addEdge(uPos, sPos, skillColor(us.skill_name), 0.28);
+  });
+
+  const seen = new Set();
+  data.sessions.forEach(s => {
+    const key = [Math.min(s.tutor_id, s.student_id), Math.max(s.tutor_id, s.student_id)].join('-');
+    if (seen.has(key)) return;
+    seen.add(key);
+    const a = userPosMap[s.tutor_id], b = userPosMap[s.student_id];
+    if (a && b) addEdge(a, b, 0xffffff, 0.12);
+  });
+
+  const statEl = document.getElementById('network-stats');
+  if (statEl) statEl.textContent = `${data.users.length} students · ${skills.length} skills · ${data.userSkills.length + seen.size} connections`;
+
+  // Connection maps for filter neighbour expansion
+  const skillToUsers = new Map();   // skillName → Set<userId>
+  const userToSkills = new Map();   // userId   → Set<skillName>
+  const sessionPeers = new Map();   // userId   → Set<userId>
+  data.userSkills.forEach(us => {
+    if (!skillToUsers.has(us.skill_name)) skillToUsers.set(us.skill_name, new Set());
+    skillToUsers.get(us.skill_name).add(us.user_id);
+    if (!userToSkills.has(us.user_id)) userToSkills.set(us.user_id, new Set());
+    userToSkills.get(us.user_id).add(us.skill_name);
+  });
+  data.sessions.forEach(s => {
+    [s.tutor_id, s.student_id].forEach(a => {
+      const b = a === s.tutor_id ? s.student_id : s.tutor_id;
+      if (!sessionPeers.has(a)) sessionPeers.set(a, new Set());
+      sessionPeers.get(a).add(b);
+    });
+  });
+
+  // Orbit controls
+  let theta = 0.3, phi = 1.1, radius = 420;
+  let flyTheta = theta, flyPhi = phi, flyRadius = radius;
+  let flying = false;
+  let dragging = false, lastX = 0, lastY = 0;
+  let autoRotate = true, autoTimer = null;
+
+  function resumeAuto() {
+    clearTimeout(autoTimer);
+    autoTimer = setTimeout(() => { autoRotate = true; }, 4000);
+  }
+  function updateCam() {
+    camera.position.set(
+      radius * Math.sin(phi) * Math.sin(theta),
+      radius * Math.cos(phi),
+      radius * Math.sin(phi) * Math.cos(theta)
+    );
+    camera.lookAt(0, 0, 0);
+  }
+  updateCam();
+
+  const onMouseDown = e => { dragging = true; lastX = e.clientX; lastY = e.clientY; autoRotate = false; canvas.style.cursor = 'grabbing'; };
+  const onMouseUp = () => { dragging = false; canvas.style.cursor = hovered ? 'pointer' : 'grab'; resumeAuto(); };
+  const onWheel = e => { radius = Math.max(150, Math.min(900, radius + e.deltaY * 0.5)); e.preventDefault(); };
+
+  canvas.addEventListener('mousedown', onMouseDown);
+  window.addEventListener('mouseup', onMouseUp);
+  canvas.addEventListener('wheel', onWheel, { passive: false });
+
+  // Raycaster — collect all child meshes, resolve back to group
+  const raycaster = new THREE.Raycaster();
+  const mouse2 = new THREE.Vector2();
+  const allMeshes = [];
+  [...skillGroups, ...userGroups].forEach(grp => grp.children.forEach(c => allMeshes.push(c)));
+  const tooltip = document.getElementById('network-tooltip');
+  let hovered = null;
+
+  canvas.addEventListener('mousemove', e => {
+    if (dragging) {
+      theta -= (e.clientX - lastX) * 0.006;
+      phi = Math.max(0.25, Math.min(Math.PI - 0.25, phi - (e.clientY - lastY) * 0.006));
+      lastX = e.clientX; lastY = e.clientY;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    mouse2.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse2.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse2, camera);
+    const hits = raycaster.intersectObjects(allMeshes);
+
+    if (hits.length) {
+      const grp = meshToGroup.get(hits[0].object) || hits[0].object;
+      if (grp !== hovered) {
+        hovered = grp;
+        const d = grp.userData;
+        if (d.type === 'user') {
+          tooltip.innerHTML = `<strong style="font-size:0.9rem;color:#fff">${Utils.escapeHtml(d.user.name || '?')}</strong><br><span style="color:rgba(255,255,255,0.5);font-size:0.75rem;">Click to view profile</span>`;
+        } else {
+          const hex = '#' + d.color.toString(16).padStart(6, '0');
+          tooltip.innerHTML = `<strong style="color:${hex};font-size:0.9rem;">${Utils.escapeHtml(d.skill.name)}</strong><br><span style="color:rgba(255,255,255,0.5);font-size:0.75rem;">${d.skill.user_count || 0} tutor${d.skill.user_count !== 1 ? 's' : ''}</span>`;
+        }
+        tooltip.style.display = 'block';
+      }
+      if (!dragging) canvas.style.cursor = 'pointer';
+      tooltip.style.left = (e.clientX + 16) + 'px';
+      tooltip.style.top = (e.clientY - 12) + 'px';
+    } else {
+      hovered = null;
+      tooltip.style.display = 'none';
+      if (!dragging) canvas.style.cursor = 'grab';
+    }
+  });
+
+  canvas.addEventListener('click', e => {
+    if (Math.abs(e.clientX - lastX) > 5) return;
+    const rect = canvas.getBoundingClientRect();
+    mouse2.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse2.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse2, camera);
+    const hits = raycaster.intersectObjects(allMeshes);
+    if (hits.length) {
+      const grp = meshToGroup.get(hits[0].object) || hits[0].object;
+      if (grp.userData.type === 'user') openUserProfileModal(grp.userData.id);
+    }
+  });
+
+  canvas.style.cursor = 'grab';
+
+  // Animation loop
+  let running = true, t = 0;
+  function animate() {
+    if (!running || !document.getElementById('network-canvas')) { running = false; return; }
+    requestAnimationFrame(animate);
+    t += 0.012;
+    if (flying) {
+      theta += (flyTheta - theta) * 0.07;
+      phi   += (flyPhi   - phi)   * 0.07;
+      radius += (flyRadius - radius) * 0.07;
+      if (Math.abs(flyTheta - theta) < 0.002 && Math.abs(flyPhi - phi) < 0.002 && Math.abs(flyRadius - radius) < 0.5) flying = false;
+    } else if (autoRotate) {
+      theta += 0.0022;
+    }
+    updateCam();
+    // Skill hubs: gentle pulse + slow spin
+    skillGroups.forEach((g, i) => {
+      const s = 1 + 0.08 * Math.sin(t * 1.2 + i * 0.85);
+      g.scale.setScalar(s);
+      g.rotation.y += 0.006;
+    });
+    // User nodes: subtle pulse (sprites face camera automatically)
+    userGroups.forEach((g, i) => {
+      const isSelf = g.userData.id === currentUserId;
+      const amp = isSelf ? 0.1 : 0.05;
+      const freq = isSelf ? 1.0 : 1.9;
+      g.scale.setScalar(1 + amp * Math.sin(t * freq + i * 1.4));
+    });
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  function setFilter(query) {
+    const q = (query || '').trim().toLowerCase();
+
+    if (!q) {
+      [...skillGroups, ...userGroups].forEach(g => { g.visible = true; });
+      autoRotate = true;
+      flying = false;
+      return;
+    }
+
+    // Direct matches
+    const matchSkills = new Set();
+    const matchUsers  = new Set();
+    skillGroups.forEach(g => { if (g.userData.skill.name.toLowerCase().includes(q)) matchSkills.add(g.userData.skill.name); });
+    userGroups.forEach(g  => { if ((g.userData.user.name || '').toLowerCase().includes(q)) matchUsers.add(g.userData.id); });
+
+    // Expand one hop: connected nodes stay visible too
+    const showSkills = new Set(matchSkills);
+    const showUsers  = new Set(matchUsers);
+    matchSkills.forEach(sn => (skillToUsers.get(sn) || []).forEach(uid => showUsers.add(uid)));
+    matchUsers.forEach(uid => {
+      (userToSkills.get(uid) || []).forEach(sn => showSkills.add(sn));
+      (sessionPeers.get(uid) || []).forEach(pid => showUsers.add(pid));
+    });
+
+    skillGroups.forEach(g => { g.visible = showSkills.has(g.userData.skill.name); });
+    userGroups.forEach(g  => { g.visible = showUsers.has(g.userData.id); });
+
+    // Compute centroid of DIRECT matches and fly camera there
+    const pts = [];
+    skillGroups.forEach(g => { if (matchSkills.has(g.userData.skill.name)) pts.push(g.position); });
+    userGroups.forEach(g  => { if (matchUsers.has(g.userData.id))          pts.push(g.position); });
+    if (!pts.length) return;
+
+    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+    const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+    const cz = pts.reduce((s, p) => s + p.z, 0) / pts.length;
+    const dist = Math.sqrt(cx * cx + cy * cy + cz * cz) || 1;
+    flyTheta  = Math.atan2(cx, cz);
+    flyPhi    = Math.acos(Math.max(-1, Math.min(1, cy / dist)));
+    flyRadius = Math.max(120, dist * 2.2 + (pts.length > 1 ? 80 : 0));
+    autoRotate = false;
+    flying = true;
+  }
+
+  function cleanup() {
+    running = false;
+    clearTimeout(autoTimer);
+    window.removeEventListener('resize', resize);
+    window.removeEventListener('mouseup', onMouseUp);
+    renderer.dispose();
+  }
+
+  return { cleanup, setFilter };
+}
+
+
 // Router
 const Router = {
   routes: {
@@ -626,7 +1217,8 @@ const Router = {
     'reports': renderReportsPage,
     'admin': renderAdminPage,
     'works-cited': renderWorksCitedPage,
-    'ai-tutor': renderAITutorPage
+    'ai-tutor': renderAITutorPage,
+    'network': renderNetworkPage
   },
 
   navigate(page) {
@@ -933,6 +1525,11 @@ const Components = {
             <span class="sidebar-nav-item-icon"><i class="fas fa-envelope"></i></span>
             <span>Messages</span>
             <span id="messages-unread-badge" class="notification-badge" style="position: static; margin-left: auto; width: 22px; height: 22px; font-size: 0.75rem; display: none;"></span>
+          </a>
+
+          <a href="#" class="sidebar-nav-item" data-page="network">
+            <span class="sidebar-nav-item-icon"><i class="fas fa-globe"></i></span>
+            <span>Skill Network</span>
           </a>
           `}
         </nav>
@@ -2130,7 +2727,10 @@ async function renderSearchPage() {
                       ${user.offeredSkills.length > 3 ? `<span style="padding: 0.25rem 0.75rem; color: var(--text-secondary); font-size: 0.875rem;">+${user.offeredSkills.length - 3} more</span>` : ''}
                     </div>
                   </div>
-                  <button type="button" class="btn btn-primary search-request-session" data-user-id="${user.id}" data-username="${Utils.escapeHtml(user.username)}" data-full-name="${Utils.escapeHtml(user.fullName || '')}">Request Session</button>
+                  <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+                    <button type="button" class="btn btn-primary search-request-session" style="flex:1;" data-user-id="${user.id}" data-username="${Utils.escapeHtml(user.username)}" data-full-name="${Utils.escapeHtml(user.fullName || '')}">Request Session</button>
+                    <button type="button" class="btn btn-outline search-view-network" title="View in Skill Network" data-network-term="${Utils.escapeHtml(user.fullName || user.username)}">🌐</button>
+                  </div>
                 </div>
               `).join('')}
             </div>
@@ -2154,6 +2754,11 @@ async function renderSearchPage() {
         }
 
         resultsDiv.innerHTML = `
+          ${searchType === 'skills' ? `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:1rem;">
+            <span style="color:var(--text-secondary);font-size:0.9rem;">${users.length} tutor${users.length !== 1 ? 's' : ''} offering <strong style="color:var(--text-primary);">${Utils.escapeHtml(query)}</strong></span>
+            <button type="button" class="btn btn-outline search-view-network-skill" style="font-size:0.82rem;padding:0.35rem 0.9rem;" data-network-term="${Utils.escapeHtml(query)}">🌐 View in Network</button>
+          </div>` : ''}
           <div class="user-grid">
             ${users.map(user => `
               <div class="user-card search-user-card" role="button" tabindex="0" data-user-id="${user.id}" aria-label="View profile">
@@ -2168,7 +2773,10 @@ async function renderSearchPage() {
                     ${user.offeredSkills.length > 3 ? `<span style="padding: 0.25rem 0.75rem; color: var(--text-secondary); font-size: 0.875rem;">+${user.offeredSkills.length - 3} more</span>` : ''}
                   </div>
                 </div>
-                <button type="button" class="btn btn-primary search-request-session" data-user-id="${user.id}" data-username="${Utils.escapeHtml(user.username)}" data-full-name="${Utils.escapeHtml(user.fullName || '')}">Request Session</button>
+                <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+                  <button type="button" class="btn btn-primary search-request-session" style="flex:1;" data-user-id="${user.id}" data-username="${Utils.escapeHtml(user.username)}" data-full-name="${Utils.escapeHtml(user.fullName || '')}">Request Session</button>
+                  <button type="button" class="btn btn-outline search-view-network" title="View in Skill Network" data-network-term="${Utils.escapeHtml(user.fullName || user.username)}">🌐</button>
+                </div>
               </div>
             `).join('')}
           </div>
@@ -2182,6 +2790,16 @@ async function renderSearchPage() {
 
   // CSP-safe delegated click/keyboard handlers for search results
   resultsDiv?.addEventListener('click', (e) => {
+    const networkBtn = e.target?.closest?.('.search-view-network, .search-view-network-skill');
+    if (networkBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const term = String(networkBtn.getAttribute('data-network-term') || searchInput.value.trim());
+      AppState.pendingNetworkFilter = term;
+      Router.navigate('network');
+      return;
+    }
+
     const requestBtn = e.target?.closest?.('.search-request-session');
     if (requestBtn) {
       e.preventDefault();
@@ -7262,7 +7880,8 @@ document.addEventListener('DOMContentLoaded', () => {
       '/messages': 'messages',
       '/sessions': 'sessions',
       '/search': 'search',
-      '/request-session': 'request-session'
+      '/request-session': 'request-session',
+      '/network': 'network'
     };
 
     // Check if user is logged in

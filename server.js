@@ -30,6 +30,7 @@ const ratingRoutes = require('./routes/ratings');
 const adminRoutes = require('./routes/admin');
 const reportRoutes = require('./routes/reports');
 const aiRoutes = require('./routes/ai');
+const networkRoutes = require('./routes/network');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -206,7 +207,8 @@ async function startServer() {
     app.use('/api/admin', adminRoutes);
     app.use('/api/reports', reportRoutes);
     app.use('/api/ai', aiRoutes);
-    
+    app.use('/api/network', networkRoutes);
+
     // Serve SPA - all routes go to index.html
     app.get('*', (req, res) => {
       res.sendFile(path.join(__dirname, 'public', 'index.html'));
