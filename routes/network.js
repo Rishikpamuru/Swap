@@ -12,30 +12,30 @@ function requireAuth(req, res) {
 
 router.get('/', async (req, res) => {
   if (!requireAuth(req, res)) return;
-  const db = req.db;
+  const db = req.app.locals.db;
   try {
     const users = await getAll(db, `
-      SELECT u.id, up.full_name as name, up.avatar_url as avatar
+      SELECT u.id, up.full_name as name
       FROM users u
       JOIN user_profiles up ON u.id = up.user_id
       WHERE u.status = 'active'
     `);
 
+    // Unique offered skill names with tutor counts
     const skills = await getAll(db, `
-      SELECT s.id, s.name, s.category,
-        COUNT(DISTINCT us.user_id) as user_count
-      FROM skills s
-      LEFT JOIN user_skills us ON s.id = us.skill_id AND us.skill_type = 'offer'
-      GROUP BY s.id
-      HAVING user_count > 0
+      SELECT skill_name as name,
+        COUNT(DISTINCT user_id) as user_count
+      FROM skills
+      WHERE skill_type IN ('offered', 'offer')
+      GROUP BY skill_name
       ORDER BY user_count DESC
     `);
 
+    // Which user offers which skill
     const userSkills = await getAll(db, `
-      SELECT us.user_id, us.skill_id, us.skill_type
-      FROM user_skills us
-      JOIN users u ON us.user_id = u.id
-      WHERE u.status = 'active'
+      SELECT DISTINCT user_id, skill_name, skill_type
+      FROM skills
+      WHERE skill_type IN ('offered', 'offer')
     `);
 
     const sessions = await getAll(db, `
