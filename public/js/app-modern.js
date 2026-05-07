@@ -665,24 +665,23 @@ async function renderNetworkPage() {
   const loadingEl = document.getElementById('network-loading');
   if (loadingEl) loadingEl.style.display = 'none';
 
-  AppState.cleanup = buildNetworkScene(netData);
+  AppState.cleanup = buildNetworkScene(netData, AppState.currentUser);
 }
 
-function buildNetworkScene(data) {
+function buildNetworkScene(data, currentUser) {
   const THREE = window.THREE;
   const canvas = document.getElementById('network-canvas');
   if (!canvas || !THREE) return () => {};
 
   const parent = canvas.parentElement;
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x050510, 1);
+  renderer.setClearColor(0x000008, 1);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x050510, 0.0007);
 
-  const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 3000);
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.5, 4000);
   camera.position.set(0, 60, 420);
 
   function resize() {
@@ -695,33 +694,54 @@ function buildNetworkScene(data) {
   resize();
   window.addEventListener('resize', resize);
 
-  scene.add(new THREE.AmbientLight(0x223355, 3));
-  const sunLight = new THREE.PointLight(0x5577cc, 4, 1000);
-  sunLight.position.set(100, 200, 150);
-  scene.add(sunLight);
+  // Stars — two-tier: bright + dim
+  function addStars(count, spread, sz, op) {
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count * 3; i++) pos[i] = (Math.random() - 0.5) * spread;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    scene.add(new THREE.Points(geo, new THREE.PointsMaterial({
+      color: 0xffffff, size: sz, transparent: true, opacity: op,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    })));
+  }
+  addStars(2000, 3000, 1.8, 0.9);
+  addStars(4000, 3000, 0.8, 0.4);
 
-  // Stars
-  const starCount = 3000;
-  const starPos = new Float32Array(starCount * 3);
-  for (let i = 0; i < starCount * 3; i++) starPos[i] = (Math.random() - 0.5) * 2400;
-  const starGeo = new THREE.BufferGeometry();
-  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-  scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, transparent: true, opacity: 0.5 })));
+  // Neon palette — 10 vivid hues, assigned by djb2 hash of skill name
+  const PALETTE = [0x00d4ff, 0xff006e, 0x39ff14, 0xff6600, 0xffe600,
+                   0xcc44ff, 0x00ffcc, 0xff1493, 0x00ff88, 0xffaa00];
+  function skillColor(name) {
+    let h = 5381;
+    for (let i = 0; i < name.length; i++) h = ((h << 5) + h) + name.charCodeAt(i);
+    return PALETTE[Math.abs(h) % PALETTE.length];
+  }
 
-  const CAT_COLORS = {
-    math: 0x4facfe, science: 0x43e97b, art: 0xf093fb, music: 0xfa709a,
-    language: 0xffd32a, english: 0xffd32a, technology: 0x00d2ff,
-    computer: 0x00d2ff, programming: 0x00d2ff, sports: 0xf7971e,
-    writing: 0xa29bfe, history: 0xff9a3c, physics: 0x43e97b,
-    chemistry: 0x43e97b, biology: 0x43e97b,
-  };
-  function catColor(cat) {
-    if (!cat) return 0x9b59b6;
-    const k = cat.toLowerCase();
-    for (const [key, val] of Object.entries(CAT_COLORS)) {
-      if (k.includes(key)) return val;
-    }
-    return 0x9b59b6;
+  // Multi-layer glow sphere group
+  function makeGlowNode(color, coreR, userData) {
+    const group = new THREE.Group();
+    group.userData = userData;
+    const addLayer = (r, col, op) => {
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(r, 16, 12),
+        new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op,
+          blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      m.userData = userData;
+      group.add(m);
+    };
+    // bright white hot core
+    const core = new THREE.Mesh(
+      new THREE.SphereGeometry(coreR * 0.3, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    core.userData = userData;
+    group.add(core);
+    addLayer(coreR * 0.7,  0xffffff, 0.9);  // white inner ring
+    addLayer(coreR,        color,    0.85);  // main color shell
+    addLayer(coreR * 1.5,  color,    0.35);  // mid halo (tighter than before)
+    addLayer(coreR * 2.2,  color,    0.12);  // subtle outer glow
+    return group;
   }
 
   function fibSphere(n, r) {
@@ -729,83 +749,214 @@ function buildNetworkScene(data) {
     for (let i = 0; i < n; i++) {
       const y = 1 - (i / Math.max(n - 1, 1)) * 2;
       const rad = Math.sqrt(Math.max(0, 1 - y * y));
-      const theta = golden * i;
-      pts.push(new THREE.Vector3(Math.cos(theta) * rad * r, y * r, Math.sin(theta) * rad * r));
+      const th = golden * i;
+      pts.push(new THREE.Vector3(Math.cos(th) * rad * r, y * r, Math.sin(th) * rad * r));
     }
     return pts;
   }
 
-  // Skill hubs on inner sphere
+  // Skill hubs
   const skillPos = {};
-  const skillMeshes = [];
+  const skillGroups = [];
+  const meshToGroup = new Map(); // child mesh → group for raycasting
   const skills = data.skills;
   const skillSphPts = fibSphere(Math.max(skills.length, 1), 140);
 
   skills.forEach((skill, i) => {
-    const r = 9 + Math.min(skill.user_count || 0, 10) * 1.8;
-    const col = catColor(skill.name);
-    const geo = new THREE.IcosahedronGeometry(r, 1);
-    const mat = new THREE.MeshStandardMaterial({
-      color: col, emissive: col, emissiveIntensity: 0.5,
-      metalness: 0.2, roughness: 0.5,
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.copy(skillSphPts[i]);
-    mesh.userData = { type: 'skill', skill };
-    scene.add(mesh);
+    const col = skillColor(skill.name);
+    const baseR = 10 + Math.min(skill.user_count || 0, 10) * 2;
+    const ud = { type: 'skill', skill, color: col };
+    const grp = makeGlowNode(col, baseR, ud);
+    grp.position.copy(skillSphPts[i]);
+    scene.add(grp);
     skillPos[skill.name] = skillSphPts[i].clone();
-    skillMeshes.push(mesh);
+    skillGroups.push(grp);
+    grp.children.forEach(c => meshToGroup.set(c, grp));
 
-    const pl = new THREE.PointLight(col, 1.5, 100);
+    // Subtle point light per skill hub
+    const pl = new THREE.PointLight(col, 2, 160);
     pl.position.copy(skillSphPts[i]);
     scene.add(pl);
   });
 
-  // User nodes on outer sphere, gravitated toward their skills
-  const userMeshes = [];
-  const userPosMap = {};
+  // Build a circular profile-picture sprite for a user
+  function makeProfileSprite(user, col, spriteSize, isSelf) {
+    const res = 256;
+    const pfpCanvas = document.createElement('canvas');
+    pfpCanvas.width = res; pfpCanvas.height = res;
+    const ctx = pfpCanvas.getContext('2d');
+    const cx = res / 2, cy = res / 2, r = res * 0.40;
+    const ringW = isSelf ? 12 : 7;
+    const ringColor = '#' + col.toString(16).padStart(6, '0');
+
+    function paint(img) {
+      ctx.clearRect(0, 0, res, res);
+      // glow ring shadow
+      ctx.save();
+      ctx.shadowColor = ringColor;
+      ctx.shadowBlur = 28;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + ringW / 2, 0, Math.PI * 2);
+      ctx.strokeStyle = ringColor;
+      ctx.lineWidth = ringW;
+      ctx.stroke();
+      ctx.restore();
+      // clip to circle then draw image or initials
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.clip();
+      if (img) {
+        ctx.drawImage(img, cx - r, cy - r, r * 2, r * 2);
+      } else {
+        const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        bg.addColorStop(0, ringColor + 'aa');
+        bg.addColorStop(1, ringColor + '22');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, res, res);
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.font = `bold ${Math.round(r * 0.72)}px Inter, Arial, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const initials = (user.name || '?').split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
+        ctx.fillText(initials, cx, cy);
+      }
+      ctx.restore();
+    }
+
+    paint(null);
+    const tex = new THREE.CanvasTexture(pfpCanvas);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(spriteSize, spriteSize, 1);
+    sprite.renderOrder = 2;
+
+    if (user.profile_image) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => { paint(img); tex.needsUpdate = true; };
+      img.onerror = () => {}; // keep initials on load fail
+      img.src = user.profile_image;
+    }
+    return sprite;
+  }
+
+  // Radial glow backdrop sprite (additive) — placed behind pfp
+  function makeGlowSprite(col, size, ud) {
+    const gc = document.createElement('canvas');
+    gc.width = 128; gc.height = 128;
+    const gctx = gc.getContext('2d');
+    const r = (col >> 16) & 255, g = (col >> 8) & 255, b = col & 255;
+    const grad = gctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, `rgba(${r},${g},${b},0.85)`);
+    grad.addColorStop(0.4, `rgba(${r},${g},${b},0.35)`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    gctx.fillStyle = grad;
+    gctx.fillRect(0, 0, 128, 128);
+    const tex = new THREE.CanvasTexture(gc);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+    }));
+    sp.scale.set(size, size, 1);
+    sp.renderOrder = 1;
+    sp.userData = ud;
+    return sp;
+  }
+
+  // Name label sprite shown below the current user node
+  function makeNameLabel(name, size) {
+    const lc = document.createElement('canvas');
+    lc.width = 512; lc.height = 80;
+    const lctx = lc.getContext('2d');
+    lctx.font = 'bold 36px Inter, Arial, sans-serif';
+    lctx.textAlign = 'center';
+    lctx.textBaseline = 'middle';
+    lctx.fillStyle = 'rgba(255,255,255,0.95)';
+    lctx.shadowColor = 'rgba(0,180,255,0.8)';
+    lctx.shadowBlur = 18;
+    lctx.fillText(name, 256, 40);
+    const tex = new THREE.CanvasTexture(lc);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+    sp.scale.set(size * 2.2, size * 0.35, 1);
+    sp.renderOrder = 3;
+    return sp;
+  }
+
+  // User nodes
   const userOffered = {};
   data.userSkills.forEach(us => {
     (userOffered[us.user_id] = userOffered[us.user_id] || []).push(us.skill_name);
   });
 
-  const userSphPts = fibSphere(Math.max(data.users.length, 1), 210);
-  data.users.forEach((user, i) => {
-    const geo = new THREE.SphereGeometry(7, 14, 10);
-    const mat = new THREE.MeshStandardMaterial({
-      color: 0xb8cde0, emissive: 0x336688, emissiveIntensity: 0.35,
-      metalness: 0.5, roughness: 0.4,
-    });
-    const mesh = new THREE.Mesh(geo, mat);
+  const currentUserId = currentUser ? (currentUser.id || currentUser.userId) : null;
+  const userGroups = [];
+  const userPosMap = {};
+  const nonSelfUsers = data.users.filter(u => u.id !== currentUserId);
+  const userSphPts = fibSphere(Math.max(nonSelfUsers.length, 1), 210);
 
+  // Helper: build and place a user group
+  function addUserGroup(user, pos, isSelf) {
     const skIds = userOffered[user.id];
-    if (skIds?.length && skillPos[skIds[0]]) {
-      const base = skillPos[skIds[0]].clone().normalize().multiplyScalar(185 + Math.random() * 40);
-      base.x += (Math.random() - 0.5) * 48;
-      base.y += (Math.random() - 0.5) * 48;
-      base.z += (Math.random() - 0.5) * 48;
-      mesh.position.copy(base);
-    } else {
-      mesh.position.copy(userSphPts[i]);
+    const col = skIds?.length ? skillColor(skIds[0]) : 0x88ccff;
+    const ud = { type: 'user', id: user.id, user, color: col };
+    const spriteSize = isSelf ? 52 : 32;
+    const glowSize = isSelf ? spriteSize * 3.2 : spriteSize * 2.4;
+    const grp = new THREE.Group();
+    grp.userData = ud;
+    grp.position.copy(pos);
+
+    const glow = makeGlowSprite(col, glowSize, ud);
+    grp.add(glow);
+
+    const pfp = makeProfileSprite(user, col, spriteSize, isSelf);
+    pfp.userData = ud;
+    grp.add(pfp);
+
+    if (isSelf) {
+      const label = makeNameLabel(user.name || 'You', spriteSize);
+      label.position.set(0, -(spriteSize * 0.68), 0);
+      label.userData = ud;
+      grp.add(label);
     }
 
-    mesh.userData = { type: 'user', id: user.id, user };
-    scene.add(mesh);
-    userMeshes.push(mesh);
-    userPosMap[user.id] = mesh.position.clone();
+    scene.add(grp);
+    userGroups.push(grp);
+    userPosMap[user.id] = pos.clone();
+    grp.children.forEach(c => meshToGroup.set(c, grp));
+  }
+
+  // Current user at center (0,0,0)
+  const selfUser = currentUserId ? data.users.find(u => u.id === currentUserId) : null;
+  if (selfUser) addUserGroup(selfUser, new THREE.Vector3(0, 0, 0), true);
+
+  // Other users on outer sphere, gravitated toward their skills
+  nonSelfUsers.forEach((user, i) => {
+    const skIds = userOffered[user.id];
+    let pos;
+    if (skIds?.length && skillPos[skIds[0]]) {
+      pos = skillPos[skIds[0]].clone().normalize().multiplyScalar(188 + Math.random() * 38);
+      pos.x += (Math.random() - 0.5) * 44;
+      pos.y += (Math.random() - 0.5) * 44;
+      pos.z += (Math.random() - 0.5) * 44;
+    } else {
+      pos = userSphPts[i].clone();
+    }
+    addUserGroup(user, pos, false);
   });
 
-  // Edges
+  // Glowing edges
   function addEdge(from, to, color, opacity) {
     const geo = new THREE.BufferGeometry().setFromPoints([from.clone(), to.clone()]);
-    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
-    scene.add(new THREE.Line(geo, mat));
+    scene.add(new THREE.Line(geo, new THREE.LineBasicMaterial({
+      color, transparent: true, opacity,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    })));
   }
 
   data.userSkills.forEach(us => {
     const uPos = userPosMap[us.user_id], sPos = skillPos[us.skill_name];
     if (!uPos || !sPos) return;
-    addEdge(uPos, sPos, 0x4facfe, 0.22);
+    addEdge(uPos, sPos, skillColor(us.skill_name), 0.28);
   });
 
   const seen = new Set();
@@ -814,7 +965,7 @@ function buildNetworkScene(data) {
     if (seen.has(key)) return;
     seen.add(key);
     const a = userPosMap[s.tutor_id], b = userPosMap[s.student_id];
-    if (a && b) addEdge(a, b, 0xff9a3c, 0.4);
+    if (a && b) addEdge(a, b, 0xffffff, 0.12);
   });
 
   const statEl = document.getElementById('network-stats');
@@ -823,8 +974,7 @@ function buildNetworkScene(data) {
   // Orbit controls
   let theta = 0.3, phi = 1.1, radius = 420;
   let dragging = false, lastX = 0, lastY = 0;
-  let autoRotate = true;
-  let autoTimer = null;
+  let autoRotate = true, autoTimer = null;
 
   function resumeAuto() {
     clearTimeout(autoTimer);
@@ -848,10 +998,11 @@ function buildNetworkScene(data) {
   window.addEventListener('mouseup', onMouseUp);
   canvas.addEventListener('wheel', onWheel, { passive: false });
 
-  // Raycaster + tooltip
+  // Raycaster — collect all child meshes, resolve back to group
   const raycaster = new THREE.Raycaster();
   const mouse2 = new THREE.Vector2();
-  const allMeshes = [...skillMeshes, ...userMeshes];
+  const allMeshes = [];
+  [...skillGroups, ...userGroups].forEach(grp => grp.children.forEach(c => allMeshes.push(c)));
   const tooltip = document.getElementById('network-tooltip');
   let hovered = null;
 
@@ -869,14 +1020,14 @@ function buildNetworkScene(data) {
     const hits = raycaster.intersectObjects(allMeshes);
 
     if (hits.length) {
-      const obj = hits[0].object;
-      if (obj !== hovered) {
-        hovered = obj;
-        const d = obj.userData;
+      const grp = meshToGroup.get(hits[0].object) || hits[0].object;
+      if (grp !== hovered) {
+        hovered = grp;
+        const d = grp.userData;
         if (d.type === 'user') {
-          tooltip.innerHTML = `<strong style="font-size:0.9rem;">${Utils.escapeHtml(d.user.name || '?')}</strong><br><span style="color:rgba(255,255,255,0.5);font-size:0.75rem;">Click to view profile</span>`;
+          tooltip.innerHTML = `<strong style="font-size:0.9rem;color:#fff">${Utils.escapeHtml(d.user.name || '?')}</strong><br><span style="color:rgba(255,255,255,0.5);font-size:0.75rem;">Click to view profile</span>`;
         } else {
-          const hex = '#' + catColor(d.skill.name).toString(16).padStart(6, '0');
+          const hex = '#' + d.color.toString(16).padStart(6, '0');
           tooltip.innerHTML = `<strong style="color:${hex};font-size:0.9rem;">${Utils.escapeHtml(d.skill.name)}</strong><br><span style="color:rgba(255,255,255,0.5);font-size:0.75rem;">${d.skill.user_count || 0} tutor${d.skill.user_count !== 1 ? 's' : ''}</span>`;
         }
         tooltip.style.display = 'block';
@@ -898,8 +1049,9 @@ function buildNetworkScene(data) {
     mouse2.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(mouse2, camera);
     const hits = raycaster.intersectObjects(allMeshes);
-    if (hits.length && hits[0].object.userData.type === 'user') {
-      openUserProfileModal(hits[0].object.userData.id);
+    if (hits.length) {
+      const grp = meshToGroup.get(hits[0].object) || hits[0].object;
+      if (grp.userData.type === 'user') openUserProfileModal(grp.userData.id);
     }
   });
 
@@ -911,14 +1063,20 @@ function buildNetworkScene(data) {
     if (!running || !document.getElementById('network-canvas')) { running = false; return; }
     requestAnimationFrame(animate);
     t += 0.012;
-    if (autoRotate) theta += 0.0025;
+    if (autoRotate) theta += 0.0022;
     updateCam();
-    skillMeshes.forEach((m, i) => {
-      m.scale.setScalar(1 + 0.06 * Math.sin(t * 1.4 + i * 0.9));
-      m.rotation.y += 0.008;
+    // Skill hubs: gentle pulse + slow spin
+    skillGroups.forEach((g, i) => {
+      const s = 1 + 0.08 * Math.sin(t * 1.2 + i * 0.85);
+      g.scale.setScalar(s);
+      g.rotation.y += 0.006;
     });
-    userMeshes.forEach((m, i) => {
-      m.scale.setScalar(1 + 0.04 * Math.sin(t * 2.1 + i * 1.3));
+    // User nodes: subtle pulse (sprites face camera automatically)
+    userGroups.forEach((g, i) => {
+      const isSelf = g.userData.id === currentUserId;
+      const amp = isSelf ? 0.1 : 0.05;
+      const freq = isSelf ? 1.0 : 1.9;
+      g.scale.setScalar(1 + amp * Math.sin(t * freq + i * 1.4));
     });
     renderer.render(scene, camera);
   }

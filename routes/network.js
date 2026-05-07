@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
   const db = req.app.locals.db;
   try {
     const users = await getAll(db, `
-      SELECT u.id, up.full_name as name
+      SELECT u.id, up.full_name as name, up.profile_image
       FROM users u
       JOIN user_profiles up ON u.id = up.user_id
       WHERE u.status = 'active'
