@@ -652,22 +652,29 @@ async function renderNetworkPage() {
   try {
     await loadScript('/js/three.min.js');
   } catch (e) {
+    if (AppState.currentPage !== 'network') return;
     const el = document.getElementById('network-loading');
     if (el) el.innerHTML = `<div style="color:#ff6b6b;font-size:1rem;">Failed to load 3D engine.<br><small style="opacity:.6">Check your internet connection.</small></div>`;
     return;
   }
 
+  if (AppState.currentPage !== 'network') return;
+
   let netData;
   try {
     const res = await fetch('/api/network', { credentials: 'include' });
+    if (AppState.currentPage !== 'network') return;
     const json = await res.json();
     if (!json.success) throw new Error(json.message);
     netData = json.data;
   } catch (e) {
+    if (AppState.currentPage !== 'network') return;
     const el = document.getElementById('network-loading');
     if (el) el.innerHTML = `<div style="color:#ff6b6b;font-size:1rem;">Failed to load network data.<br><small style="opacity:.6">${e.message}</small></div>`;
     return;
   }
+
+  if (AppState.currentPage !== 'network') return;
 
   const loadingEl = document.getElementById('network-loading');
   if (loadingEl) loadingEl.style.display = 'none';

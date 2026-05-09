@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320">
+  <!-- Neck -->
+  <rect x="88" y="10" width="24" height="140" rx="8" fill="#c8860a"/>
+  <!-- Headstock -->
+  <rect x="82" y="5" width="36" height="30" rx="6" fill="#b87800"/>
+  <!-- Tuning pegs -->
+  <rect x="74" y="12" width="12" height="6" rx="3" fill="#888"/>
+  <rect x="74" y="24" width="12" height="6" rx="3" fill="#888"/>
+  <rect x="114" y="12" width="12" height="6" rx="3" fill="#888"/>
+  <rect x="114" y="24" width="12" height="6" rx="3" fill="#888"/>
+  <!-- Fret lines -->
+  <line x1="88" y1="55" x2="112" y2="55" stroke="#a07000" stroke-width="2"/>
+  <line x1="88" y1="75" x2="112" y2="75" stroke="#a07000" stroke-width="2"/>
+  <line x1="88" y1="95" x2="112" y2="95" stroke="#a07000" stroke-width="2"/>
+  <line x1="88" y1="115" x2="112" y2="115" stroke="#a07000" stroke-width="2"/>
+  <!-- Guitar body upper bout -->
+  <ellipse cx="100" cy="195" rx="62" ry="55" fill="#5aaa44"/>
+  <!-- Guitar body lower bout -->
+  <ellipse cx="100" cy="260" rx="72" ry="62" fill="#5aaa44"/>
+  <!-- Body highlight -->
+  <ellipse cx="85" cy="190" rx="30" ry="28" fill="#6abb55" opacity="0.5"/>
+  <!-- Waist cutout (indentation effect) -->
+  <ellipse cx="40" cy="228" rx="22" ry="18" fill="white"/>
+  <ellipse cx="160" cy="228" rx="22" ry="18" fill="white"/>
+  <!-- Sound hole -->
+  <circle cx="100" cy="240" r="28" fill="#333"/>
+  <circle cx="100" cy="240" r="24" fill="#222"/>
+  <!-- Sound hole ring -->
+  <circle cx="100" cy="240" r="28" fill="none" stroke="#c8860a" stroke-width="3"/>
+  <circle cx="100" cy="240" r="22" fill="none" stroke="#c8860a" stroke-width="1.5"/>
+  <!-- Strings -->
+  <line x1="92" y1="35" x2="92" y2="240" stroke="#aaa" stroke-width="1.2"/>
+  <line x1="96" y1="35" x2="96" y2="240" stroke="#999" stroke-width="1.4"/>
+  <line x1="100" y1="35" x2="100" y2="240" stroke="#888" stroke-width="1.6"/>
+  <line x1="104" y1="35" x2="104" y2="240" stroke="#999" stroke-width="1.4"/>
+  <line x1="108" y1="35" x2="108" y2="240" stroke="#aaa" stroke-width="1.2"/>
+  <!-- Bridge -->
+  <rect x="78" y="268" width="44" height="8" rx="3" fill="#8b6000"/>
+  <!-- Strap pin -->
+  <circle cx="100" cy="318" r="5" fill="#777"/>
+</svg>

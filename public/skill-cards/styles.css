@@ -1,0 +1,355 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  background: #03050f;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(80,30,150,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 80%, rgba(0,60,180,0.14) 0%, transparent 55%);
+  font-family: 'Inter', sans-serif;
+  color: #fff;
+  padding: 3rem 2rem 4rem;
+}
+
+/* ── Header ── */
+header {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+header h1 {
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.45));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+header p {
+  margin-top: 0.5rem;
+  color: rgba(255,255,255,0.4);
+  font-size: 1rem;
+}
+.brand {
+  color: #60a5fa;
+  font-weight: 700;
+  -webkit-text-fill-color: #60a5fa;
+}
+
+/* ── Grid ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 340px));
+  gap: 2.25rem;
+  max-width: 1120px;
+  margin: 0 auto;
+  justify-content: center;
+}
+
+/* ── Card outer: gradient border ── */
+.card-outer {
+  background: linear-gradient(165deg,
+    #c41212 0%,
+    #7a1888 30%,
+    #2233bb 65%,
+    #1155ee 100%
+  );
+  padding: 3px;
+  border-radius: 24px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.card-outer:hover {
+  transform: translateY(-7px) scale(1.015);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.75);
+}
+
+/* ── Card inner ── */
+.card {
+  background: #060a1c;
+  border-radius: 22px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Side labels: SKILLSWAP ── */
+.side-label {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.4);
+  font-style: italic;
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+}
+.side-label.left {
+  left: 0;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+.side-label.right {
+  right: 0;
+  writing-mode: vertical-rl;
+}
+.side-label strong {
+  font-weight: 900;
+  font-style: italic;
+  color: rgba(255,255,255,0.8);
+}
+
+/* ── Top pill bar ── */
+.card-top {
+  display: flex;
+  align-items: stretch;
+  padding: 14px 30px 10px;
+  gap: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.pill-name {
+  background: linear-gradient(140deg, #6e87a4 0%, #b8cfe0 45%, #7a90aa 100%);
+  color: #fff;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 1.05rem;
+  text-shadow: 0 1px 5px rgba(0,0,0,0.55);
+  padding: 7px 24px 7px 16px;
+  border-radius: 999px 0 0 999px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Dark S-wave connector between pills */
+.pill-wave {
+  width: 24px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: visible;
+  margin: 0 -1px;
+  z-index: 3;
+}
+.pill-wave svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.pill-hp {
+  background: linear-gradient(140deg, #b83010 0%, #e84a28 45%, #b83010 100%);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1rem;
+  text-shadow: 0 1px 5px rgba(0,0,0,0.55);
+  padding: 7px 16px 7px 22px;
+  border-radius: 0 999px 999px 0;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.hp-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  opacity: 0.75;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+
+/* ── Watercolor art area ── */
+.card-art {
+  margin: 4px 28px 14px;
+  height: 198px;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  border: 1.5px solid rgba(255,255,255,0.13);
+  background: #050d20;
+}
+/* paper grain overlay */
+.card-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-conic-gradient(rgba(255,255,255,0.025) 0% 25%, transparent 0% 50%);
+  background-size: 3px 3px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Watercolor washes — each skill gets a unique palette */
+.wc-python {
+  background:
+    radial-gradient(ellipse 65% 55% at 18% 28%, rgba(30,115,60,0.98) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 65% at 78% 18%, rgba(75,185,100,0.88) 0%, transparent 58%),
+    radial-gradient(ellipse 72% 48% at 48% 82%, rgba(15,68,35,0.92) 0%, transparent 64%),
+    radial-gradient(ellipse 48% 52% at 88% 68%, rgba(105,215,55,0.72) 0%, transparent 54%),
+    radial-gradient(ellipse 58% 48% at 8% 72%, rgba(6,48,22,0.88) 0%, transparent 60%),
+    radial-gradient(ellipse 42% 38% at 58% 8%, rgba(175,250,80,0.58) 0%, transparent 48%),
+    #061610;
+  filter: url(#wc) saturate(1.3);
+}
+
+.wc-css {
+  background:
+    radial-gradient(ellipse 65% 58% at 18% 25%, rgba(0,125,215,0.97) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 65% at 80% 22%, rgba(35,195,238,0.87) 0%, transparent 58%),
+    radial-gradient(ellipse 68% 50% at 46% 80%, rgba(0,72,165,0.92) 0%, transparent 62%),
+    radial-gradient(ellipse 48% 58% at 87% 62%, rgba(0,195,195,0.72) 0%, transparent 52%),
+    radial-gradient(ellipse 56% 48% at 12% 70%, rgba(0,42,125,0.87) 0%, transparent 58%),
+    radial-gradient(ellipse 40% 38% at 52% 8%, rgba(112,215,252,0.62) 0%, transparent 48%),
+    #020c1e;
+  filter: url(#wc) saturate(1.35);
+}
+
+.wc-js {
+  background:
+    radial-gradient(ellipse 65% 58% at 22% 28%, rgba(195,152,0,0.97) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 65% at 76% 18%, rgba(238,198,18,0.87) 0%, transparent 58%),
+    radial-gradient(ellipse 70% 48% at 48% 82%, rgba(175,95,0,0.92) 0%, transparent 64%),
+    radial-gradient(ellipse 48% 55% at 87% 65%, rgba(252,198,0,0.72) 0%, transparent 54%),
+    radial-gradient(ellipse 56% 50% at 8% 70%, rgba(145,72,0,0.88) 0%, transparent 60%),
+    radial-gradient(ellipse 42% 38% at 58% 8%, rgba(252,235,95,0.68) 0%, transparent 48%),
+    #180d00;
+  filter: url(#wc) saturate(1.3);
+}
+
+.wc-guitar {
+  background:
+    radial-gradient(ellipse 65% 58% at 18% 28%, rgba(175,12,48,0.97) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 65% at 80% 18%, rgba(115,0,175,0.87) 0%, transparent 58%),
+    radial-gradient(ellipse 70% 48% at 48% 82%, rgba(215,0,75,0.92) 0%, transparent 64%),
+    radial-gradient(ellipse 48% 55% at 87% 65%, rgba(155,0,195,0.72) 0%, transparent 54%),
+    radial-gradient(ellipse 56% 50% at 10% 72%, rgba(95,0,95,0.88) 0%, transparent 60%),
+    radial-gradient(ellipse 42% 38% at 55% 8%, rgba(252,75,95,0.68) 0%, transparent 48%),
+    #160010;
+  filter: url(#wc) saturate(1.35);
+}
+
+.wc-calculus {
+  background:
+    radial-gradient(ellipse 65% 58% at 18% 28%, rgba(95,0,158,0.97) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 65% at 80% 18%, rgba(55,35,215,0.87) 0%, transparent 58%),
+    radial-gradient(ellipse 70% 48% at 48% 82%, rgba(135,0,198,0.92) 0%, transparent 64%),
+    radial-gradient(ellipse 48% 55% at 87% 65%, rgba(75,0,175,0.72) 0%, transparent 54%),
+    radial-gradient(ellipse 56% 50% at 10% 72%, rgba(45,0,115,0.88) 0%, transparent 60%),
+    radial-gradient(ellipse 42% 38% at 58% 8%, rgba(195,95,252,0.68) 0%, transparent 48%),
+    #0b0018;
+  filter: url(#wc) saturate(1.35);
+}
+
+.wc-digital-art {
+  background:
+    radial-gradient(ellipse 52% 52% at 18% 22%, rgba(252,42,95,0.87) 0%, transparent 58%),
+    radial-gradient(ellipse 48% 58% at 80% 18%, rgba(252,175,0,0.82) 0%, transparent 54%),
+    radial-gradient(ellipse 58% 48% at 48% 82%, rgba(0,195,145,0.87) 0%, transparent 60%),
+    radial-gradient(ellipse 44% 50% at 87% 60%, rgba(0,95,215,0.77) 0%, transparent 54%),
+    radial-gradient(ellipse 48% 44% at 10% 70%, rgba(175,0,215,0.82) 0%, transparent 58%),
+    radial-gradient(ellipse 38% 38% at 53% 8%, rgba(0,215,252,0.68) 0%, transparent 48%),
+    #040b18;
+  filter: url(#wc) saturate(1.45);
+}
+
+/* ── Image-based art area ── */
+.card-art-image {
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-art-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 12px;
+}
+
+/* ── Type badge ── */
+.type-row {
+  padding: 0 28px 10px;
+}
+.type-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.11);
+  color: rgba(255,255,255,0.6);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  padding: 0.22rem 0.75rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+/* ── Card body (moves) ── */
+.card-body {
+  padding: 0 28px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+.move {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.move-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.move-name {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.88);
+  letter-spacing: 0.2px;
+}
+.move-dmg {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+}
+.move-desc {
+  font-size: 0.71rem;
+  color: rgba(255,255,255,0.44);
+  line-height: 1.52;
+}
+
+/* ── Card footer ── */
+.card-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 28px 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 6px;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.2);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* ── Page footer ── */
+footer {
+  text-align: center;
+  margin-top: 4rem;
+  color: rgba(255,255,255,0.18);
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}

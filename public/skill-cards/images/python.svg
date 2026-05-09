@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Body coil -->
+  <ellipse cx="100" cy="148" rx="72" ry="44" fill="#3ab81a"/>
+  <ellipse cx="100" cy="152" rx="50" ry="28" fill="#1e8800"/>
+  <!-- Shadow detail on coil -->
+  <ellipse cx="88" cy="148" rx="30" ry="18" fill="#2da010" opacity="0.6"/>
+  <!-- Neck -->
+  <path d="M75,118 Q82,88 105,75 Q122,65 142,72" fill="none" stroke="#3ab81a" stroke-width="24" stroke-linecap="round"/>
+  <path d="M75,118 Q82,88 105,75 Q122,65 142,72" fill="none" stroke="#4cd824" stroke-width="12" stroke-linecap="round" opacity="0.4"/>
+  <!-- Head -->
+  <ellipse cx="148" cy="78" rx="24" ry="18" fill="#55cc00"/>
+  <ellipse cx="145" cy="79" rx="18" ry="13" fill="#66dd10"/>
+  <!-- Nostril -->
+  <ellipse cx="166" cy="76" rx="4" ry="3" fill="#3aaa00"/>
+  <!-- Eye -->
+  <circle cx="157" cy="70" r="6" fill="#111"/>
+  <circle cx="159" cy="68" r="2.5" fill="#fff"/>
+  <circle cx="159.5" cy="67.5" r="1" fill="#111"/>
+  <!-- Tongue -->
+  <line x1="170" y1="79" x2="182" y2="72" stroke="#ee1133" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="170" y1="79" x2="183" y2="83" stroke="#ee1133" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Tail tip -->
+  <ellipse cx="52" cy="152" rx="8" ry="5" fill="#1e8800"/>
+</svg>

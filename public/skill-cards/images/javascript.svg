@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 115">
+  <!-- Outer shield (darker gold) -->
+  <path d="M5,5 L95,5 L95,82 L50,110 L5,82 Z" fill="#c8970a"/>
+  <!-- Inner right panel (lighter gold) -->
+  <path d="M52,5 L95,5 L95,82 L52,84 Z" fill="#f0d000"/>
+  <!-- Divider shadow between panels -->
+  <line x1="52" y1="5" x2="52" y2="84" stroke="#a07800" stroke-width="2"/>
+  <!-- J letter -->
+  <text x="10" y="78" font-family="Impact, Arial Black, sans-serif" font-size="58" font-weight="900" fill="white">J</text>
+  <!-- S letter -->
+  <text x="53" y="78" font-family="Impact, Arial Black, sans-serif" font-size="58" font-weight="900" fill="white">S</text>
+</svg>

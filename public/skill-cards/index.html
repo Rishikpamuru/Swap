@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillSwap -- Skill Cards</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Watercolor displacement filter -->
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <filter id="wc" x="-25%" y="-25%" width="150%" height="150%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.038 0.072" numOctaves="7" seed="4" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="24" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <header>
+    <h1>Skill Cards</h1>
+    <p>Collect them all on <span class="brand">SkillSwap</span></p>
+  </header>
+
+  <div class="card-grid">
+
+    <!-- PYTHON -->
+    <div class="card-outer">
+      <div class="card">
+        <div class="side-label left">SKILL<strong>SWAP</strong></div>
+        <div class="side-label right">SKILL<strong>SWAP</strong></div>
+        <div class="card-top">
+          <div class="pill-name">Python</div>
+          <div class="pill-wave">
+            <svg viewBox="0 0 24 38" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,0 L24,0 L24,38 L0,38 C16,28 16,10 0,0 Z" fill="#060a1c"/>
+            </svg>
+          </div>
+          <div class="pill-hp"><span class="hp-label">HP</span> 120</div>
+        </div>
+        <div class="card-art card-art-image"><img src="images/python.svg" alt="Python snake"></div>
+        <div class="type-row"><span class="type-badge">[~] Code . Serpent</span></div>
+        <div class="card-body">
+          <div class="move">
+            <div class="move-header">
+              <span class="move-name">* Import Pandas</span>
+              <span class="move-dmg">50</span>
+            </div>
+            <p class="move-desc">Foe gets confused by DataFrames. They sit in silence for one turn.</p>
+          </div>
+          <div class="move">
+            <div class="move-header">
+              <span class="move-name">* Stack Overflow</span>
+              <span class="move-dmg">70</span>
+            </div>
+            <p class="move-desc">Massive damage. Both players cry. The answer was on page 3.</p>
+          </div>
+        </div>
+        <div class="card-footer">#001</div>
+      </div>
+    </div>
+
+    <!-- CSS -->
+    <div class="card-outer">
+      <div class="card">
+        <div class="side-label left">SKILL<strong>SWAP</strong></div>
+        <div class="side-label right">SKILL<strong>SWAP</strong></div>
+        <div class="card-top">
+          <div class="pill-name">CSS</div>
+          <div class="pill-wave">
+            <svg viewBox="0 0 24 38" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,0 L24,0 L24,38 L0,38 C16,28 16,10 0,0 Z" fill="#060a1c"/>
+            </svg>
+          </div>
+          <div class="pill-hp"><span class="hp-label">HP</span> 60</div>
+        </div>
+        <div class="card-art card-art-image"><img src="images/css.svg" alt="CSS"></div>
+        <div class="type-row"><span class="type-badge">[~] Style . Suffering</span></div>
+        <div class="card-body">
+          <div class="move">
+            <div class="move-header">
+              <span class="move-name">* Center A Div</span>
+              <span class="move-dmg">40</span>
+            </div>
+            <p class="move-desc">Foe is stunned for 3 turns trying to figure out why. You are also stunned.</p>
+          </div>
+          <div class="move">
+            <div class="move-header">
+              <span class="move-name">* Flexbox Fury</span>
+              <span class="move-dmg">80</span>
+            </div>
+            <p class="move-desc">Devastating layout attack. Instantly breaks IE6. No survivors.</p>
+          </div>
+        </div>
+        <div class="card-footer">#002</div>
+      </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <div class="card-outer">
+      <div class="card">
+        <div class="side-label left">SKILL<strong>SWAP</strong></div>
+        <div class="side-label right">SKILL<strong>SWAP</strong></div>
+        <div class="card-top">
+          <div class="pill-name">JavaScript</div>
+          <div class="pill-wave">
+            <svg viewBox="0 0 24 38" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,0 L24,0 L24,38 L0,38 C16,28 16,10 0,0 Z" fill="#060a1c"/>
+            </svg>
+          </div>
+          <div class="pill-hp"><span class="hp-label">HP</span> 85</div>
+        </div>
+        <div class="card-art card-art-image"><img src="images/javascript.svg" alt="JavaScript"></div>
+        <div class="type-row"><span class="type-badge">[!] Chaos . Web</span></div>
+        <div class="card-body">
+          <div class="move">
+            <div class="move-header">
+              <span class="move-name">* Callback Hell</span>
+              <span class="move-dmg">50</span>
+            </div>
+            <p class="move-desc">Nests 6 layers deep. Foe loses their will to debug. Permanent confusion.</p>
+          </div>
+          <div class="move">
+            <div class="move-header">
+              <span class="move-name">* NaN Confusion</span>
+              <span class="move-dmg">60</span>
+            </div>
+            <p class="move-desc">Foe spends their entire turn asking why NaN !== NaN. Time wasted.</p>
+          </div>
+        </div>
+        <div class="card-footer">#003</div>
+      </div>
+    </div>
+
+    <!-- GUITAR -->
+    <div class="card-outer">
+      <div class="card">
+        <div class="side-label left">SKILL<strong>SWAP</strong></div>
+        <div class="side-label right">SKILL<strong>SWAP</strong></div>
+        <div class="card-top">
+          <div class="pill-name">Guitar</div>
+          <div class="pill-wave">
+            <svg viewBox="0 0 24 38" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,0 L24,0 L24,38 L0,38 C16,28 16,10 0,0 Z" fill="#060a1c"/>
+            </svg>
+          </div>
+          <div class="pill-hp"><span class="hp-label">HP</span> 75</div>
+        </div>
+        <div class="card-art card-art-image"><img src="images/guitar.svg" alt="Guitar"></div>
+        <div class="type-row"><span class="type-badge">[#] Music . Vibe</span></div>
+        <div class="card-body">
+          <div class="move">
+            <div class="move-header">
+              <span class="move-name">* Power Chord</span>
+              <span class="move-dmg">40</span>
+            </div>
+            <p class="move-desc">Shakes the room. Neighbors file a noise complaint. Foe covers their ears.</p>
+          </div>
+          <div class="move">
+            <div class="move-header">
+              <span class="move-name">* Smoke on the Water</span>
+              <span class="move-dmg">60</span>
+            </div>
+            <p class="move-desc">Foe cannot stop humming this riff for a week. Complete mental occupation.</p>
+          </div>
+        </div>
+        <div class="card-footer">#004</div>
+      </div>
+    </div>
+
+    <!-- CALCULUS -->
+    <div class="card-outer">
+      <div class="card">
+        <div class="side-label left">SKILL<strong>SWAP</strong></div>
+        <div class="side-label right">SKILL<strong>SWAP</strong></div>
+        <div class="card-top">
+          <div class="pill-name">Calculus</div>
+          <div class="pill-wave">
+            <svg viewBox="0 0 24 38" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,0 L24,0 L24,38 L0,38 C16,28 16,10 0,0 Z" fill="#060a1c"/>
+            </svg>
+          </div>
+          <div class="pill-hp"><span class="hp-label">HP</span> 140</div>
+        </div>
+        <div class="card-art card-art-image"><img src="images/calculus.svg" alt="Calculus"></div>
+        <div class="type-row"><span class="type-badge">[+] Math . Existential</span></div>
+        <div class="card-body">
+          <div class="move">
+            <div class="move-header">
+              <span class="move-name">* Chain Rule</span>
+              <span class="move-dmg">90</span>
+            </div>
+            <p class="move-desc">Foe must show all work. Each step spawns two more steps. Endless.</p>
+          </div>
+          <div class="move">
+            <div class="move-header">
+              <span class="move-name">* Implicit Diff</span>
+              <span class="move-dmg">75</span>
+            </div>
+            <p class="move-desc">Foe forgets everything they knew about algebra. The effect is permanent.</p>
+          </div>
+        </div>
+        <div class="card-footer">#005</div>
+      </div>
+    </div>
+
+    <!-- DIGITAL ART -->
+    <div class="card-outer">
+      <div class="card">
+        <div class="side-label left">SKILL<strong>SWAP</strong></div>
+        <div class="side-label right">SKILL<strong>SWAP</strong></div>
+        <div class="card-top">
+          <div class="pill-name">Digital Art</div>
+          <div class="pill-wave">
+            <svg viewBox="0 0 24 38" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,0 L24,0 L24,38 L0,38 C16,28 16,10 0,0 Z" fill="#060a1c"/>
+            </svg>
+          </div>
+          <div class="pill-hp"><span class="hp-label">HP</span> 90</div>
+        </div>
+        <div class="card-art card-art-image"><img src="images/digital-art.svg" alt="Digital Art"></div>
+        <div class="type-row"><span class="type-badge">[@] Creative . Pixel</span></div>
+        <div class="card-body">
+          <div class="move">
+            <div class="move-header">
+              <span class="move-name">* Layer Merge</span>
+              <span class="move-dmg">55</span>
+            </div>
+            <p class="move-desc">Combines all attacks into one. Foe cannot undo. Ctrl+Z is disabled.</p>
+          </div>
+          <div class="move">
+            <div class="move-header">
+              <span class="move-name">* Bezier Blast</span>
+              <span class="move-dmg">65</span>
+            </div>
+            <p class="move-desc">Perfectly smooth curve attack. The foe is simply too ugly to respond.</p>
+          </div>
+        </div>
+        <div class="card-footer">#006</div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>SkillSwap Trading Cards &nbsp;.&nbsp; Reedy HS BPA Chapter &nbsp;.&nbsp; 2026</p>
+  </footer>
+</body>
+</html>
